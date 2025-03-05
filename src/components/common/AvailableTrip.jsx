@@ -47,7 +47,6 @@ export const AvailableTripItems = ({ trips, cities = [] }) => {
     };
 
     const handleSeatSelect = (seatSelected) => {
-        console.log('selected : ', seatSelected);
         
         setRouteSelected((prevRouteSelected) => {
           const updatedSeats = prevRouteSelected.allSeat.map((seat) => {
@@ -66,6 +65,13 @@ export const AvailableTripItems = ({ trips, cities = [] }) => {
             ...prevRouteSelected,
             allSeat: updatedSeats
           };
+        });
+
+        setSelectedSeat((prevSelectedSeats) => {
+            if (prevSelectedSeats.includes(seatSelected)) {
+                return prevSelectedSeats.filter(existingSeat => existingSeat !== seatSelected);
+            }
+            return [...prevSelectedSeats, seatSelected];
         });
       };
 
