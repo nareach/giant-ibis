@@ -73,13 +73,13 @@ export default function SearchBookForm() {
     const filteredRoutes = routeList.filter(route => {
       const matchesOrigin = origin ? route.origin?.city_id === origin : true;
       const matchesDestination = destination ? route.destination?.city_id === destination : true;
-    
+
       return matchesOrigin && matchesDestination;
     });
 
     const routes = await handleMapStatus(filteredRoutes);
     console.log('search: ', routes);
-    
+
     setTrips(routes)
     setLoading(false);
   }
@@ -167,8 +167,8 @@ export default function SearchBookForm() {
 
       const seatBooked = busData?.data || null;
       console.log('seatBook: ', busData);
-      
-      if(seatBooked){
+
+      if (seatBooked) {
         route.seatBooked = seatBooked;
         const busStatus = Array.isArray(busData?.data) ? busData.data.map(seat => seat.seat_id) : [];
         const busType = route?.bus_type?.bus_type;
@@ -185,15 +185,13 @@ export default function SearchBookForm() {
         });
         route.allSeat = seatStatus;
         route.seatAvalable = avalableSeat;
-  
+
         routeResult.push(route);
       }
     }
 
     return routeResult;
   };
-
-
 
 
   useEffect(() => {
@@ -203,14 +201,14 @@ export default function SearchBookForm() {
         setLoading(true);
         const routeList = await fetchFromApi('get_routeList');
         const cities = await fetchFromApi('get_cityList');
-    
+
         let routes = await handleMapCities(routeList, cities);
         routes = await handleMapSeat(routes);
         routes = await handleMapRouteTime(routes);
 
         const result = await fetchFromApi('get_cityList');
         console.log('routes: ', routes);
-        
+
         setCities(result);
         setRouteList(routes);
       } catch (error) {
@@ -224,10 +222,6 @@ export default function SearchBookForm() {
     fetchData();
   }, []);
 
-  useEffect(()=>{
-    console.log('active stap: ', activeStep);
-    
-  },[activeStep])
 
 
   return (
@@ -279,8 +273,7 @@ export default function SearchBookForm() {
           </> : <div className="max-w-7xl py-16 mx-auto">
             {
               trips ? <>
-                <BookProgress activeStep={activeStep} />
-                <AvailableTripItems activeStep={activeStep} trips={trips} cities={cities} />
+                <AvailableTripItems activeStep={activeStep} trips={trips} cities={cities} departureDate={departureDate} />
               </> : <></>
             }
           </div>
