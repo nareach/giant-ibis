@@ -1,0 +1,1 @@
+export const API_URL = process.env.API_URL || "https://www.giantibis.com/beta1/api-booking.php";
