@@ -130,7 +130,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
         }
 
         const books = {
-            id: routeSelected?.id,
+            route_id: routeSelected?.id,
             email: "nareachkr@gmail.com",
             password : 123456,
             mobile: phoneNumber,
@@ -140,6 +140,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
             bus_id: routeSelected?.bus_type?.id,
             bus_type: routeSelected?.bus_type?.bus_type,
             seat_no: selectedSeat?.map(seat => seat.seat_id).join(", "),
+            pass_email:"nareachkr@gmail.com",
             firstname: fullname,
             surname: fullname,
             remarks: 'I love giantibis'
