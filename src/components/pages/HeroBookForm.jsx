@@ -164,9 +164,9 @@ export default function SearchBookForm() {
         travel_date: departureDate,
         travel_time: route?.timings?.meta_value
       });
-
+      console.log('busData : ', busData);
+      
       const seatBooked = busData?.data || null;
-      console.log('seatBook: ', busData);
 
       if (seatBooked) {
         route.seatBooked = seatBooked;
@@ -175,9 +175,11 @@ export default function SearchBookForm() {
         const busList = await fetchFromApi('get_busList', {
           bus_type: busType
         });
+        
         const routeBus = busList?.data?.[0]?.seats_no?.split(',') || [];
         const avalableSeat = routeBus.filter(seat => !busStatus.includes(seat));
         const seatStatus = routeBus.map(seat => {
+          
           return {
             seat_id: seat,
             status: busStatus.includes(seat) ? 'booked' : 'available'
@@ -207,7 +209,6 @@ export default function SearchBookForm() {
         routes = await handleMapRouteTime(routes);
 
         const result = await fetchFromApi('get_cityList');
-        console.log('routes: ', routes);
 
         setCities(result);
         setRouteList(routes);

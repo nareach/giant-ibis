@@ -1,5 +1,6 @@
 "use client";
 
+import { BakongKHQR, khqrData, IndividualInfo, MerchantInfo, SourceInfo } from "bakong-khqr";
 
 import {
     Bus,
@@ -28,10 +29,11 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookProgress } from "./BookProgress";
 import { fetchFromApi } from "@/utils/api";
+import QRCode from "react-qr-code";
 
 export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
 
@@ -45,6 +47,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
     const [phoneNumber, setPhoneNumber] = useState("");
     const [email, setEmail] = useState("");
     const [pickupOrigin, setPickupOrigin] = useState("");
+    const [qorCode, setQorCode] = useState("");
 
     const [errors, setErrors] = useState({
         fullname: "",
@@ -132,25 +135,56 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
         const books = {
             route_id: routeSelected?.id,
             email: "nareachkr@gmail.com",
-            password : 123456,
+            password: 123456,
             mobile: phoneNumber,
             travel_date: departureDate,
-            travel_time : routeSelected?.timings?.meta_value,
+            travel_time: routeSelected?.timings?.meta_value,
             price: selectedSeat?.length * (Number(routeSelected?.price)),
             bus_id: routeSelected?.bus_type?.id,
             bus_type: routeSelected?.bus_type?.bus_type,
             seat_no: selectedSeat?.map(seat => seat.seat_id).join(", "),
-            pass_email:"nareachkr@gmail.com",
+            pass_email: "nareachkr@gmail.com",
             firstname: fullname,
             surname: fullname,
             remarks: 'I love giantibis'
         }
 
-        const book = await fetchFromApi('add_booking',books);
-        
+        // generate q or code
+        const optionalData = {
+            currency: khqrData.currency.khr,
+            amount: 0.1,
+            billNumber: "#0001",
+            mobileNumber: "85592655182",
+            storeLabel: "Chea Chento",
+            terminalLabel: "Chea Chento",
+            expirationTimestamp: Date.now() + (21 * 60 * 1000), // required if dynamic KHQR (eg. expired in 2 minutes)
+        };
 
-        console.log('books: ', book);
-        
+        const individualInfo = new IndividualInfo(
+            "chea_chento@aclb",
+            khqrData.currency.khr,
+            "devit",
+            "Battambang",
+            optionalData
+        );
+
+        const khqr = new BakongKHQR();
+        const response = khqr.generateIndividual(individualInfo);
+        const isKHQR = BakongKHQR.verify(response.data.qr).isValid;
+        const decodeResult = BakongKHQR.decode(response.data.qr);
+
+        if (isKHQR) {
+            setQorCode(response?.data?.qr);
+        }
+        console.log('response: khqor: ', response);
+        console.log('valid: ', isKHQR);
+        console.log('decode: ', decodeResult);
+
+        // const book = await fetchFromApi('add_booking', books);
+
+
+        // console.log('books: ', book);
+
 
         // router.push("/success");
     };
@@ -496,7 +530,33 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                             </div>
                                         </div>
                                     </div>
+
                                 </div>
+                                {
+                                    paymentMethod === 'khqr' && qorCode ? <>
+                                        <div className="rounded-lg overflow-hidden  bg-white shadow-lg">
+                                            <div className="bg-red-500 text-white h-[60px] text-[20px] flex justify-center items-center">
+                                                KHQOR
+                                            </div>
+                                            <div className="flex justify-center items-start font-bold flex-col pl-[30px]">
+                                                <span className="text-[15px]">
+                                                    Chea Chento
+                                                </span>
+                                                <span className="text-[30px]">
+                                                    100 USD
+                                                </span>
+                                            </div>
+                                            <div className="px-[30px] pb-[30px]">
+                                                <QRCode
+                                                    size={256}
+                                                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                                    value={qorCode}
+                                                    viewBox={`0 0 256 256`}
+                                                />
+                                            </div>
+                                        </div>
+                                    </> : <></>
+                                }
                                 <div
                                     className={`flex items-center justify-between p-4 rounded-lg border ${paymentMethod === "card"
                                         ? "border-primary"

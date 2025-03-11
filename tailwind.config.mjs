@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const {heroui} = require("@heroui/react");
+
 // eslint-disable-next-line import/no-anonymous-default-export
 export default {
 	darkMode: ["class"],
@@ -6,6 +8,7 @@ export default {
 	  "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
 	  "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
 	  "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+	  "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}",
 	],
 	theme: {
 	  extend: {
@@ -29,14 +32,8 @@ export default {
 		  custom: "2px 3px 15px rgba(0, 0, 0, 0.07)",
 		  custom2: "3px 3px 15px rgba(0, 0, 0, 0.08)",
 		},
-		// Uncomment and adjust borderRadius if needed
-		// borderRadius: {
-		//   lg: "var(--radius)",
-		//   md: "calc(var(--radius) - 2px)",
-		//   sm: "calc(var(--radius) - 4px)",
-		// },
 	  },
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [require("tailwindcss-animate"),heroui()],
   };
   
