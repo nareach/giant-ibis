@@ -40,6 +40,7 @@ import { useRouter } from "next/navigation";
 import { BookProgress } from "../common/BookProgress";
 import { AvailableTripItems } from "../common/AvailableTrip";
 import moment from "moment";
+import LoadingComponent from "../layout/Loading";
 
 export default function SearchBookForm() {
   const router = useRouter();
@@ -224,6 +225,9 @@ export default function SearchBookForm() {
   }, []);
 
 
+  if(loading){
+    return <LoadingComponent />;
+  }
 
   return (
     <>
@@ -270,7 +274,7 @@ export default function SearchBookForm() {
         </div>
         {
           loading ? <>
-            <h1>Loading</h1>
+            <h1></h1>
           </> : <div className="max-w-7xl py-16 mx-auto">
             {
               trips ? <>

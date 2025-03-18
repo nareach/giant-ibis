@@ -34,6 +34,12 @@ import { useRouter } from "next/navigation";
 import { BookProgress } from "./BookProgress";
 import { fetchFromApi } from "@/utils/api";
 import QRCode from "react-qr-code";
+import { ACLEDA_BANK_API, loginId, merchantID, password, signature } from "@/constant/constant";
+import axios from "axios";
+import LoadingComponent from "../layout/Loading";
+import { APP_CLIENT_INTERNALS } from "next/dist/shared/lib/constants";
+import moment from "moment";
+import PopupPayment from "../features/payments/PopupPayment";
 
 export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
 
@@ -48,6 +54,8 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
     const [email, setEmail] = useState("");
     const [pickupOrigin, setPickupOrigin] = useState("");
     const [qorCode, setQorCode] = useState("");
+    const [loading, setLoading] = useState("");
+
 
     const [errors, setErrors] = useState({
         fullname: "",
@@ -108,6 +116,8 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
     };
 
     const handlePay = async () => {
+
+        setLoading(true);
         let formErrors = {
             fullname: "",
             phoneNumber: "",
@@ -132,53 +142,38 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
             return;
         }
 
-        const books = {
-            route_id: routeSelected?.id,
-            email: "nareachkr@gmail.com",
-            password: 123456,
-            mobile: phoneNumber,
-            travel_date: departureDate,
-            travel_time: routeSelected?.timings?.meta_value,
-            price: selectedSeat?.length * (Number(routeSelected?.price)),
-            bus_id: routeSelected?.bus_type?.id,
-            bus_type: routeSelected?.bus_type?.bus_type,
-            seat_no: selectedSeat?.map(seat => seat.seat_id).join(", "),
-            pass_email: "nareachkr@gmail.com",
-            firstname: fullname,
-            surname: fullname,
-            remarks: 'I love giantibis'
-        }
+        let data = JSON.stringify({
+            "loginId": loginId,
+            "password": password,
+            "merchantID": merchantID,
+            "signature": signature,
+            "xpayTransaction": {
+                "txid": "2018110100000001",
+                "purchaseAmount": selectedSeat?.length * (Number(routeSelected?.price)),
+                "purchaseCurrency": "USD",
+                "purchaseDate": moment(new Date()).format('DD-MM-YYYY'),
+                "purchaseDesc": "mobile",
+                "invoiceid": "2018110100000001",
+                "item": "1",
+                "quantity": "1",
+                "expiryTime": "5",
+                "operationType": "5",
+                "counterId": "Counter 1"
+            }
+        });
 
-        // generate q or code
-        const optionalData = {
-            currency: khqrData.currency.khr,
-            amount: 0.1,
-            billNumber: "#0001",
-            mobileNumber: "85592655182",
-            storeLabel: "Chea Chento",
-            terminalLabel: "Chea Chento",
-            expirationTimestamp: Date.now() + (21 * 60 * 1000), // required if dynamic KHQR (eg. expired in 2 minutes)
-        };
-
-        const individualInfo = new IndividualInfo(
-            "chea_chento@aclb",
-            khqrData.currency.khr,
-            "devit",
-            "Battambang",
-            optionalData
+        const response = await axios.post(
+            ACLEDA_BANK_API,
+            data,{
+                headers:{
+                    'Content-Type': 'application/json',
+                }
+            }
         );
 
-        const khqr = new BakongKHQR();
-        const response = khqr.generateIndividual(individualInfo);
-        const isKHQR = BakongKHQR.verify(response.data.qr).isValid;
-        const decodeResult = BakongKHQR.decode(response.data.qr);
+        console.log('axios: ', response?.data?.result?.qrValue);
+        setQorCode(response?.data?.result?.qrValue);
 
-        if (isKHQR) {
-            setQorCode(response?.data?.qr);
-        }
-        console.log('response: khqor: ', response);
-        console.log('valid: ', isKHQR);
-        console.log('decode: ', decodeResult);
 
         // const book = await fetchFromApi('add_booking', books);
 
@@ -187,6 +182,8 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
 
 
         // router.push("/success");
+
+        setLoading(false);
     };
 
     const Seat = ({ seat_id, status, onClick }) => {
@@ -239,6 +236,10 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
         const newTimeString = date.toLocaleTimeString('en-US', options);
 
         return newTimeString;
+    }
+
+    if(loading){
+        return <LoadingComponent/>
     }
 
     if (activeStep === "select") {
@@ -696,6 +697,8 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                         >
                             Pay
                         </Button>
+
+                        <PopupPayment selectedSeat={selectedSeat || null} routeSelected={routeSelected || null}  />
                     </div>
                 </div>
             </div>
