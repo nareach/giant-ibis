@@ -1,8 +1,7 @@
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import LayoutProvider from "./LayoutProvider";
 import { Banner } from "@/components/layout/Banner";
-import SearchBookForm from "@/components/pages/HeroBookForm";
+import LayoutProvider from "./layoutProvider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -83,11 +82,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={poppins.className}>
-        <LayoutProvider>
-          <Banner />
-          {children}
-          {/* <SearchBookForm children={children} /> */}
-        </LayoutProvider>
+          <LayoutProvider>
+            <Banner />
+            {children}
+            {/* <SearchBookForm children={children} /> */}
+          </LayoutProvider>
       </body>
     </html>
   );
