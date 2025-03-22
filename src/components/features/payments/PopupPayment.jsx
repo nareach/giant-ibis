@@ -26,7 +26,8 @@ export default function PopupPayment({ isOpen, onClose, selectedSeat, routeSelec
     const [resultQorCode, setResultQorCode] = useState();
     const [resultOpenSession, setResultOpenSession] = useState();
     const [qorCode, setQorCode] = useState("");
-
+    const [size, setSize] = React.useState("md");
+    
     const handleOpen = async () => {
         setLoading(true);
         setTimeLeft(300);
