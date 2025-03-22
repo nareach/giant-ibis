@@ -27,7 +27,7 @@ export default function PopupPayment({ isOpen, onClose, selectedSeat, routeSelec
     const [resultOpenSession, setResultOpenSession] = useState();
     const [qorCode, setQorCode] = useState("");
     const [size, setSize] = React.useState("md");
-    
+
     const handleOpen = async () => {
         setLoading(true);
         setTimeLeft(300);
@@ -38,7 +38,7 @@ export default function PopupPayment({ isOpen, onClose, selectedSeat, routeSelec
             "signature": signature,
             "xpayTransaction": {
                 "txid": uuidv4(),
-                "purchaseAmount": 0.03,
+                "purchaseAmount": selectedSeat?.length * (Number(routeSelected?.price)),
                 "purchaseCurrency": "USD",
                 "purchaseDate": moment(new Date()).format('DD-MM-YYYY'),
                 "purchaseDesc": "mobile",
@@ -184,27 +184,29 @@ export default function PopupPayment({ isOpen, onClose, selectedSeat, routeSelec
                                             </div>
                                         </div>
                                     </> : <>
-                                        <Modal isOpen={isOpen} size={size} onClose={onClose} >
-                                            <ModalContent>
-                                                {(onClose) => (
-                                                    <>
-                                                        <ModalHeader className="flex flex-col gap-1">PAY SUCCESS</ModalHeader>
-                                                        <ModalBody>
-                                                            <div className='h-[400px] px-[50px] py-[10px] flex flex-col overflow-y-auto justify-center items-center gap-[40px]'>
-                                                                <img src="/assets/images/payment-success.webp" className='h-[200px] object-center w-[200px]' alt="" />
-                                                                <h1 className='text-[20px] font-bold'>Payment success !!</h1>
-                                                            </div>
-                                                        </ModalBody>
-                                                    </>
-                                                )}
-                                            </ModalContent>
-                                        </Modal>
+                                        <h1>Loading ...</h1>
                                     </>
                                 }
                             </ModalBody>
                         </ModalContent>
                     </Modal>
-                </> : <></>
+                </> : <>
+                    <Modal isOpen={isOpen} size={size} onClose={onClose} >
+                        <ModalContent>
+                            {(onClose) => (
+                                <>
+                                    <ModalHeader className="flex flex-col gap-1">PAY SUCCESS</ModalHeader>
+                                    <ModalBody>
+                                        <div className='h-[400px] px-[50px] py-[10px] flex flex-col overflow-y-auto justify-center items-center gap-[40px]'>
+                                            <img src="/assets/images/payment-success.webp" className='h-[200px] object-center w-[200px]' alt="" />
+                                            <h1 className='text-[20px] font-bold'>Payment success !!</h1>
+                                        </div>
+                                    </ModalBody>
+                                </>
+                            )}
+                        </ModalContent>
+                    </Modal>
+                </>
             }
         </div>
     );
