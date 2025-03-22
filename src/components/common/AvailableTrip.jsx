@@ -55,7 +55,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
     const [pickupOrigin, setPickupOrigin] = useState("");
     const [qorCode, setQorCode] = useState("");
     const [loading, setLoading] = useState("");
-
+    const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
 
     const [errors, setErrors] = useState({
         fullname: "",
@@ -116,15 +116,16 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
     };
 
     const handlePay = async () => {
-
         setLoading(true);
+    
+        // Validate the form
         let formErrors = {
             fullname: "",
             phoneNumber: "",
             email: "",
             pickupOrigin: ""
         };
-
+    
         if (!fullname) {
             formErrors.fullname = "Fullname is required";
         }
@@ -137,53 +138,17 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
             formErrors.email = "Invalid email format";
         }
         setErrors(formErrors);
-
+    
         if (Object.values(formErrors).some((error) => error !== "")) {
+            setLoading(false);
             return;
         }
-
-        let data = JSON.stringify({
-            "loginId": loginId,
-            "password": password,
-            "merchantID": merchantID,
-            "signature": signature,
-            "xpayTransaction": {
-                "txid": "2018110100000001",
-                "purchaseAmount": selectedSeat?.length * (Number(routeSelected?.price)),
-                "purchaseCurrency": "USD",
-                "purchaseDate": moment(new Date()).format('DD-MM-YYYY'),
-                "purchaseDesc": "mobile",
-                "invoiceid": "2018110100000001",
-                "item": "1",
-                "quantity": "1",
-                "expiryTime": "5",
-                "operationType": "5",
-                "counterId": "Counter 1"
-            }
-        });
-
-        const response = await axios.post(
-            ACLEDA_BANK_API,
-            data,{
-                headers:{
-                    'Content-Type': 'application/json',
-                }
-            }
-        );
-
-        console.log('axios: ', response?.data?.result?.qrValue);
-        setQorCode(response?.data?.result?.qrValue);
-
-
-        // const book = await fetchFromApi('add_booking', books);
-
-
-        // console.log('books: ', book);
-
-
-        // router.push("/success");
-
+        setPaymentModalOpen(true);
         setLoading(false);
+    };
+
+    const handleOpenPaymentModal = () => {
+        setPaymentModalOpen(true);
     };
 
     const Seat = ({ seat_id, status, onClick }) => {
@@ -238,8 +203,8 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
         return newTimeString;
     }
 
-    if(loading){
-        return <LoadingComponent/>
+    if (loading) {
+        return <LoadingComponent />
     }
 
     if (activeStep === "select") {
@@ -691,14 +656,26 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                 </div>
                             </div>
                         </div>
+
                         <Button
                             onClick={handlePay}
                             className="w-full bg-primary hover:bg-primary text-white py-6 text-lg"
                         >
                             Pay
                         </Button>
-
-                        <PopupPayment selectedSeat={selectedSeat || null} routeSelected={routeSelected || null}  />
+                        {
+                            isPaymentModalOpen && (
+                                <PopupPayment
+                                    isOpen={isPaymentModalOpen}
+                                    onClose={() => setPaymentModalOpen(false)}
+                                    selectedSeat={selectedSeat || null}
+                                    routeSelected={routeSelected || null}
+                                    phoneNumber={phoneNumber}
+                                    departureDate={departureDate}
+                                    fullname={fullname}
+                                />
+                            )
+                        }
                     </div>
                 </div>
             </div>
