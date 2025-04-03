@@ -96,7 +96,7 @@ export default function PopupPayment({ isOpen, onClose, selectedSeat, routeSelec
             if (paymentStatusResponse === PaymentStatusEnum.SUCCESS) {
                 setPaymentStatus(PaymentStatusEnum.SUCCESS);
 
-                const books = {
+                const books = {          
                     route_id: routeSelected?.id,
                     email: "nareachkr@gmail.com",
                     password: 123456,
@@ -141,7 +141,7 @@ export default function PopupPayment({ isOpen, onClose, selectedSeat, routeSelec
 
         const handle = setInterval(async () => {
             await checkPaymentStatus();
-        }, 2000);
+        }, 10000);
 
         return () => clearInterval(handle);
     }, [isOpen, paymentStatus]);

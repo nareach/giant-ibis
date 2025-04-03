@@ -2,6 +2,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { Banner } from "@/components/layout/Banner";
 import LayoutProvider from "./layoutProvider";
+import SearchBookForm from "@/components/pages/HeroBookForm";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -85,7 +86,6 @@ export default function RootLayout({ children }) {
           <LayoutProvider>
             <Banner />
             {children}
-            {/* <SearchBookForm children={children} /> */}
           </LayoutProvider>
       </body>
     </html>

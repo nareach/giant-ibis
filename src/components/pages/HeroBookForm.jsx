@@ -78,6 +78,9 @@ export default function SearchBookForm() {
       return matchesOrigin && matchesDestination;
     });
 
+    console.log('filtered route: ', filteredRoutes);
+    
+
     const routes = await handleMapStatus(filteredRoutes);
     console.log('search: ', routes);
 
@@ -165,8 +168,7 @@ export default function SearchBookForm() {
         travel_date: departureDate,
         travel_time: route?.timings?.meta_value
       });
-      console.log('busData : ', busData);
-      
+            
       const seatBooked = busData?.data || null;
 
       if (seatBooked) {

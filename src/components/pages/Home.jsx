@@ -202,7 +202,12 @@ const Home = () => {
         </div>
       </div>
 
-      <div className="relative flex items-center my-[40px] justify-between h-[250px] text-white px-6">
+      <div className="relative flex items-center my-[40px] justify-between h-[250px] text-white px-6" style={{
+        backgroundImage: "url('/assets/images/banner-angkor.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat"
+      }}>
         <div className="absolute inset-0 -z-10">
           <Image
             src="/assets/images/angkorwat-banner.png"

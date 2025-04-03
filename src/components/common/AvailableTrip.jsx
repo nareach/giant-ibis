@@ -117,7 +117,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
 
     const handlePay = async () => {
         setLoading(true);
-    
+
         // Validate the form
         let formErrors = {
             fullname: "",
@@ -125,7 +125,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
             email: "",
             pickupOrigin: ""
         };
-    
+
         if (!fullname) {
             formErrors.fullname = "Fullname is required";
         }
@@ -138,7 +138,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
             formErrors.email = "Invalid email format";
         }
         setErrors(formErrors);
-    
+
         if (Object.values(formErrors).some((error) => error !== "")) {
             setLoading(false);
             return;
@@ -656,6 +656,37 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                 </div>
                             </div>
                         </div>
+
+
+                        <div>
+                            <form id="_xpayTestForm" name="_xpayTestForm"
+                                action="https://epaymentuat.acledabank.com.kh:8443/GIANTIBIS/paymentPage.jsp"
+                                method="post">
+                                <input type="hidden" id="merchantID" name="merchantID"
+                                    value="QxSy5wACjfT1eLDTIaL8M6NNKGs=" />
+                                <input type="hidden" id="sessionid" name="sessionid"
+                                    value="KQ0DkU7QNhBZbIUCkEvKGAhtfuY=" />
+
+                                <input type="hidden" id="paymenttokenid" name="paymenttokenid"
+                                    value="HYuGf8hv3k2B0lrbHY2uNEvgHZk=" />
+                                <input type="hidden" id="description" name="description" value="mobile" />
+                                <input type="hidden" id="expirytime" name="expirytime" value="5" />
+                                <input type="hidden" id="amount" name="amount" value="25" />
+                                <input type="hidden" id="quantity" name="quantity" value="1" />
+                                <input type="hidden" id="item" name="item" value="1" />
+                                <input type="hidden" id="invoiceid" name="invoiceid" value="2909202000000001" />
+                                <input type="hidden" id="currencytype" name="currencytype" value="USD" />
+                                <input type="hidden" id="transactionID" name="transactionID"
+                                    value="2909202000000001" />
+                                <input type="hidden" id="successUrlToReturn" name="successUrlToReturn"
+                                    value="https://www. yourwebsite.com/success" />
+                                <input type="hidden" id="errorUrl" name="errorUrl"
+                                    value="https://www.yourwebsite.com/failed" />
+                                <input type="hidden" id="tokenizeId" name="tokenizeId" value="2805435817" />
+                                <input type="submit" value="Submit" />
+                            </form>
+                        </div>
+
 
                         <Button
                             onClick={handlePay}

@@ -37,9 +37,9 @@ export const Banner = () => {
                         Voted #1 Bus Service in Cambodia – Trusted by Thousands on
                     </span>
                     <Image
-                        src="/assets/tripa.svg"
+                        src="/assets/trip-logo.png"
                         alt="TripAdvisor"
-                        width={80}
+                        width={20}
                         height={20}
                         className="ml-2"
                     />
