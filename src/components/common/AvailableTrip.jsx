@@ -29,23 +29,24 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookProgress } from "./BookProgress";
-import { fetchFromApi } from "@/utils/api";
-import QRCode from "react-qr-code";
-import { ACLEDA_BANK_API, loginId, merchantID, password, signature } from "@/constant/constant";
+import { decrypt, encrypt, fetchFromApi } from "@/utils/api";
+import { ACLEDA_BANK_API, API_KEY, API_URL, loginId, merchantID, password, signature } from "@/constant/constant";
 import axios from "axios";
 import LoadingComponent from "../layout/Loading";
-import { APP_CLIENT_INTERNALS } from "next/dist/shared/lib/constants";
 import moment from "moment";
 import PopupPayment from "../features/payments/PopupPayment";
+import { v4 as uuidv4 } from 'uuid';
+import { isValid } from "date-fns";
+import * as crypto from 'crypto';
+
 
 export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
 
     const [activeStep, setActiveStep] = useState('select');
     const [routeSelected, setRouteSelected] = useState();
-    const router = useRouter();
     const [selectedSeat, setSelectedSeat] = useState([]);
     const [paymentMethod, setPaymentMethod] = useState("khqr");
 
@@ -55,7 +56,17 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
     const [pickupOrigin, setPickupOrigin] = useState("");
     const [qorCode, setQorCode] = useState("");
     const [loading, setLoading] = useState("");
-    const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [sessionId, setSessionId] = useState();
+    const [paymentTokenid, setPaymentTokenid] = useState();
+    const [transactionID, setTransactionID] = useState();
+    const [payDate, setPayDate] = useState();
+    const [isFormValid, setIsFormValid] = useState(false);
+    const [item, setItem] = useState();
+    const [successsUrl, setSuccesssUrl] = useState();
+
 
     const [errors, setErrors] = useState({
         fullname: "",
@@ -115,42 +126,6 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
         }
     };
 
-    const handlePay = async () => {
-        setLoading(true);
-
-        // Validate the form
-        let formErrors = {
-            fullname: "",
-            phoneNumber: "",
-            email: "",
-            pickupOrigin: ""
-        };
-
-        if (!fullname) {
-            formErrors.fullname = "Fullname is required";
-        }
-        if (!phoneNumber) {
-            formErrors.phoneNumber = "Phone number is required";
-        }
-        if (!email) {
-            formErrors.email = "Email is required";
-        } else if (!/\S+@\S+\.\S+/.test(email)) {
-            formErrors.email = "Invalid email format";
-        }
-        setErrors(formErrors);
-
-        if (Object.values(formErrors).some((error) => error !== "")) {
-            setLoading(false);
-            return;
-        }
-        setPaymentModalOpen(true);
-        setLoading(false);
-    };
-
-    const handleOpenPaymentModal = () => {
-        setPaymentModalOpen(true);
-    };
-
     const Seat = ({ seat_id, status, onClick }) => {
 
         const getStatusColor = () => {
@@ -202,6 +177,136 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
 
         return newTimeString;
     }
+
+    const hashing = (data) => {
+
+        let b4hash = crypto.createHmac('sha512', API_KEY);
+        b4hash.update(JSON.stringify(data));
+        return b4hash.digest('base64');
+    }
+
+
+
+
+    const openSessionV2 = async () => {
+        try {
+            console.log('call...', isFormValid);
+
+            if (!isFormValid) {
+                toast.error('please fill in user information')
+                return;
+            }
+
+            const uuid = uuidv4();
+
+            setIsLoading(true);
+            setError(null);
+            setTransactionID(uuid);
+            setPayDate(moment(new Date()).format('DD-MM-YYYY'));
+            // route_id: routeSelected?.id,
+            // mobile: phoneNumber,
+            // bus_id: routeSelected?.bus_type?.id,
+            const url = `http://localhost:3000/success/?route_id=${routeSelected?.id}&mobile=${phoneNumber}&bus_id=${routeSelected?.bus_type?.id}`
+            
+            const b4hash = JSON.stringify({
+                travel_date: departureDate || moment(new Date()).format('DD-MM-YYYY'),
+                meta_value: routeSelected?.timings?.meta_value,
+                bus_type: routeSelected?.bus_type?.bus_type,
+                seat_no: selectedSeat?.map(seat => seat.seat_id).join(", "),
+                firstname: fullname,
+                email: email
+            })
+
+
+            console.log('b4hash: ', b4hash);
+            
+
+            const dataEncrypt = encrypt(b4hash);
+            setItem(dataEncrypt);
+            setSuccesssUrl(url);
+            let data = JSON.stringify({
+                "loginId": loginId,
+                "password": password,
+                "merchantID": merchantID,
+                "signature": signature,
+                "xpayTransaction": {
+                    "txid": uuid,
+                    "purchaseAmount": selectedSeat?.length * (Number(routeSelected?.price)),
+                    "purchaseCurrency": "USD",
+                    "purchaseDate": payDate,
+                    "purchaseDesc": dataEncrypt,
+                    "invoiceid": uuid,
+                    "item": 'booking',
+                    "quantity": "1",
+                    "expiryTime": "5",
+                    "paymentCard": paymentMethod == 'khqr' ? '0' : '1',
+                }
+            });
+
+            const response = await axios.post(
+                ACLEDA_BANK_API,
+                data, {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            console.log('respose open session : ', response.data?.xTran);
+
+            setPaymentTokenid(response.data?.result?.xTran?.paymentTokenid)
+            setSessionId(response.data?.result?.sessionid);
+
+        } catch (err) {
+            console.log('error: ', err);
+
+            if (err instanceof AxiosError) {
+                console.log(err.response);
+            }
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+            console.log({
+                sessionId, isLoading, isFormValid, item
+            });
+
+        }
+    };
+
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (activeStep === "pay" && isFormValid) {
+                await openSessionV2();
+            }
+        };
+        fetchData();
+    }, [paymentMethod, isFormValid]);
+
+    useEffect(() => {
+        const isValid =
+            fullname.trim() !== "" &&
+            phoneNumber.trim() !== "" &&
+            email.trim() !== "" &&
+            /\S+@\S+\.\S+/.test(email);
+
+        setIsFormValid(isValid);
+
+        const fetchData = async () => {
+            if (activeStep === "pay" && isFormValid) {
+                await openSessionV2();
+            }
+        };
+        fetchData();
+    }, [fullname, phoneNumber, email, pickupOrigin]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (activeStep === "pay" && isFormValid) {
+                await openSessionV2();
+            }
+        };
+        fetchData();
+    }, [activeStep]);
 
     if (loading) {
         return <LoadingComponent />
@@ -454,7 +559,6 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                     className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
                                 />
                                 {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
-
                             </div>
                             <div>
                                 <label className="block text-sm mb-1">
@@ -498,31 +602,6 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                     </div>
 
                                 </div>
-                                {
-                                    paymentMethod === 'khqr' && qorCode ? <>
-                                        <div className="rounded-lg overflow-hidden  bg-white shadow-lg">
-                                            <div className="bg-red-500 text-white h-[60px] text-[20px] flex justify-center items-center">
-                                                KHQOR
-                                            </div>
-                                            <div className="flex justify-center items-start font-bold flex-col pl-[30px]">
-                                                <span className="text-[15px]">
-                                                    Chea Chento
-                                                </span>
-                                                <span className="text-[30px]">
-                                                    100 USD
-                                                </span>
-                                            </div>
-                                            <div className="px-[30px] pb-[30px]">
-                                                <QRCode
-                                                    size={256}
-                                                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                                                    value={qorCode}
-                                                    viewBox={`0 0 256 256`}
-                                                />
-                                            </div>
-                                        </div>
-                                    </> : <></>
-                                }
                                 <div
                                     className={`flex items-center justify-between p-4 rounded-lg border ${paymentMethod === "card"
                                         ? "border-primary"
@@ -656,57 +735,47 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                 </div>
                             </div>
                         </div>
-
-
                         <div>
                             <form id="_xpayTestForm" name="_xpayTestForm"
-                                action="https://epaymentuat.acledabank.com.kh:8443/GIANTIBIS/paymentPage.jsp"
+                                action="https://epaymentuat.acledabank.com.kh/GIANTIBIS/paymentPage.jsp"
                                 method="post">
-                                <input type="hidden" id="merchantID" name="merchantID"
-                                    value="QxSy5wACjfT1eLDTIaL8M6NNKGs=" />
-                                <input type="hidden" id="sessionid" name="sessionid"
-                                    value="KQ0DkU7QNhBZbIUCkEvKGAhtfuY=" />
 
-                                <input type="hidden" id="paymenttokenid" name="paymenttokenid"
-                                    value="HYuGf8hv3k2B0lrbHY2uNEvgHZk=" />
-                                <input type="hidden" id="description" name="description" value="mobile" />
+                                <input type="hidden" id="merchantID" name="merchantID" value={merchantID} />
+                                <input type="hidden" id="paymenttokenid" name="paymenttokenid" value={paymentTokenid} />
+                                <input type="hidden" id="sessionid" name="sessionid" value={sessionId} />
+                                <input type="hidden" id="transactionID" name="transactionID" value={transactionID} />
                                 <input type="hidden" id="expirytime" name="expirytime" value="5" />
-                                <input type="hidden" id="amount" name="amount" value="25" />
+                                <input type="hidden" id="amount" name="amount" value={selectedSeat?.length * (Number(routeSelected?.price))} />
                                 <input type="hidden" id="quantity" name="quantity" value="1" />
-                                <input type="hidden" id="item" name="item" value="1" />
-                                <input type="hidden" id="invoiceid" name="invoiceid" value="2909202000000001" />
                                 <input type="hidden" id="currencytype" name="currencytype" value="USD" />
-                                <input type="hidden" id="transactionID" name="transactionID"
-                                    value="2909202000000001" />
-                                <input type="hidden" id="successUrlToReturn" name="successUrlToReturn"
-                                    value="https://www. yourwebsite.com/success" />
+                                <input type="hidden" id="description" name="description" value={item} />
+                                <input type="hidden" id="item" name="item" value='booking' />
                                 <input type="hidden" id="errorUrl" name="errorUrl"
-                                    value="https://www.yourwebsite.com/failed" />
-                                <input type="hidden" id="tokenizeId" name="tokenizeId" value="2805435817" />
-                                <input type="submit" value="Submit" />
+                                    value="http://localhost:3000/error" />
+                                <input type="hidden" id="paymentCard" name="paymentCard" value={paymentMethod == 'khqr' ? '0' : '1'} />
+                                <input type="hidden" id="invoiceid" name="invoiceid" value={transactionID} />
+
+                                <input type="hidden" id="successUrlToReturn" name="successUrlToReturn"
+                                    value={successsUrl} />
+                                <input type="hidden" id="errorUrl" name="errorUrl"
+                                    value={`http://localhost:3000/error/`} />
+                                    <br />
+                                <button
+                                    type="submit"
+                                    style={{
+                                        padding: '10px 20px',
+                                        backgroundColor: '#cccccc',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    {sessionId && !isLoading && isFormValid && item ? 'Submit Payment' : 'Processing...'}
+                                </button>
                             </form>
                         </div>
 
-
-                        <Button
-                            onClick={handlePay}
-                            className="w-full bg-primary hover:bg-primary text-white py-6 text-lg"
-                        >
-                            Pay
-                        </Button>
-                        {
-                            isPaymentModalOpen && (
-                                <PopupPayment
-                                    isOpen={isPaymentModalOpen}
-                                    onClose={() => setPaymentModalOpen(false)}
-                                    selectedSeat={selectedSeat || null}
-                                    routeSelected={routeSelected || null}
-                                    phoneNumber={phoneNumber}
-                                    departureDate={departureDate}
-                                    fullname={fullname}
-                                />
-                            )
-                        }
                     </div>
                 </div>
             </div>

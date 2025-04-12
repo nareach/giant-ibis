@@ -40,24 +40,24 @@ export default function PaymentForm() {
         try {
             setIsLoading(true);
             setError(null);
-            setTransactionID(uuidv4());
+            const uuid = uuidv4();
+            setTransactionID(uuid);
             let data = JSON.stringify({
                 "loginId": loginId,
                 "password": password,
                 "merchantID": merchantID,
                 "signature": signature,
                 "xpayTransaction": {
-                    "txid": uuidv4(),
+                    "txid": uuid,
                     "purchaseAmount": 0.5,
                     "purchaseCurrency": "USD",
                     "purchaseDate": '3-31-2025',
                     "purchaseDesc": "mobile",
-                    "invoiceid": uuidv4(),
+                    "invoiceid": uuid,
                     "item": "1",
                     "quantity": "1",
                     "expiryTime": "5",
-                    "operationType": "5",
-                    "counterId": "Counter 1"
+                    "paymentCard": "0",
                 }
             });
 
@@ -74,6 +74,8 @@ export default function PaymentForm() {
             setSessionId(response.data?.result?.sessionid);
 
         } catch (err) {
+            console.log('error detail: ', err);
+
             if (err instanceof AxiosError) {
                 console.log(err.response);
             }
@@ -112,20 +114,28 @@ export default function PaymentForm() {
     return (
         <>
             <form id="_xpayTestForm" name="_xpayTestForm"
-                action="https://epaymentuat.acledabank.com.kh:8443/GIANTIBIS/paymentPage.jsp"
+                action="https://epaymentuat.acledabank.com.kh/GIANTIBIS/paymentPage.jsp"
                 method="post">
 
                 <input type="hidden" id="merchantID" name="merchantID" value={merchantID} />
-                <input type="hidden" id="paymenttokenid" name="sessionid" value={paymentTokenid} />
+                <input type="hidden" id="paymenttokenid" name="paymenttokenid" value={paymentTokenid} />
                 <input type="hidden" id="sessionid" name="sessionid" value={sessionId} />
-                <input type="hidden" id="transactionID" name="transactionID"
-                    value={transactionID} />
+                <input type="hidden" id="transactionID" name="transactionID" value={transactionID} />
                 <input type="hidden" id="expirytime" name="expirytime" value="5" />
                 <input type="hidden" id="amount" name="amount" value="0.5" />
                 <input type="hidden" id="quantity" name="quantity" value="1" />
                 <input type="hidden" id="currencytype" name="currencytype" value="USD" />
-                <input type="hidden" id="description" name="description" value="mobile" /> 
-                <input type="hidden" id="successUrlToReturn" name="successUrlToReturn" value="http://localhost:3000/success" /> 
+                <input type="hidden" id="description" name="description" value="mobile" />
+                <input type="hidden" id="item" name="item" value="1" />
+                <input type="hidden" id="errorUrl" name="errorUrl"
+                    value="http://localhost:3000/error" />
+                <input type="hidden" id="paymentCard" name="paymentCard" value="0" />
+                <input type="hidden" id="invoiceid" name="invoiceid" value={transactionID} />
+
+                <input type="hidden" id="successUrlToReturn" name="successUrlToReturn"
+                    value={`http://localhost:3000/success/`} />
+                <input type="hidden" id="errorUrl" name="errorUrl"
+                    value={`http://localhost:3000/error/`} />
                 <button
                     type="submit"
                     style={{

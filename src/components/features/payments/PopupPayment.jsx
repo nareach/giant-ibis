@@ -79,7 +79,6 @@ export default function PopupPayment({ isOpen, onClose, selectedSeat, routeSelec
                 "password": password,
                 "merchantId": merchantID,
                 "signature": signature,
-                "merchantName": merchantName,
                 "paymentTokenid": resultOpenSession?.result?.xTran?.paymentTokenid,
             });
 

@@ -1,4 +1,5 @@
-import { API_URL } from "@/constant/constant";
+import { API_KEY, API_URL } from "@/constant/constant";
+import * as crypto from 'crypto';
 
 export const fetchFromApi = async (apiFunction, bodyData = {}) => {
   const myHeaders = new Headers();
@@ -22,7 +23,7 @@ export const fetchFromApi = async (apiFunction, bodyData = {}) => {
 
   try {
     const response = await fetch(API_URL, requestOptions);
-    
+
     if (!response.ok) {
       // Log the response status and status text
       console.error("API Error: HTTP status", response.status, response.statusText);
@@ -44,5 +45,39 @@ export const fetchFromApi = async (apiFunction, bodyData = {}) => {
   } catch (error) {
     console.error("Network or other error:", error);
     throw error;
+  }
+};
+
+// export function encrypt(data) {
+//   const iv = Buffer.alloc(16, 0); // Fixed IV (for short output)
+//   const cipher = crypto.createCipheriv('aes-256-cbc', API_KEY, iv);
+//   const encrypted = Buffer.concat([
+//     cipher.update(JSON.stringify(data)),
+//     cipher.final()
+//   ]);
+//   return encrypted.toString('base64'); // Shorter than hex
+// }
+
+// // Decrypt (AES-256-CBC)
+// export function decrypt(encryptedBase64) {
+//   const iv = Buffer.alloc(16, 0);
+//   const decipher = crypto.createDecipheriv('aes-256-cbc', API_KEY, iv);
+//   const decrypted = Buffer.concat([
+//     decipher.update(Buffer.from(encryptedBase64, 'base64')),
+//     decipher.final()
+//   ]);
+//   return JSON.parse(decrypted.toString());
+// }
+
+
+export function encrypt (inputText) {
+  return btoa(inputText); // Base64 encode
+};
+
+export function decrypt (encodedText) {
+  try {
+    return atob(encodedText); // Base64 decode
+  } catch (error) {
+    alert("Invalid Base64 input!");
   }
 };
