@@ -33,7 +33,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookProgress } from "./BookProgress";
 import { decrypt, encrypt, fetchFromApi } from "@/utils/api";
-import { ACLEDA_BANK_API, API_KEY, API_URL, loginId, merchantID, password, signature } from "@/constant/constant";
+import { ACLEDA_BANK_API, API_KEY, API_URL, CLIENT_URL, loginId, merchantID, password, signature } from "@/constant/constant";
 import axios from "axios";
 import LoadingComponent from "../layout/Loading";
 import moment from "moment";
@@ -203,10 +203,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
             setError(null);
             setTransactionID(uuid);
             setPayDate(moment(new Date()).format('DD-MM-YYYY'));
-            // route_id: routeSelected?.id,
-            // mobile: phoneNumber,
-            // bus_id: routeSelected?.bus_type?.id,
-            const url = `http://localhost:3000/success/?route_id=${routeSelected?.id}&mobile=${phoneNumber}&bus_id=${routeSelected?.bus_type?.id}`
+            const url = `${CLIENT_URL}/success/?route_id=${routeSelected?.id}&mobile=${phoneNumber}&bus_id=${routeSelected?.bus_type?.id}`
             
             const b4hash = JSON.stringify({
                 travel_date: departureDate || moment(new Date()).format('DD-MM-YYYY'),
@@ -251,7 +248,6 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                 }
             });
 
-            console.log('respose open session : ', response.data?.xTran);
 
             setPaymentTokenid(response.data?.result?.xTran?.paymentTokenid)
             setSessionId(response.data?.result?.sessionid);
@@ -762,14 +758,8 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                     <br />
                                 <button
                                     type="submit"
-                                    style={{
-                                        padding: '10px 20px',
-                                        backgroundColor: '#cccccc',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer'
-                                    }}
+                                    disabled={!(sessionId && !isLoading && isFormValid && item)}
+                                    className="w-full bg-primary hover:bg-primary text-lg py-3 text-white"
                                 >
                                     {sessionId && !isLoading && isFormValid && item ? 'Submit Payment' : 'Processing...'}
                                 </button>
