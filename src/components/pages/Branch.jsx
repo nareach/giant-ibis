@@ -1,6 +1,6 @@
 import { MapPin, Phone, Search, Filter } from "lucide-react";
 import Link from "next/link";
-import SearchBookForm from "./HeroBookForm";
+import SearchBookForm from "./SearchBox";
 
 export default function Branch() {
   // Define the locations array

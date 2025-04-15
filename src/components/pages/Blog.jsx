@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import SearchBookForm from "./HeroBookForm";
+import SearchBookForm from "./SearchBox";
 import Link from "next/link";
 const categories = [
   { id: "all", name: "All" },

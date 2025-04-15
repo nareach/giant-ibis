@@ -1,6 +1,7 @@
 "use client";
 
 import { BakongKHQR, khqrData, IndividualInfo, MerchantInfo, SourceInfo } from "bakong-khqr";
+import dayjs from 'dayjs';
 
 import {
     Bus,
@@ -43,7 +44,7 @@ import { isValid } from "date-fns";
 import * as crypto from 'crypto';
 
 
-export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
+export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDate, tripType, isLoadingFetching }) => {
 
     const [activeStep, setActiveStep] = useState('select');
     const [routeSelected, setRouteSelected] = useState();
@@ -82,34 +83,39 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
         setRouteSelected(trip);
     };
 
+
+
     const handleSeatSelect = (seatSelected) => {
+        console.log('seatSelected: ', seatSelected);
 
         setRouteSelected((prevRouteSelected) => {
-            const updatedSeats = prevRouteSelected.allSeat.map((seat) => {
-                console.log('t.seat_id === seatSelected?.seatId: ', seat.seat_id === seatSelected?.seat_id);
+            const updatedSeats = prevRouteSelected?.seat_status.map((seat) => {
 
-                if (seat.seat_id === seatSelected?.seat_id) {
+                if (seat.seat === seatSelected?.seat) {
                     return {
                         ...seat,
-                        status: seat.status === 'available' ? 'selected' : 'available'
+                        status: seat?.status === 'Available' ? 'selected' : 'Available'
                     };
                 }
                 return seat;
             });
 
+            console.log('update status: ', updatedSeats);
+
+
             return {
                 ...prevRouteSelected,
-                allSeat: updatedSeats
+                seat_status: updatedSeats
             };
         });
 
         setSelectedSeat((prevSelectedSeats) => {
             // Check if the seat_id already exists in the selectedSeats array
-            const seatExists = prevSelectedSeats.some(existingSeat => existingSeat.seat_id === seatSelected.seat_id);
+            const seatExists = prevSelectedSeats.some(existingSeat => existingSeat.seat === seatSelected.seat);
 
             if (seatExists) {
                 // If it exists, remove the seat by filtering out the matching seat_id
-                return prevSelectedSeats.filter(existingSeat => existingSeat.seat_id !== seatSelected.seat_id);
+                return prevSelectedSeats.filter(existingSeat => existingSeat.seat !== seatSelected.seat);
             }
 
             // If it doesn't exist, add the new seat object to the array
@@ -126,13 +132,15 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
         }
     };
 
-    const Seat = ({ seat_id, status, onClick }) => {
+    const Seat = ({ seat, status, onClick }) => {
 
         const getStatusColor = () => {
             switch (status) {
-                case "available":
+                case "Available":
                     return "bg-gray-300 hover:bg-gray-400 text-white cursor-pointer";
                 case "reserved":
+                    return "bg-red-500 text-white cursor-not-allowed";
+                case "Booked":
                     return "bg-red-500 text-white cursor-not-allowed";
                 case "selected":
                     return "bg-blue-600 text-white cursor-pointer";
@@ -141,15 +149,18 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
             }
         };
 
+        console.log('get color: ', getStatusColor());
+
+
         return (
             <button
                 onClick={onClick}
                 className={`w-16 h-16 flex items-center justify-center rounded-lg ${getStatusColor()}`}
-                disabled={status === "reserved"}
+                disabled={status === "reserved" || status == 'Booked'}
             >
                 <div className="flex flex-col items-center">
                     <RockingChair className="w-8 h-8" />
-                    <span className="text-xs font-medium">{seat_id}</span>
+                    <span className="text-xs font-medium">{seat}</span>
                 </div>
             </button>
         );
@@ -178,19 +189,8 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
         return newTimeString;
     }
 
-    const hashing = (data) => {
-
-        let b4hash = crypto.createHmac('sha512', API_KEY);
-        b4hash.update(JSON.stringify(data));
-        return b4hash.digest('base64');
-    }
-
-
-
-
     const openSessionV2 = async () => {
         try {
-            console.log('call...', isFormValid);
 
             if (!isFormValid) {
                 toast.error('please fill in user information')
@@ -203,24 +203,22 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
             setError(null);
             setTransactionID(uuid);
             setPayDate(moment(new Date()).format('DD-MM-YYYY'));
-            const url = `${CLIENT_URL}/success/?route_id=${routeSelected?.id}&mobile=${phoneNumber}&bus_id=${routeSelected?.bus_type?.id}`
-            
+            const url = `${CLIENT_URL}/success/?route_id=${routeSelected?.id}&mobile=${phoneNumber}&bus_id=${routeSelected?.busDetail?.id}&trip_type=${tripType}`
+
             const b4hash = JSON.stringify({
-                travel_date: departureDate || moment(new Date()).format('DD-MM-YYYY'),
-                meta_value: routeSelected?.timings?.meta_value,
-                bus_type: routeSelected?.bus_type?.bus_type,
-                seat_no: selectedSeat?.map(seat => seat.seat_id).join(", "),
+                travel_date: departureDate ? dayjs(departureDate).format('DD-MM-YYYY') : '',
+                return_date: departureDate ? dayjs(departureDate).format('DD-MM-YYYY') : '',
+                meta_value: routeSelected?.timing?.time,
+                bus_type: routeSelected?.busDetail?.bus_type,
+                seat_no: selectedSeat?.map(seat => seat.seat).join(", "),
                 firstname: fullname,
                 email: email
             })
 
-
-            console.log('b4hash: ', b4hash);
-            
-
             const dataEncrypt = encrypt(b4hash);
             setItem(dataEncrypt);
             setSuccesssUrl(url);
+
             let data = JSON.stringify({
                 "loginId": loginId,
                 "password": password,
@@ -308,6 +306,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
         return <LoadingComponent />
     }
 
+
     if (activeStep === "select") {
         return (
             <div>
@@ -325,7 +324,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                             <div className="flex-1">
                                 <div className="flex items-center justify-between mb-2">
                                     <h3 className="text-lg font-medium">
-                                        {trip?.bus_type?.bus_type}
+                                        {trip?.bus_type}
                                         <Button
                                             size="sm"
                                             variant="secondary"
@@ -337,7 +336,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
 
                                     <div className="text-right">
                                         <span className="text-seatColor text-sm font-semibold">
-                                            {trip?.seatAvalable.length} Seats Left
+                                            {trip?.seatAvalable?.length} Seats Left
                                         </span>
                                     </div>
                                 </div>
@@ -352,13 +351,10 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center">
                                         <div>
-                                            <div className="text-gray-700 font-medium">
-                                                {/* {trip?.timings?.meta_value || 'no'} */}
-                                            </div>
                                             <div className="text-lg font-semibold text-gray-900">
-                                                {trip?.timings?.meta_value || 'no'}
+                                                {trip.timing?.time || 'no'}
                                             </div>
-                                            <div className="text-sm text-gray-500">{trip?.origin?.city_name || ''}</div>
+                                            <div className="text-sm text-gray-500">{trip?.origin_details?.city_name || ''}</div>
                                         </div>
                                     </div>
 
@@ -375,14 +371,11 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                     <div className="flex   items-center text-right">
                                         <MapPin className="w-5 h-5 text-secondary mr-2" />
                                         <div>
-                                            <div className="text-gray-700 font-medium">
-                                                {trip.date || 'no'}
-                                            </div>
                                             <div className="text-lg font-semibold text-gray-900">
-                                                {trip.timings?.meta_value ? addHoursToTime(trip?.timings?.meta_value, trip?.duration) : '' || 'no'}
+                                                {trip.timing?.time ? addHoursToTime(trip.timing?.time, trip?.duration) : '' || 'no'}
                                             </div>
                                             <div className="text-sm text-gray-500">
-                                                {trip?.destination?.city_name || ''}
+                                                {trip?.destination_details?.city_name || ''}
                                             </div>
                                         </div>
                                     </div>
@@ -400,7 +393,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                 <div className="grid md:grid-cols-3 gap-8">
                     <div className="p-6 shadow-custom rounded-lg md:col-span-1">
                         <div className="grid grid-cols-3 ml-8 gap-4">
-                            {routeSelected?.allSeat.map((seat, index) => (
+                            {routeSelected?.seat_status.map((seat, index) => (
                                 <Seat
                                     key={index}
                                     {...seat}
@@ -430,7 +423,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                     <div className="flex justify-between items-start">
                                         <h2 className="text-xl font-semibold">Trip Details</h2>
                                         <span className="text-pink-600 font-bold">
-                                            Seat Number: [ {selectedSeat?.map((item, index) => (<span key={index}>{item?.seat_id} , </span>)) || "-"} ]
+                                            Seat Number: [ {selectedSeat?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
                                         </span>
                                     </div>
                                     <h3 className="text-lg mt-2">{trips[0].title}</h3>
@@ -444,9 +437,8 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <div className="text-md font-medium">{trips[0].date || 'date'}</div>
-                                            <div className="text-lg font-bold">{routeSelected?.timings?.meta_value || 'no'}</div>
-                                            <div className="text-gray-600">{routeSelected?.origin?.city_name}</div>
+                                            <div className="text-lg font-bold">{routeSelected?.timing?.time || 'no'}</div>
+                                            <div className="text-gray-600">{routeSelected?.origin_details?.city_name}</div>
                                         </div>
                                         <Bus className="w-5 h-5 mt-8 text-secondary ml-6 mr-6 " />
                                         <div className="flex-1 px-4 relative">
@@ -460,9 +452,8 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                         </div>
                                         <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
                                         <div className="text-right">
-                                            <div className="text-md font-medium">{trips[0].date || 'date'}</div>
-                                            <div className="text-lg font-bold">{addHoursToTime(routeSelected?.timings?.meta_value, routeSelected?.duration) || 'no'}</div>
-                                            <div className="text-gray-600">{routeSelected?.destination?.city_name}</div>
+                                            <div className="text-lg font-bold">{addHoursToTime(routeSelected.timing?.time, routeSelected?.duration) || 'no'}</div>
+                                            <div className="text-gray-600">{routeSelected?.destination_details?.city_name}</div>
                                             <div className="text-gray-600">{trips[0].to}</div>
                                         </div>
                                     </div>
@@ -556,21 +547,6 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                 />
                                 {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
                             </div>
-                            <div>
-                                <label className="block text-sm mb-1">
-                                    Pickup Origin <span className="text-red-500">*</span>
-                                </label>
-                                <Select value={pickupOrigin} onChange={(e) => setPickupOrigin(e.target.value)}>
-                                    <SelectTrigger className="w-full p-3 bg-[#F8F7FD] border-none">
-                                        <SelectValue placeholder="Select" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="location1">Location 1</SelectItem>
-                                        <SelectItem value="location2">Location 2</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                            </div>
                         </div>
                         <div className="border-2 border-dashed shadow-custom2 p-6 rounded-md border-pay">
                             <h2 className="text-xl font-semibold mb-4">Payment Methods</h2>
@@ -639,11 +615,10 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                         <div className="bg-white rounded-md p-6 shadow-custom2">
                             <div className="flex justify-between items-start mb-4">
                                 <h2 className="text-xl font-semibold">Trip Details</h2>
-                                <span className="text-seatColor">
-                                    Seat Number: [ {selectedSeat?.map((item, index) => (<span key={index}>{item?.seat_id} , </span>)) || "-"} ]
+                                <span className="text-seatColor  font-bold">
+                                    Seat Number: [ {selectedSeat?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
                                 </span>
                             </div>
-                            <h3 className="text-lg mb-3">{trips[0].title}</h3>
                             <div className="flex gap-3 mb-6">
                                 <Wifi className="w-5 h-5 text-secondary" />
                                 <Building2 className="w-5 h-5 text-secondary" />
@@ -652,25 +627,29 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                 <Clock className="w-5 h-5 text-secondary" />
                             </div>
                             <div className="flex items-center gap-4 mb-4">
-                                <div className="relative">
-                                    <div className="text-gray-500">{routeSelected?.timings?.meta_value || 'no'}</div>
-                                    <BusFront className="w-5 h-5 absolute top-9 right-0 text-secondary" />
-                                    <div className="mt-1">{routeSelected?.origin?.city_name}</div>
-
+                                <div>
+                                    <div className="text-lg font-bold">{routeSelected?.timing?.time || 'no'}</div>
+                                    <div className="text-gray-600">{routeSelected?.origin_details?.city_name}</div>
                                 </div>
+
+                                <Bus className="w-5 h-5  text-secondary" />
+
                                 <div className="flex-1 flex flex-col items-center">
                                     <div className="text-sm text-gray-500">
                                         {routeSelected?.duration}
                                     </div>
-                                    <div className="w-full h-px bg-gray-200 my-2" />
+                                    <div className="w-full h-px bg-gray-200 my-2 px-[5px]" />
                                     <div className="text-sm text-gray-500">
                                         {routeSelected?.kilo_meters} KM
                                     </div>
                                 </div>
-                                <div className="relative">
-                                    <div className="text-gray-500">{addHoursToTime(routeSelected?.timings?.meta_value, routeSelected?.duration) || 'no'}</div>
-                                    <MapPinCheckInside className="w-5 h-5 absolute top-9 right-32 text-secondary" />
-                                    <div className="mt-1">{routeSelected?.destination?.city_name}</div>
+
+                                <MapPinCheckInside className="w-5 h-5 text-secondary" />
+
+                                <div className="text-right">
+                                    <div className="text-lg font-bold">{addHoursToTime(routeSelected.timing?.time, routeSelected?.duration) || 'no'}</div>
+                                    <div className="text-gray-600">{routeSelected?.destination_details?.city_name}</div>
+                                    <div className="text-gray-600">{trips[0].to}</div>
                                 </div>
                             </div>
                             <Button
@@ -680,7 +659,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                 Change Trip
                             </Button>
                         </div>
-                        <div className="border-2 border-dashed border-primary rounded-md shadow-custom2 p-6">
+                        {/* <div className="border-2 border-dashed border-primary rounded-md shadow-custom2 p-6">
                             <h2 className="text-xl font-semibold mb-4">Offers</h2>
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between">
@@ -713,7 +692,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                     className="flex-1 border-none bg-transparent focus:outline-none"
                                 />
                             </div>
-                        </div>
+                        </div> */}
                         <div className="bg-white rounded-md p-6 shadow-custom2">
                             <h2 className="text-xl font-semibold mb-4">Bill details</h2>
                             <div className="space-y-3">
@@ -755,13 +734,15 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate }) => {
                                     value={successsUrl} />
                                 <input type="hidden" id="errorUrl" name="errorUrl"
                                     value={`http://localhost:3000/error/`} />
-                                    <br />
+                                <br />
                                 <button
                                     type="submit"
                                     disabled={!(sessionId && !isLoading && isFormValid && item)}
-                                    className="w-full bg-primary hover:bg-primary text-lg py-3 text-white"
-                                >
-                                    {sessionId && !isLoading && isFormValid && item ? 'Submit Payment' : 'Processing...'}
+                                    className={`w-full text-lg py-3 text-white ${!(sessionId && !isLoading && isFormValid && item)
+                                        ? 'bg-gray-400 cursor-not-allowed'
+                                        : 'bg-primary hover:bg-primary-dark'
+                                        }`}                                >
+                                    {sessionId && !isLoading && isFormValid && item ? 'Submit Payment' : 'Submit Payment'}
                                 </button>
                             </form>
                         </div>

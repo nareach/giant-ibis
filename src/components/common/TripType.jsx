@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 
-export const TripTypeComponent = ({ onChange }) => {
+export const TripTypeComponent = ({ onChange, defaultValue='one-way' }) => {
 
     return (
         <div className="lg:col-span-1">
@@ -13,19 +13,19 @@ export const TripTypeComponent = ({ onChange }) => {
                 Trip Type
             </Label>
             <RadioGroup
-                defaultValue="one-way"
+                defaultValue={defaultValue}
                 className="space-y-2"
                 onValueChange={onChange}
             >
-                <Label className="flex items-center font-normal space-x-2">
+                <Label className="flex items-center font-normal space-x-2 cursor-pointer">
                     <RadioGroupItem
                         value="one-way"
                         id="one-way"
-                        className="text-secondary"
+                        className="text-secondary "
                     />
                     <span>One Way</span>
                 </Label>
-                <Label className="flex items-center font-normal pb-1 text-label space-x-2">
+                <Label className="flex items-center font-normal pb-1 text-label space-x-2 cursor-pointer">
                     <RadioGroupItem
                         value="round-trip"
                         id="round-trip"

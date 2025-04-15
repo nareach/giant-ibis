@@ -1,4 +1,4 @@
-import SearchBookForm from "./HeroBookForm";
+import SearchBookForm from "./SearchBox";
 
 export default function About() {
   return (

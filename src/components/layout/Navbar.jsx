@@ -82,17 +82,18 @@ const Navbar = () => {
   
         <nav className="hidden md:flex items-center gap-5 lg:gap-12 bg-white dark:bg-gray-800 backdrop-blur-sm px-4 py-2 rounded-[15px] shadow-custom">
           {navIcons.map(({ id, icon, tooltip, href }) => (
-            <a
+            <Link
               key={id}
               href={href}
               className="relative flex items-center gap-2 text-primary hover:text-primary transition-colors group"
             >
               {icon}
+              <span>{tooltip}</span>
               <span className="hidden">{tooltip}</span>
               <span className="absolute left-1/2 -translate-x-1/2 -bottom-8 px-2 py-1 bg-gray-800 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                 {tooltip}
               </span>
-            </a>
+            </Link>
           ))}
         </nav>
         <div className="flex items-center gap-5">

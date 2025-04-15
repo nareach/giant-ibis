@@ -1,0 +1,114 @@
+{
+    "status": true,
+    "message": "List of all Routes.",
+    "data": [
+        {
+            "unique_id": "c4da9195-43fc-4877-9d69-2033144036e7",
+            "id": "1",
+            "origin_id": "1",
+            "destination_id": "15",
+            "kilo_meters": "320",
+            "bus_type": "Universe Luxury",
+            "duration": "6 hours",
+            "price": "17",
+            "part_price": "15",
+            "time": {
+                "leaveAt": "08:45 AM",
+                "arriveAt": "10:00 AM"
+            },
+            "destination": {
+                "city_id": "2",
+                "city_name": "Battambang",
+                "Is_operational": "yes",
+                "city_description": "noted",
+                "country_id": "37",
+                "nickname": "BTBGI"
+            },
+            "origin": {
+                "city_id": "1",
+                "city_name": "Phnom Penh",
+                "Is_operational": "yes",
+                "city_description": "Operation",
+                "country_id": "37",
+                "nickname": "PPGI"
+            },
+            "route_time": {
+                "meta_id": "12",
+                "meta_key": "route_timings",
+                "meta_value": "08:45 AM",
+                "category": "routes",
+                "parent": "1",
+                "sort_order": null,
+                "sort_order_partner": null,
+                "route_order": "0",
+                "day_night": "day",
+                "price": "17",
+                "part_price": "15",
+                "commission_price": "2",
+                "bus_type": "Universe Luxury",
+                "d_price": "0",
+                "agency_price": "0",
+                "allowedpick": "0",
+                "facilities": ""
+            },
+            "bus_detail": {
+                "bus_id": 1,
+                "bus_type": "Universe Luxury",
+                "category": "routes",
+                "avalable_seat": 10,
+                "reserved": 10,
+                "booked": 10,
+                "status": [
+                    {
+                        "seat_id": "1-A",
+                        "seat_status": "Booked"
+                    },
+                    {
+                        "seat_id": "1-B",
+                        "seat_status": "Booked"
+                    },
+                    {
+                        "seat_id": "3-A",
+                        "seat_status": "Booked"
+                    },
+                    {
+                        "seat_id": "4-D",
+                        "seat_status": "Reserved"
+                    },
+                    {
+                        "seat_id": "1-D",
+                        "seat_status": "Reserved"
+                    },
+                    {
+                        "seat_id": "1-P",
+                        "seat_status": "Reserved"
+                    },
+                    {
+                        "seat_id": "3-B",
+                        "seat_status": "Reserved"
+                    },
+                    {
+                        "seat_id": "4-C",
+                        "seat_status": "Reserved"
+                    },
+                    {
+                        "seat_id": "1-D",
+                        "seat_status": "Reserved"
+                    },
+                    {
+                        "seat_id": "1-P",
+                        "seat_status": "Avalable"
+                    },
+                    {
+                        "seat_id": "3-B",
+                        "seat_status": "Avalable"
+                    },
+                    {
+                        "seat_id": "4-C",
+                        "seat_status": "Avalable"
+                    }
+                ]
+            }
+        }
+    ]
+}

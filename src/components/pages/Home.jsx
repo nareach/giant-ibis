@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import Testimonials from "./Testimonials";
-import SearchBookForm from "./HeroBookForm";
+import SearchBookForm from "./SearchBox";
 import { CreditCard, RockingChair, Search } from "lucide-react";
 
 const Home = () => {

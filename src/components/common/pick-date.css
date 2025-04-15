@@ -1,0 +1,8 @@
+/* In your global CSS file or component CSS */
+.ant-picker-input input::placeholder {
+    color: #0a0a0a !important;
+}
+
+/* .ant-picker-input{
+    font-weight: 400;
+} */

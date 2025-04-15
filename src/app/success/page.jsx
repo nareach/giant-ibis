@@ -11,7 +11,9 @@ import { decrypt, fetchFromApi } from "@/utils/api";
 // Move the main logic to a separate component
 const PaymentStatusChecker = () => {
   const searchParams = useSearchParams();
-  const [apiResponse, setApiResponse] = useState(null);
+  const [oneTrip, setOneTrip] = useState(null);
+  const [roundTrip, setRoundTrip] = useState(null);
+
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -20,7 +22,7 @@ const PaymentStatusChecker = () => {
     const bus_id = searchParams.get('bus_id');
     const mobile = searchParams.get('mobile');
     const route_id = searchParams.get('route_id');
-
+    const trip_type = searchParams.get('trip_type');
     const checkPaymentStatus = async () => {
       setIsLoading(true);
       try {
@@ -44,6 +46,9 @@ const PaymentStatusChecker = () => {
         const decryptData = decrypt(response?.data?.result?.xTran?.purchaseDesc);
         const purchaseDesc = JSON.parse(decryptData);
 
+
+
+        // book the on trip
         const confirmed = await addBook({
           bus_id,
           bus_type: purchaseDesc?.bus_type,
@@ -57,7 +62,26 @@ const PaymentStatusChecker = () => {
           email: purchaseDesc?.email
         });
 
-        setApiResponse(confirmed);
+        // book the round trip
+        if (trip_type === 'round-trip' && purchaseDesc.return_date) {
+          const confirmedRoundedTrip = await addBook({
+            bus_id,
+            bus_type: purchaseDesc?.bus_type,
+            fullname: purchaseDesc?.firstname,
+            phoneNumber: mobile,
+            departureDate: purchaseDesc.return_date,
+            meta_value: purchaseDesc?.meta_value,
+            price: response?.data?.result?.xTran?.purchaseAmount,
+            route_id,
+            seat_no: purchaseDesc?.seat_no,
+            email: purchaseDesc?.email
+          });
+
+          setRoundTrip(confirmedRoundedTrip);
+        }
+
+
+        setOneTrip(confirmed);
       } catch (err) {
         console.error('Error checking payment status:', err);
         setError(err);
@@ -68,26 +92,69 @@ const PaymentStatusChecker = () => {
     checkPaymentStatus();
   }, [searchParams]);
 
-  const addBook = async (bookData) => {
-    const books = {
-      ...bookData,
-      email: "nareachkr@gmail.com",
-      password: 123456,
-      surname: bookData.fullname,
-      remarks: 'I love giantibis'
-    };
+  const addBook = async ({
+    bus_id,
+    bus_type,
+    fullname,
+    phoneNumber,
+    departureDate,
+    meta_value,
+    price,
+    route_id,
+    seat_no,
+    email
+  }) => {
 
-    const book = await fetchFromApi('add_booking', books);
-    if (book) {
-      return await fetchFromApi('confirm_Booking', {
-        ref_code: book?.Booking_id,
-      });
+
+    const seat_array = seat_no.split(',').map(seat => seat.trim());
+    const booked = [];
+    for (const seat of seat_array) {
+      console.log('seat: ', seat);
+
+      const books = {
+        route_id: route_id,
+        email: "nareachkr@gmail.com",
+        pass_email: "nareachkr@gmail.com",
+        password: 123456,
+        surname: fullname,
+        mobile: phoneNumber,
+        firstname: fullname,
+        remarks: 'I love giantibis',
+        travel_date: departureDate,
+        travel_time: meta_value,
+        price: price,
+        bus_id: bus_id,
+        bus_type: bus_type,
+        seat_no: seat
+      };
+
+      // const book = await fetchFromApi('add_booking', books);
+      // console.log('book: ', book);
+
+      // if (book && book?.Booking_id) {
+      //   const confirmedBook=  await fetchFromApi('confirm_Booking', {
+      //     ref_code: book?.Booking_id,
+      //   });
+
+      //   booked.push(confirmedBook);
+      // } else {
+
+      //   alert(`please contact to admin because it someone booked ${seat}. ` + book.message);
+      // }
     }
+
+    if (booked.length > 0) {
+      return booked;
+    }
+
   }
+
+
+
 
   if (isLoading) return <LoadingComponent />;
   if (error) return <div>Error: {error.message}</div>;
-  
+
   return <TicketConfirmation />;
 };
 

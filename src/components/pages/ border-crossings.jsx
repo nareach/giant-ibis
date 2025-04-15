@@ -5,7 +5,7 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MapPin, Rocket } from "lucide-react"
-import SearchBookForm from "./HeroBookForm"
+import SearchBookForm from "./SearchBox"
 
 export default function BorderCrossings() {
   const [openRouteIndex, setOpenRouteIndex] = useState(null)

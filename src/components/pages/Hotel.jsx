@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MapPin, ChevronLeft, ChevronRight, Search } from "lucide-react";
-import SearchBookForm from "./HeroBookForm";
+import SearchBookForm from "./SearchBox";
 
 const hotels = [
   {
