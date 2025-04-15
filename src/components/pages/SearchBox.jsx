@@ -35,7 +35,7 @@ import { TripTypeComponent } from "../common/TripType";
 import { SelectProvince } from "../common/SelectProvince";
 import { PickDateFilter } from "../common/PickDate";
 import { Banner } from "../layout/Banner";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { fetchFromApi } from "@/utils/api";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BookProgress } from "../common/BookProgress";
@@ -245,7 +245,7 @@ export default function SearchBookForm() {
 
 
   return (
-    <>
+    <Suspense fallback={<div>Loading ...</div>}>
       <div className="mb-10">
         <div>
           <div className="max-w-7xl mx-auto mt-12 p-6 bg-white shadow-custom rounded-lg border border-gray-200">
@@ -340,6 +340,6 @@ export default function SearchBookForm() {
           </>
         }
       </div>
-    </>
+    </Suspense>
   );
 }
