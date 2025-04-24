@@ -229,17 +229,6 @@ export default function SearchBookForm() {
             </div>
           </div>
         </div>
-        {
-          loading || !trips ? <> </> : <>
-            <div className="max-w-7xl py-16 mx-auto">
-              {
-                trips ? <>
-                  <AvailableTripItems isLoadingFetching={loading} activeStep={activeStep} trips={trips} cities={cities} departureDate={departureDate} returnDate={returnDate} tripType={tripType} />
-                </> : <></>
-              }
-            </div>
-          </>
-        }
       </div>
     </>
   );

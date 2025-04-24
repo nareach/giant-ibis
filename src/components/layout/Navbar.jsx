@@ -88,7 +88,7 @@ const Navbar = () => {
               className="relative flex items-center gap-2 text-primary hover:text-primary transition-colors group"
             >
               {icon}
-              <span>{tooltip}</span>
+              <span className="text-center text-sm">{tooltip}</span>
               <span className="hidden">{tooltip}</span>
               <span className="absolute left-1/2 -translate-x-1/2 -bottom-8 px-2 py-1 bg-gray-800 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                 {tooltip}

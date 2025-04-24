@@ -28,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast, Toaster } from "sonner";
 import Image from "next/image";
 import { TitleFilter } from "../common/TitleFilter";
 import { TripTypeComponent } from "../common/TripType";
@@ -43,6 +42,10 @@ import { AvailableTripItems } from "../common/AvailableTrip";
 import moment from "moment";
 import LoadingComponent from "../layout/Loading";
 import { cn } from "@/lib/utils";
+import { Toaster, toast } from 'sonner';
+import { getAllSeatLayout } from '@/utils/seat-status';
+import { RangePickDateFilter } from '../common/RangePickDate';
+import { getBusStatus } from '@/utils/action';
 
 export default function SearchBookForm() {
 
@@ -58,8 +61,8 @@ export default function SearchBookForm() {
 
   const originParam = searchParams.get('origin') || null;
   const destinationParam = searchParams.get('destination') || null;
-  const departureDateParam = dayjs(searchParams.get('departure_date'), "DD-MM-YYYY") || null;
-  const return_date_param = dayjs(searchParams.get('return_date'), "DD-MM-YYYY") || null;
+  const departureDateParam = searchParams.get('departure_date') ? dayjs(searchParams.get('departure_date'), "DD-MM-YYYY") : dayjs();
+  const return_date_param = searchParams.get('return_date') ? dayjs(searchParams.get('return_date'), "DD-MM-YYYY") : dayjs();
   const trip_type_param = searchParams.get('trip_type') || 'one-way';
 
 
@@ -71,7 +74,15 @@ export default function SearchBookForm() {
   const [departureDate, setDepartureDate] = useState(departureDateParam);
   const [returnDate, setReturnDate] = useState(return_date_param);
 
-  const [routeList, setRouteList] = useState([]);
+
+  /**
+ * before search state filter
+ */
+  const [originB4, setOriginB4] = useState(originParam);
+  const [destinationB4, setDestinationB4] = useState(destinationParam);
+  const [departureDateB4, setDepartureDateB4] = useState(departureDateParam);
+  const [returnDateB4, setReturnDateB4] = useState(return_date_param);
+
 
   /**
    * 
@@ -88,6 +99,12 @@ export default function SearchBookForm() {
   const [isDestinationError, setDestinationError] = useState(false);
   const [isDepartureDateError, setDepartureDateError] = useState(false);
   const [isReturneDateError, setReturnDateError] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }));
+
   const [tripType, setTripType] = useState(trip_type_param);
 
 
@@ -97,8 +114,8 @@ export default function SearchBookForm() {
   const [trips, setTrips] = useState([]);
 
   const handleSearch = async () => {
-    setLoading(true);
 
+    setLoading(true);
     setOriginError(!origin);
     setDestinationError(!destination);
     setDepartureDateError(!departureDate);
@@ -121,6 +138,12 @@ export default function SearchBookForm() {
       router.push(`/book?origin=${origin}&destination=${destination}&departure_date=${moment(departureDate).format('DD-MM-YYYY')}`);
     }
 
+    setCurrentTime(new Date().toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }))
+
 
     const routeList = await fetchFromApi('get_routeList');
 
@@ -129,53 +152,68 @@ export default function SearchBookForm() {
       return;
     }
 
-    let routeFilter = routeList?.data
+    let routeFilter = [];
+    routeFilter = routeList?.data
       .filter(route =>
         route.origin === origin &&
         route.destination === destination
       );
 
 
-
-    const busDetail = await fetchFromApi('get_busList', {
-      bus_type: routeFilter[0].bus_type
-    });
-
-
-    const timing = await fetchFromApi('get_route_timing', {
-      route_id: routeFilter[0]?.id
-    });
+    if (routeFilter.length == 0) {
+      toast.info('There no data.');
+      setTrips([]);
+      setLoading(false);
+      return;
+    }
 
 
 
-    routeFilter = await Promise.all(
+
+    routeFilter = (await Promise.all(
       routeFilter?.map(async (route, index) => {
+        // get the city
         const originCity = cities?.data?.find(city => city.city_id === route.origin);
         const destinationCity = cities?.data?.find(city => city.city_id === route.destination);
 
+        // fetch timing
+        const timing = await fetchFromApi('get_route_timing', {
+          route_id: route?.id
+        });
+
+        const busType = await fetchFromApi('get_busList', {
+          bus_type: route?.bus_type
+        });
+
         const routeTiming = timing?.data[index] || null;
 
+        if (!routeTiming?.meta_value) {
+          return null;
+        }
 
-        const bus_status = await fetchFromApi('get_bus_status', {
-          route_id: routeFilter[0]?.id,
-          bus_id: busDetail.data[0].id,
-          travel_date: moment(departureDate).format('YYYY-MM-DD'),
-          travel_time: routeTiming?.meta_value,
+        const busDetail = await fetchFromApi('get_route_bus', {
+          route_id: route?.id,
+          travel_time: routeTiming?.meta_value
         });
 
-        const seatsArray = busDetail.data[0].seats_no.split(',');
+        const bus_status = await getBusStatus({
+          busType: busType,
+          date: departureDate,
+          route: route,
+          routeTiming: routeTiming,
+          busDetail: busDetail
+        })
 
-        const seatStatuses = bus_status.status && bus_status.data !== "NULL"
-          ? bus_status.data
-          : [];
-
-        const seatsWithStatus = seatsArray.map(seat => {
-          const foundStatus = seatStatuses.find(s => s.seat_id === seat);
-          return {
-            seat,
-            status: foundStatus ? foundStatus.seat_status : "Available"
-          };
-        });
+        let busStatusReturn;
+        if (tripType === 'round-trip') {
+          busStatusReturn = await getBusStatus({
+            busType: busType,
+            date: returnDate[1],
+            route: route,
+            routeTiming: routeTiming,
+            busDetail: busDetail
+          });
+        }
 
 
         return {
@@ -184,16 +222,21 @@ export default function SearchBookForm() {
           destination_details: destinationCity,
           busDetail: busDetail?.data[0],
           timing: routeTiming ? {
+            meta_id: routeTiming?.meta_id,
             time: routeTiming.meta_value,
             day_night: routeTiming.day_night,
             price: routeTiming.price,
             part_price: routeTiming.part_price,
-            bus_type: routeTiming?.bus_type
+            bus_type: routeTiming?.bus_type,
+            allowedpick: routeTiming?.allowedpick === '0' ? false : true,
           } : null,
-          seat_status: seatsWithStatus
+          seat_status: bus_status,
+          busTypeDetail: busType?.data[0],
+          busStatusReturn: busStatusReturn
         };
       })
-    );
+    )).filter(Boolean);
+
 
 
     /**
@@ -201,7 +244,6 @@ export default function SearchBookForm() {
      */
 
     console.log('routeFilter: ', routeFilter);
-
     setTrips(routeFilter);
     setLoading(false);
   }
@@ -230,7 +272,9 @@ export default function SearchBookForm() {
       setLoading(true);
       try {
         setLoading(true);
-        await handleSearch();
+        if (origin && destination && departureDate) {
+          await handleSearch();
+        }
       } catch (error) {
         console.error('Failed to fetch data:', error);
         setError(error.toString());
@@ -242,11 +286,17 @@ export default function SearchBookForm() {
     fetchData();
   }, [cities]);
 
+  const notify = () => toast("Wow so easy!");
 
 
   return (
     <Suspense fallback={<div>Loading ...</div>}>
-      <div className="mb-10">
+
+
+      <div className="mb-10 mx-3 lg:mx-auto">
+
+        <Toaster />
+
         <div>
           <div className="max-w-7xl mx-auto mt-12 p-6 bg-white shadow-custom rounded-lg border border-gray-200">
             <TitleFilter />
@@ -257,6 +307,7 @@ export default function SearchBookForm() {
 
               <TripTypeComponent defaultValue={trip_type_param} onChange={(value) => {
                 setTripType(value);
+                setTrips([]);
               }} />
 
               <div className={cn('lg:col-span-6 grid gap-6',
@@ -303,12 +354,22 @@ export default function SearchBookForm() {
                     tripType == 'one-way' ? (<>
                     </>) : (<div className="flex flex-col lg:flex-row w-full lg:col-span-4 gap-6">
 
-                      <PickDateFilter isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date, dateString) => {
-                        setDepartureDate(date);
-                      }} />
-                      <PickDateFilter isError={isReturneDateError} value={returnDate} title={'Return'} onChange={(date, dateString) => {
-                        setReturnDate(date);
-                      }} />
+                      <PickDateFilter
+                        isError={isDepartureDateError}
+                        value={departureDate}
+                        title={'Departure'}
+                        onChange={(date, dateString) => {
+                          setDepartureDate(date);
+                        }} />
+
+                      <RangePickDateFilter
+                        isError={isReturneDateError}
+                        startFrom={departureDate}
+                        value={returnDate}
+                        title={'Return'}
+                        onChange={(date, dateString) => {                          
+                          setReturnDate(date);
+                        }} />
 
                     </div>)
                   }
@@ -329,11 +390,20 @@ export default function SearchBookForm() {
           </div>
         </div>
         {
-          loading || !trips ? <> </> : <>
+          loading ? <div className='text-center m-10 text-lg'>Loading ...</div> : <>
             <div className="max-w-7xl py-16 mx-auto">
               {
-                trips ? <>
-                  <AvailableTripItems isLoadingFetching={loading} activeStep={activeStep} trips={trips} cities={cities} departureDate={departureDate} returnDate={returnDate} tripType={tripType} />
+                trips.length > 0 ? <>
+                  <AvailableTripItems
+                    currentTime={currentTime}
+                    isLoadingFetching={loading}
+                    activeStep={activeStep}
+                    trips={trips}
+                    cities={cities}
+                    departureDate={departureDate}
+                    returnDate={returnDate[1]}
+                    tripType={tripType}
+                  />
                 </> : <></>
               }
             </div>

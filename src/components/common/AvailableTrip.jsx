@@ -38,17 +38,34 @@ import { ACLEDA_BANK_API, API_KEY, API_URL, CLIENT_URL, loginId, merchantID, pas
 import axios from "axios";
 import LoadingComponent from "../layout/Loading";
 import moment from "moment";
-import PopupPayment from "../features/payments/PopupPayment";
 import { v4 as uuidv4 } from 'uuid';
-import { isValid } from "date-fns";
-import * as crypto from 'crypto';
+import { cn } from "@/lib/utils";
+import { addHoursToTime } from "@/utils/time-util";
+import { SeatLayout } from "../features/seat/SeatLayout";
+import TripListComponent from "../features/trip/ListTrip";
+import Frees from "../features/seat/Frees";
+import AllSeatStatus from "../features/seat/AllSeatStatus";
+import TripListReturnComponent from "../features/trip/ListTripReturn";
 
 
-export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDate, tripType, isLoadingFetching }) => {
+export const AvailableTripItems = ({
+    trips,
+    cities = [],
+    departureDate,
+    returnDate,
+    tripType,
+    isLoadingFetching,
+    currentTime,
+
+}) => {
 
     const [activeStep, setActiveStep] = useState('select');
     const [routeSelected, setRouteSelected] = useState();
+    const [routeReturnSelected, setRouteReturnSelected] = useState();
+
     const [selectedSeat, setSelectedSeat] = useState([]);
+    const [selectedSeatReturn, setSelectedSeatReturn] = useState([]);
+
     const [paymentMethod, setPaymentMethod] = useState("khqr");
 
     const [fullname, setFullname] = useState("");
@@ -65,8 +82,15 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
     const [transactionID, setTransactionID] = useState();
     const [payDate, setPayDate] = useState();
     const [isFormValid, setIsFormValid] = useState(false);
+    const [showSecondTrip, setShowSecondTrip] = useState(false);
+
     const [item, setItem] = useState();
     const [successsUrl, setSuccesssUrl] = useState();
+
+
+    // state add booking
+    const [oneTripBooking, setOneTripBooking] = useState();
+    const [roundTripBooking, setRoundTripBooking] = useState();
 
 
     const [errors, setErrors] = useState({
@@ -77,19 +101,44 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
     });
 
     const handleTripSelect = (trip) => {
-        console.log('trip: ', trip);
-
-        setActiveStep("seat")
         setRouteSelected(trip);
+        if (tripType == 'round-trip') {
+            setShowSecondTrip(true);
+            setTimeout(() => {
+                const element = document.getElementById('return_trip_list');
+                if (element) {
+                    element.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start' // or 'center', 'end'
+                    });
+                }
+            }, 50);
+        } else {
+            setActiveStep("seat")
+
+            setTimeout(() => {
+                const element = document.getElementById('select_seat');
+                if (element) {
+                    element.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start' // or 'center', 'end'
+                    });
+                }
+            }, 50);
+        }
     };
 
 
+    const handleSelectNextReturnTip = (trip) => {
+        setRouteReturnSelected(trip);
+        setActiveStep("seat")
+    };
 
     const handleSeatSelect = (seatSelected) => {
-        console.log('seatSelected: ', seatSelected);
+        console.log('seat selected: ', seatSelected);
 
         setRouteSelected((prevRouteSelected) => {
-            const updatedSeats = prevRouteSelected?.seat_status.map((seat) => {
+            const updatedSeats = prevRouteSelected?.seat_status?.seats?.map((seat) => {
 
                 if (seat.seat === seatSelected?.seat) {
                     return {
@@ -100,12 +149,15 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
                 return seat;
             });
 
-            console.log('update status: ', updatedSeats);
 
 
             return {
                 ...prevRouteSelected,
-                seat_status: updatedSeats
+                seat_status: {
+                    row: prevRouteSelected?.seat_status?.row,
+                    col: prevRouteSelected?.seat_status?.col,
+                    seats: updatedSeats
+                }
             };
         });
 
@@ -124,69 +176,330 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
 
     };
 
-    const handleSeatConfirm = () => {
-        if (selectedSeat) {
-            setActiveStep("pay");
-        } else {
-            toast.error("Please select a seat");
-        }
-    };
 
-    const Seat = ({ seat, status, onClick }) => {
+    const handleSeatReturnSelect = (seatSelected) => {
+        console.log(routeReturnSelected);
 
-        const getStatusColor = () => {
-            switch (status) {
-                case "Available":
-                    return "bg-gray-300 hover:bg-gray-400 text-white cursor-pointer";
-                case "reserved":
-                    return "bg-red-500 text-white cursor-not-allowed";
-                case "Booked":
-                    return "bg-red-500 text-white cursor-not-allowed";
-                case "selected":
-                    return "bg-blue-600 text-white cursor-pointer";
-                default:
-                    return "";
+        setRouteReturnSelected((prevRouteSelected) => {
+            const updatedSeats = prevRouteSelected?.busStatusReturn?.seats?.map((seat) => {
+
+                if (seat.seat === seatSelected?.seat) {
+                    return {
+                        ...seat,
+                        status: seat?.status === 'Available' ? 'selected' : 'Available'
+                    };
+                }
+                return seat;
+            });
+
+
+
+            return {
+                ...prevRouteSelected,
+                busStatusReturn: {
+                    row: prevRouteSelected?.seat_status?.row,
+                    col: prevRouteSelected?.seat_status?.col,
+                    seats: updatedSeats
+                }
+            };
+        });
+
+        setSelectedSeatReturn((prevSelectedSeats) => {
+            // Check if the seat_id already exists in the selectedSeats array
+            const seatExists = prevSelectedSeats.some(existingSeat => existingSeat.seat === seatSelected.seat);
+
+            if (seatExists) {
+                // If it exists, remove the seat by filtering out the matching seat_id
+                return prevSelectedSeats.filter(existingSeat => existingSeat.seat !== seatSelected.seat);
             }
-        };
 
-        console.log('get color: ', getStatusColor());
+            // If it doesn't exist, add the new seat object to the array
+            return [...prevSelectedSeats, seatSelected];
+        });
 
-
-        return (
-            <button
-                onClick={onClick}
-                className={`w-16 h-16 flex items-center justify-center rounded-lg ${getStatusColor()}`}
-                disabled={status === "reserved" || status == 'Booked'}
-            >
-                <div className="flex flex-col items-center">
-                    <RockingChair className="w-8 h-8" />
-                    <span className="text-xs font-medium">{seat}</span>
-                </div>
-            </button>
-        );
     };
 
-    function addHoursToTime(timeString, timeToAddString) {
-        const hoursToAdd = parseInt(timeToAddString, 10);
+    const handleSeatConfirm = async () => {
 
-        const [time, period] = timeString?.split(" ");
-        const [hour, minute] = time?.split(":");
 
-        let hour24 = parseInt(hour, 10);
-        if (period === "PM" && hour24 !== 12) {
-            hour24 += 12;
-        } else if (period === "AM" && hour24 === 12) {
-            hour24 = 0;
+        /**
+         * call API to check seat status
+         */
+
+        if (selectedSeat.length < 1) {
+            toast.warning('Please select at least one seat!');
+            return;
         }
 
-        const date = new Date(1970, 0, 1, hour24, minute);
+        if (tripType == 'round-trip') {
+            if (selectedSeatReturn.length < 1) {
+                toast.warning('Please  select at least one return seat!');
+                return;
+            }
+        }
 
-        date.setHours(date.getHours() + hoursToAdd);
+        /**
+         * we have to seperate it 
+         */
+        console.log('route select: ', routeSelected);
 
-        const options = { hour: '2-digit', minute: '2-digit', hour12: true };
-        const newTimeString = date.toLocaleTimeString('en-US', options);
 
-        return newTimeString;
+
+        if (tripType == 'round-trip') {
+
+            // 1. Process the one-trip first
+            await getBusStatusByTrip({
+                bus_id: routeSelected?.busTypeDetail.id,
+                route_id: routeSelected?.id,
+                travel_date: dayjs(departureDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
+                travel_time: routeSelected?.timing?.time,
+                routeSelect: routeSelected,
+                selectedSeatData: selectedSeat,
+                tripType: 'one-trip'
+            })
+
+            const travelDateDeparture = dayjs(departureDate, "DD-MM-YYYY").format('DD-MM-YYYY');
+            const seatNoDeparture = selectedSeat?.map(item => item.seat).join(',')
+
+            const bookedOnWay = await addBooking({
+                travel_date: travelDateDeparture,
+                travel_time: routeSelected?.timing?.time,
+                bus_type: routeSelected?.busTypeDetail?.bus_type,
+                route_id: routeSelected?.id,
+                bus_id: routeSelected?.busTypeDetail?.id,
+                seat_no: seatNoDeparture,
+                price: selectedSeat.length * routeSelected?.price,
+            });
+            console.log('bookedOneWay: ', bookedOnWay);
+
+            setOneTripBooking(bookedOnWay);
+
+            // 2. Process the round-trip
+
+            const travelDate = dayjs(returnDate, "DD-MM-YYYY").format('DD-MM-YYYY');
+            const seat_no = selectedSeatReturn?.map(item => item.seat).join(',')
+
+            await getBusStatusByTrip({
+                bus_id: routeReturnSelected?.busTypeDetail.id,
+                route_id: routeReturnSelected?.id,
+                travel_date: dayjs(returnDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
+                travel_time: routeReturnSelected?.timing?.time,
+                routeSelect: routeReturnSelected,
+                selectedSeatData: selectedSeatReturn,
+                tripType: 'round-trip'
+            })
+
+            const booked = await addBooking({
+                travel_date: travelDate,
+                travel_time: routeReturnSelected?.timing?.time,
+                bus_type: routeReturnSelected?.busTypeDetail?.bus_type,
+                route_id: routeReturnSelected?.id,
+                bus_id: routeReturnSelected?.busTypeDetail?.id,
+                seat_no: seat_no,
+                price: selectedSeatReturn.length * routeReturnSelected?.price,
+            });
+            console.log('bookedRoundTrip: ', booked);
+
+            setRoundTripBooking(booked);
+
+            if (booked?.status && bookedOnWay.status) {
+                setActiveStep('pay');
+            } else {
+                toast.warning('Other User select user seat please try again');
+            }
+
+        } else {
+            await getBusStatusByTrip({
+                bus_id: routeSelected?.busTypeDetail.id,
+                route_id: routeSelected?.id,
+                travel_date: dayjs(departureDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
+                travel_time: routeSelected?.timing?.time,
+                routeSelect: routeSelected,
+                selectedSeatData: selectedSeat,
+                tripType: 'one-trip'
+            })
+
+            const travelDateDeparture = dayjs(departureDate, "DD-MM-YYYY").format('DD-MM-YYYY');
+            const seatNoDeparture = selectedSeat?.map(item => item.seat).join(',')
+
+            const bookedOnWay = await addBooking({
+                travel_date: travelDateDeparture,
+                travel_time: routeSelected?.timing?.time,
+                bus_type: routeSelected?.busTypeDetail?.bus_type,
+                route_id: routeSelected?.id,
+                bus_id: routeSelected?.busTypeDetail?.id,
+                seat_no: seatNoDeparture,
+                price: selectedSeat.length * routeSelected?.price,
+            });
+
+            setOneTripBooking(bookedOnWay);
+
+            if (bookedOnWay.status) {
+                setActiveStep('pay');
+            } else {
+                toast.warning('Other User select user seat please try again');
+            }
+        }
+
+
+    };
+
+
+
+    /**
+     * if the seat bus already reserved or bookek, it will return from here the function is stop
+     */
+    const getBusStatusByTrip = async ({
+        route_id,
+        bus_id,
+        travel_date,
+        travel_time,
+        routeSelect,
+        tripType,
+        selectedSeatData = []
+    }) => {
+
+        const bus_status = await fetchFromApi('get_bus_status', {
+            route_id: route_id,
+            bus_id: bus_id,
+            travel_date: travel_date,
+            travel_time: travel_time,
+        });
+
+        const seatStatusData = bus_status?.data && bus_status.data !== 'NULL'
+            ? Array.isArray(bus_status.data)
+                ? bus_status.data
+                : []
+            : [];
+
+
+        const invalidSeats = selectedSeatData.map(selected => {
+            const seatInfo = seatStatusData.find(item => item.seat_id === selected.seat);
+            return seatInfo?.seat_status === "Reserved" || seatInfo?.seat_status === "Booked"
+                ? seatInfo
+                : null;
+        })
+            .filter(Boolean);
+
+        console.log({
+            invalidSeats,
+            tripType
+        });
+
+
+        if (invalidSeats.length > 0) {
+
+            if (tripType == 'one-trip') {
+                const updatedSeatStatus = routeSelect.seat_status?.seats.map(seat => {
+                    const invalidMatch = invalidSeats.find(invalid =>
+                        String(invalid.seat_id).trim() === String(seat.seat).trim()
+                    );
+
+                    return invalidMatch
+                        ? { ...seat, status: invalidMatch?.seat_status }
+                        : seat;
+                });
+
+                setRouteSelected(prevRouteSelected => ({
+                    ...prevRouteSelected,
+                    seat_status: {
+                        col: prevRouteSelected?.seat_status?.col,
+                        row: prevRouteSelected?.seat_status.row,
+                        seats: updatedSeatStatus
+                    }
+                }));
+
+
+                setSelectedSeat(prevSelectedSeats => {
+                    if (!Array.isArray(prevSelectedSeats)) return [];
+
+                    if (!Array.isArray(invalidSeats)) return prevSelectedSeats;
+
+                    const reservedSeatIds = new Set(
+                        invalidSeats.map(reserved => reserved.seat_id)
+                    );
+
+                    return prevSelectedSeats.filter(
+                        selected => !reservedSeatIds.has(selected.seat)
+                    );
+                });
+
+
+                const unavailableSeats = invalidSeats.map(item => item.seat_id).join(', ');
+                return;
+            } else {
+                const updatedSeatStatus = routeSelect.busStatusReturn?.seats.map(seat => {
+                    const invalidMatch = invalidSeats.find(invalid =>
+                        String(invalid.seat_id).trim() === String(seat.seat).trim()
+                    );
+
+                    return invalidMatch
+                        ? { ...seat, status: invalidMatch?.seat_status }
+                        : seat;
+                });
+
+                setRouteReturnSelected(prevRouteSelected => ({
+                    ...prevRouteSelected,
+                    busStatusReturn: {
+                        col: prevRouteSelected?.busStatusReturn?.col,
+                        row: prevRouteSelected?.busStatusReturn?.row,
+                        seats: updatedSeatStatus
+                    }
+                }));
+
+                setSelectedSeatReturn(prevSelectedSeats => {
+                    if (!Array.isArray(prevSelectedSeats)) return [];
+
+                    if (!Array.isArray(invalidSeats)) return prevSelectedSeats;
+
+                    const reservedSeatIds = new Set(
+                        invalidSeats.map(reserved => reserved.seat_id)
+                    );
+
+                    return prevSelectedSeats.filter(
+                        selected => !reservedSeatIds.has(selected.seat)
+                    );
+                });
+
+                const unavailableSeats = invalidSeats.map(item => item.seat_id).join(', ');
+                toast.error(`These seats are unavailable: ${unavailableSeats}. Please remove them.`);
+                return;
+            }
+
+        }
+
+        // return bus_status;
+    }
+
+
+    const addBooking = async ({
+        travel_date,
+        travel_time,
+        route_id,
+        price,
+        bus_id,
+        bus_type,
+        seat_no
+    }) => {
+
+        const books = {
+            route_id: route_id,
+            email: "nareachkr@gmail.com",
+            password: 123456,
+            mobile: '092655182',
+            travel_date: travel_date,
+            travel_time: travel_time,
+            price: price,
+            bus_id: bus_id,
+            bus_type: bus_type,
+            seat_no: seat_no,
+            pass_email: "nareachkr@gmail.com",
+            firstname: 'guest_name1',
+            surname: 'guest_name1',
+            remarks: 'guest_remarks'
+        };
+        const book = await fetchFromApi('add_booking', books);
+        return book;
     }
 
     const openSessionV2 = async () => {
@@ -197,26 +510,19 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
                 return;
             }
 
+            let url;
+            if (tripType == 'round-trip') {
+                url = `${CLIENT_URL}/success/${oneTripBooking?.Booking_id}/${roundTripBooking?.Booking_id}`
+            } else {
+                url = `${CLIENT_URL}/success/${oneTripBooking?.Booking_id}`
+            }
+
             const uuid = uuidv4();
 
             setIsLoading(true);
             setError(null);
             setTransactionID(uuid);
-            setPayDate(moment(new Date()).format('DD-MM-YYYY'));
-            const url = `${CLIENT_URL}/success/?route_id=${routeSelected?.id}&mobile=${phoneNumber}&bus_id=${routeSelected?.busDetail?.id}&trip_type=${tripType}`
-
-            const b4hash = JSON.stringify({
-                travel_date: departureDate ? dayjs(departureDate).format('DD-MM-YYYY') : '',
-                return_date: departureDate ? dayjs(departureDate).format('DD-MM-YYYY') : '',
-                meta_value: routeSelected?.timing?.time,
-                bus_type: routeSelected?.busDetail?.bus_type,
-                seat_no: selectedSeat?.map(seat => seat.seat).join(", "),
-                firstname: fullname,
-                email: email
-            })
-
-            const dataEncrypt = encrypt(b4hash);
-            setItem(dataEncrypt);
+            setPayDate(moment(new Date()).format('DD-MM-YYYY'));            
             setSuccesssUrl(url);
 
             let data = JSON.stringify({
@@ -229,7 +535,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
                     "purchaseAmount": selectedSeat?.length * (Number(routeSelected?.price)),
                     "purchaseCurrency": "USD",
                     "purchaseDate": payDate,
-                    "purchaseDesc": dataEncrypt,
+                    "purchaseDesc": 'booking',
                     "invoiceid": uuid,
                     "item": 'booking',
                     "quantity": "1",
@@ -262,7 +568,6 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
             console.log({
                 sessionId, isLoading, isFormValid, item
             });
-
         }
     };
 
@@ -302,6 +607,7 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
         fetchData();
     }, [activeStep]);
 
+
     if (loading) {
         return <LoadingComponent />
     }
@@ -311,111 +617,84 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
         return (
             <div>
                 <BookProgress activeStep={activeStep} />
-                <h1 className="text-xl font-semibold mb-6">
-                    Available Trips ({trips?.length})
-                </h1>
-                <div className="space-y-4">
-                    {trips?.map((trip, index) => (
-                        <div
-                            key={index}
-                            className="p-6 flex mb-7 justify-between items-start cursor-pointer hover:shadow-lg transition-shadow border rounded-lg"
-                            onClick={() => handleTripSelect(trip)}
-                        >
-                            <div className="flex-1">
-                                <div className="flex items-center justify-between mb-2">
-                                    <h3 className="text-lg font-medium">
-                                        {trip?.bus_type}
-                                        <Button
-                                            size="sm"
-                                            variant="secondary"
-                                            className="bg-primary ml-2 text-white hover:bg-blue-700"
-                                        >
-                                            ${trip?.price}
-                                        </Button>
-                                    </h3>
-
-                                    <div className="text-right">
-                                        <span className="text-seatColor text-sm font-semibold">
-                                            {trip?.seatAvalable?.length} Seats Left
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-3 text-secondary mb-4">
-                                    <Wifi className="w-4 h-4" />
-                                    <Coffee className="w-4 h-4" />
-                                    <Monitor className="w-4 h-4" />
-                                    <Wind className="w-4 h-4" />
-                                    <Clock className="w-4 h-4" />
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        <div>
-                                            <div className="text-lg font-semibold text-gray-900">
-                                                {trip.timing?.time || 'no'}
-                                            </div>
-                                            <div className="text-sm text-gray-500">{trip?.origin_details?.city_name || ''}</div>
-                                        </div>
-                                    </div>
-
-                                    <Bus className="w-5 h-5 text-secondary ml-2" />
-                                    <div className="flex-1 px-4 relative">
-                                        <div className="text-center mt-6 text-sm text-gray-500">
-                                            {trip.duration}
-                                        </div>
-                                        <div className="absolute  inset-x-0 top-11 border-t  border-red-200"></div>
-                                        <div className="text-center text-sm text-gray-500">
-                                            {trip?.kilo_meters} KM
-                                        </div>
-                                    </div>
-                                    <div className="flex   items-center text-right">
-                                        <MapPin className="w-5 h-5 text-secondary mr-2" />
-                                        <div>
-                                            <div className="text-lg font-semibold text-gray-900">
-                                                {trip.timing?.time ? addHoursToTime(trip.timing?.time, trip?.duration) : '' || 'no'}
-                                            </div>
-                                            <div className="text-sm text-gray-500">
-                                                {trip?.destination_details?.city_name || ''}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                {
+                    !showSecondTrip ? <>
+                        <h1 className="text-xl font-semibold mb-6">
+                            Departure Trips Available  ({trips?.length})
+                        </h1>
+                        <div className="space-y-4">
+                            {
+                                isLoadingFetching ? (<>Loading ...</>) : (<div className="flex flex-col gap-6">
+                                    {trips?.map((trip, index) => trip.timing?.time && (
+                                        (
+                                            <TripListComponent
+                                                departure_date={departureDate}
+                                                key={index}
+                                                handleTripSelect={handleTripSelect}
+                                                trip={trip}
+                                                index={index}
+                                            />
+                                        )
+                                    ))}
+                                </div>)
+                            }
                         </div>
-                    ))}
-                </div>
+                    </> : <></>
+                }
+                {
+                    showSecondTrip ? <>
+                        <h1 className="text-xl font-semibold mb-6" id="return_trip_list">
+                            Return Trips Available  ({trips?.length})
+                        </h1>
+                        <div className="space-y-4">
+                            {
+                                isLoadingFetching ? (<>Loading ...</>) : (<div className="flex flex-col gap-6">
+                                    {trips?.map((trip, index) => trip.timing?.time && (
+                                        (
+                                            <TripListReturnComponent
+                                                departure_date={returnDate}
+                                                key={index}
+                                                handleTripSelect={handleSelectNextReturnTip}
+                                                trip={trip}
+                                                index={index}
+                                            />
+                                        )
+                                    ))}
+                                </div>)
+                            }
+                        </div>
+                    </> : <></>
+                }
             </div>
         );
     } else if (activeStep === "seat") {
         return (
             <div>
                 <BookProgress activeStep={activeStep} />
-                <div className="grid md:grid-cols-3 gap-8">
-                    <div className="p-6 shadow-custom rounded-lg md:col-span-1">
-                        <div className="grid grid-cols-3 ml-8 gap-4">
-                            {routeSelected?.seat_status.map((seat, index) => (
-                                <Seat
-                                    key={index}
-                                    {...seat}
-                                    onClick={() => handleSeatSelect(seat)}
+                <div className="grid md:grid-cols-3 gap-8" id="select_seat">
+                    <div className="flex flex-col ">
+                        <div className="p-6 shadow-custom rounded-lg md:col-span-1">
+                            <SeatLayout
+                                busType={routeSelected?.bus_type}
+                                allSeatStatus={routeSelected?.seat_status}
+                                onSelectSeat={(seat) => handleSeatSelect(seat)}
+                            />
+                            <AllSeatStatus />
+                        </div>
+
+                        {
+                            tripType === 'round-trip' ? (<div className="p-6 shadow-custom rounded-lg md:col-span-1 mt-5">
+                                <SeatLayout
+                                    busType={routeReturnSelected?.bus_type}
+                                    allSeatStatus={routeReturnSelected?.busStatusReturn}
+                                    onSelectSeat={(seat) => handleSeatReturnSelect(seat)}
                                 />
-                            ))}
-                        </div>
-                        <div className="mt-6 flex justify-around gap-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-gray-300" />
-                                <span className="text-sm text-gray-600">Available</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-red-500" />
-                                <span className="text-sm text-gray-600">Reserved</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-blue-600" />
-                                <span className="text-sm text-gray-600">Selected</span>
-                            </div>
-                        </div>
+                                <AllSeatStatus />
+                            </div>) : (<></>)
+                        }
                     </div>
+
+                    {/* go trip */}
                     <div className="mt-8 md:mt-0 space-y-6 md:col-span-2">
                         <div className="p-6 shadow-custom rounded-lg">
                             <div className="space-y-6">
@@ -426,77 +705,141 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
                                             Seat Number: [ {selectedSeat?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
                                         </span>
                                     </div>
-                                    <h3 className="text-lg mt-2">{trips[0].title}</h3>
-                                    <div className="flex gap-4 mt-4">
-                                        <Wifi className="w-5 h-5 text-orange-400" />
-                                        <TableIcon className="w-5 h-5 text-orange-400" />
-                                        <Coffee className="w-5 h-5 text-orange-400" />
-                                        <RockingChair className="w-5 h-5 text-orange-400" />
-                                    </div>
+                                    <Frees />
                                 </div>
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-start">
-                                        <div>
+                                        <div className="text-left">
                                             <div className="text-lg font-bold">{routeSelected?.timing?.time || 'no'}</div>
                                             <div className="text-gray-600">{routeSelected?.origin_details?.city_name}</div>
                                         </div>
                                         <Bus className="w-5 h-5 mt-8 text-secondary ml-6 mr-6 " />
                                         <div className="flex-1 px-4 relative">
                                             <div className="text-center mt-6 text-sm text-gray-500">
-                                                {trips[0].duration || 'duration'}
+                                                {routeSelected?.duration}
                                             </div>
                                             <div className="absolute inset-x-0 top-11 border-t border-gray-300"></div>
                                             <div className="text-center text-sm text-gray-500">
-                                                {trips[0].distance || 'duration'}
+                                                {routeSelected?.kilo_meters} KM
                                             </div>
                                         </div>
                                         <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
                                         <div className="text-right">
                                             <div className="text-lg font-bold">{addHoursToTime(routeSelected.timing?.time, routeSelected?.duration) || 'no'}</div>
                                             <div className="text-gray-600">{routeSelected?.destination_details?.city_name}</div>
-                                            <div className="text-gray-600">{trips[0].to}</div>
                                         </div>
                                     </div>
-                                </div>
-                                <Button
-                                    variant="outline"
-                                    className="w-32 text-primary border-primary"
-                                    onClick={handleTripSelect}
-                                >
-                                    Change Trip
-                                </Button>
-                            </div>
-                        </div>
-                        <div className="bg-white rounded-md p-6 shadow-custom2">
-                            <h2 className="text-xl font-semibold mb-4">Bill details</h2>
-                            <div className="space-y-3">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Base Ticket Fare</span>
-                                    <span>${routeSelected?.price}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Total Travellers</span>
-                                    <span>{selectedSeat?.length}</span>
-                                </div>
-                                <div className="flex justify-between font-medium pt-3 border-t">
-                                    <span>Total Charge</span>
-                                    <span>${selectedSeat?.length * (Number(routeSelected?.price))}</span>
                                 </div>
                             </div>
                         </div>
 
+                        {/* return trip */}
+                        {
+                            tripType == 'round-trip' ?
+                                <div className="mt-8 md:mt-0 space-y-6 md:col-span-2">
+                                    <div className="p-6 shadow-custom rounded-lg">
+                                        <div className="space-y-6">
+                                            <div>
+                                                <div className="flex justify-between items-start">
+                                                    <h2 className="text-xl font-semibold">Trip Details</h2>
+                                                    <span className="text-pink-600 font-bold">
+                                                        Seat Number: [ {selectedSeatReturn?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
+                                                    </span>
+                                                </div>
+                                                <Frees />
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="text-left">
+                                                        <div className="text-lg font-bold">{addHoursToTime(routeReturnSelected?.timing?.time, routeReturnSelected?.duration) || 'no'}</div>
+                                                        <div className="text-gray-600">{routeReturnSelected?.destination_details?.city_name}</div>
+                                                    </div>
+
+                                                    <Bus className="w-5 h-5 mt-8 text-secondary ml-6 mr-6 " />
+                                                    <div className="flex-1 px-4 relative">
+                                                        <div className="text-center mt-6 text-sm text-gray-500">
+                                                            {routeReturnSelected?.duration}
+                                                        </div>
+                                                        <div className="absolute inset-x-0 top-11 border-t border-gray-300"></div>
+                                                        <div className="text-center text-sm text-gray-500">
+                                                            {routeReturnSelected?.kilo_meters} KM
+                                                        </div>
+                                                    </div>
+                                                    <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
+                                                    <div>
+                                                        <div className="text-lg font-bold">{routeReturnSelected?.timing?.time || 'no'}</div>
+                                                        <div className="text-gray-600">{routeReturnSelected?.origin_details?.city_name}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div> : <></>
+                        }
+
+                        {
+                            tripType == 'round-trip' ? <div className="bg-white rounded-md p-6 shadow-custom2">
+                                <h2 className="text-xl font-semibold mb-4">Bill details</h2>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Departure Base Ticket Fare</span>
+                                        <span>${routeSelected?.price}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Return Base Ticket Fare</span>
+                                        <span>${routeReturnSelected?.price}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Total Travellers</span>
+                                        <span>{selectedSeat?.length + selectedSeatReturn.length}</span>
+                                    </div>
+                                    <div className="flex justify-between font-medium pt-3 border-t">
+                                        <span>Total Charge</span>
+                                        <span>${
+                                            (selectedSeat?.length * (Number(routeSelected?.price))) + (selectedSeatReturn.length * (Number(routeReturnSelected?.price)))
+                                        }
+                                        </span>
+                                    </div>
+                                </div>
+                            </div> : <div className="bg-white rounded-md p-6 shadow-custom2">
+                                <h2 className="text-xl font-semibold mb-4">Bill details</h2>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600"> Base Ticket Fare </span>
+                                        <span>${routeSelected?.price}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Total Travellers</span>
+                                        <span>{selectedSeat?.length}</span>
+                                    </div>
+                                    <div className="flex justify-between font-medium pt-3 border-t">
+                                        <span>Total Charge</span>
+                                        <span>${selectedSeat?.length * (Number(routeSelected?.price))}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
                         <Button
                             onClick={handleSeatConfirm}
-                            className="w-full bg-primary hover:bg-primary text-lg py-6"
+                            className={cn(
+                                'w-full bg-primary hover:bg-primary text-lg py-6',
+                            )}
                         >
                             Confirm Seat
                         </Button>
                     </div>
 
+
+
                     <Button
                         variant="outline"
                         className="mb-6"
-                        onClick={() => setActiveStep("select")}
+                        onClick={() => {
+                            setActiveStep("select")
+                            setSelectedSeat([]);
+                            setShowSecondTrip(false);
+                        }}
                     >
                         Back
                     </Button>
@@ -548,6 +891,9 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
                                 {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
                             </div>
                         </div>
+
+
+
                         <div className="border-2 border-dashed shadow-custom2 p-6 rounded-md border-pay">
                             <h2 className="text-xl font-semibold mb-4">Payment Methods</h2>
                             <div className="space-y-3">
@@ -574,6 +920,9 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
                                     </div>
 
                                 </div>
+
+
+
                                 <div
                                     className={`flex items-center justify-between p-4 rounded-lg border ${paymentMethod === "card"
                                         ? "border-primary"
@@ -603,7 +952,11 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
                         <div className=" w-full ">
                             <Button
                                 variant="outline"
-                                onClick={() => setActiveStep("seat")}
+                                onClick={() => {
+                                    setActiveStep("seat")
+                                    setSelectedSeat([]);
+                                    toast.info('please select the seat again.');
+                                }}
                                 className="w-full"
                             >
                                 Back
@@ -612,104 +965,131 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
                     </div>
 
                     <div className="space-y-6 md:col-span-2">
-                        <div className="bg-white rounded-md p-6 shadow-custom2">
-                            <div className="flex justify-between items-start mb-4">
-                                <h2 className="text-xl font-semibold">Trip Details</h2>
-                                <span className="text-seatColor  font-bold">
-                                    Seat Number: [ {selectedSeat?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
-                                </span>
-                            </div>
-                            <div className="flex gap-3 mb-6">
-                                <Wifi className="w-5 h-5 text-secondary" />
-                                <Building2 className="w-5 h-5 text-secondary" />
-                                <User className="w-5 h-5 text-secondary" />
-                                <MapPin className="w-5 h-5 text-secondary" />
-                                <Clock className="w-5 h-5 text-secondary" />
-                            </div>
-                            <div className="flex items-center gap-4 mb-4">
-                                <div>
-                                    <div className="text-lg font-bold">{routeSelected?.timing?.time || 'no'}</div>
-                                    <div className="text-gray-600">{routeSelected?.origin_details?.city_name}</div>
-                                </div>
-
-                                <Bus className="w-5 h-5  text-secondary" />
-
-                                <div className="flex-1 flex flex-col items-center">
-                                    <div className="text-sm text-gray-500">
-                                        {routeSelected?.duration}
+                        <div className="mt-8 md:mt-0 space-y-6 md:col-span-2">
+                            <div className="p-6 shadow-custom rounded-lg">
+                                <div className="space-y-6">
+                                    <div>
+                                        <div className="flex justify-between items-start">
+                                            <h2 className="text-xl font-semibold">Departure Trip Details </h2>
+                                            <span className="text-pink-600 font-bold">
+                                                Seat Number: [ {selectedSeat?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
+                                            </span>
+                                        </div>
+                                        <Frees />
                                     </div>
-                                    <div className="w-full h-px bg-gray-200 my-2 px-[5px]" />
-                                    <div className="text-sm text-gray-500">
-                                        {routeSelected?.kilo_meters} KM
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-start">
+                                            <div className="text-left">
+                                                <div className="text-lg font-bold">{routeSelected?.timing?.time || 'no'}</div>
+                                                <div className="text-gray-600">{routeSelected?.origin_details?.city_name}</div>
+                                            </div>
+                                            <Bus className="w-5 h-5 mt-8 text-secondary ml-6 mr-6 " />
+                                            <div className="flex-1 px-4 relative">
+                                                <div className="text-center mt-6 text-sm text-gray-500">
+                                                    {routeSelected?.duration}
+                                                </div>
+                                                <div className="absolute inset-x-0 top-11 border-t border-gray-300"></div>
+                                                <div className="text-center text-sm text-gray-500">
+                                                    {routeSelected?.kilo_meters} KM
+                                                </div>
+                                            </div>
+                                            <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
+                                            <div className="text-right">
+                                                <div className="text-lg font-bold">{addHoursToTime(routeSelected.timing?.time, routeSelected?.duration) || 'no'}</div>
+                                                <div className="text-gray-600">{routeSelected?.destination_details?.city_name}</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <MapPinCheckInside className="w-5 h-5 text-secondary" />
-
-                                <div className="text-right">
-                                    <div className="text-lg font-bold">{addHoursToTime(routeSelected.timing?.time, routeSelected?.duration) || 'no'}</div>
-                                    <div className="text-gray-600">{routeSelected?.destination_details?.city_name}</div>
-                                    <div className="text-gray-600">{trips[0].to}</div>
-                                </div>
                             </div>
-                            <Button
-                                variant="outline"
-                                className="w-32 text-primary border-primary"
-                            >
-                                Change Trip
-                            </Button>
+
+                            {/* return trip */}
+                            {
+                                tripType == 'round-trip' ?
+                                    <div className="mt-8 md:mt-0 space-y-6 md:col-span-2">
+                                        <div className="p-6 shadow-custom rounded-lg">
+                                            <div className="space-y-6">
+                                                <div>
+                                                    <div className="flex justify-between items-start">
+                                                        <h2 className="text-xl font-semibold"> Return Trip Details</h2>
+                                                        <span className="text-pink-600 font-bold">
+                                                            Seat Number: [ {selectedSeatReturn?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
+                                                        </span>
+                                                    </div>
+                                                    <Frees />
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="text-left">
+                                                            <div className="text-lg font-bold">{addHoursToTime(routeReturnSelected?.timing?.time, routeReturnSelected?.duration) || 'no'}</div>
+                                                            <div className="text-gray-600">{routeReturnSelected?.destination_details?.city_name}</div>
+                                                        </div>
+
+                                                        <Bus className="w-5 h-5 mt-8 text-secondary ml-6 mr-6 " />
+                                                        <div className="flex-1 px-4 relative">
+                                                            <div className="text-center mt-6 text-sm text-gray-500">
+                                                                {routeReturnSelected?.duration}
+                                                            </div>
+                                                            <div className="absolute inset-x-0 top-11 border-t border-gray-300"></div>
+                                                            <div className="text-center text-sm text-gray-500">
+                                                                {routeReturnSelected?.kilo_meters} KM
+                                                            </div>
+                                                        </div>
+                                                        <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
+                                                        <div>
+                                                            <div className="text-lg font-bold">{routeReturnSelected?.timing?.time || 'no'}</div>
+                                                            <div className="text-gray-600">{routeReturnSelected?.origin_details?.city_name}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div> : <></>
+                            }
                         </div>
-                        {/* <div className="border-2 border-dashed border-primary rounded-md shadow-custom2 p-6">
-                            <h2 className="text-xl font-semibold mb-4">Offers</h2>
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Tag className="w-5 h-5 text-primary" />
-                                        <span>50% off up to ₹100 | Use code BOOKNOW</span>
+
+                        {
+                            tripType == 'round-trip' ? <div className="bg-white rounded-md p-6 shadow-custom2">
+                                <h2 className="text-xl font-semibold mb-4">Bill details</h2>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Departure Base Ticket Fare</span>
+                                        <span>${routeSelected?.price}</span>
                                     </div>
-                                    <Button variant="link" className="text-primary font-medium">
-                                        Apply
-                                    </Button>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Tag className="w-5 h-5 text-primary" />
-                                        <span>20% off | Use code FIRSTTIME</span>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Return Base Ticket Fare</span>
+                                        <span>${routeReturnSelected?.price}</span>
                                     </div>
-                                    <Button variant="link" className="text-primary font-medium">
-                                        Apply
-                                    </Button>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Total Travellers</span>
+                                        <span>{selectedSeat?.length + selectedSeatReturn.length}</span>
+                                    </div>
+                                    <div className="flex justify-between font-medium pt-3 border-t">
+                                        <span>Total Charge</span>
+                                        <span>${
+                                            (selectedSeat?.length * (Number(routeSelected?.price))) + (selectedSeatReturn.length * (Number(routeReturnSelected?.price)))
+                                        }
+                                        </span>
+                                    </div>
+                                </div>
+                            </div> : <div className="bg-white rounded-md p-6 shadow-custom2">
+                                <h2 className="text-xl font-semibold mb-4">Bill details</h2>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600"> Base Ticket Fare </span>
+                                        <span>${routeSelected?.price}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Total Travellers</span>
+                                        <span>{selectedSeat?.length}</span>
+                                    </div>
+                                    <div className="flex justify-between font-medium pt-3 border-t">
+                                        <span>Total Charge</span>
+                                        <span>${selectedSeat?.length * (Number(routeSelected?.price))}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className="bg-white rounded-lg p-6 shadow-custom2">
-                            <div className="flex items-center gap-3">
-                                <Tag className="w-5 h-5 text-primary" />
-                                <span className="font-medium">Apply Code</span>
-                                <input
-                                    type="text"
-                                    placeholder="Enter Code"
-                                    className="flex-1 border-none bg-transparent focus:outline-none"
-                                />
-                            </div>
-                        </div> */}
-                        <div className="bg-white rounded-md p-6 shadow-custom2">
-                            <h2 className="text-xl font-semibold mb-4">Bill details</h2>
-                            <div className="space-y-3">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Base Ticket Fare</span>
-                                    <span>${routeSelected?.price}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600">Total Travellers</span>
-                                    <span>{selectedSeat?.length}</span>
-                                </div>
-                                <div className="flex justify-between font-medium pt-3 border-t">
-                                    <span>Total Charge</span>
-                                    <span>${selectedSeat?.length * (Number(routeSelected?.price))}</span>
-                                </div>
-                            </div>
-                        </div>
+                        }
                         <div>
                             <form id="_xpayTestForm" name="_xpayTestForm"
                                 action="https://epaymentuat.acledabank.com.kh/GIANTIBIS/paymentPage.jsp"
@@ -720,10 +1100,25 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
                                 <input type="hidden" id="sessionid" name="sessionid" value={sessionId} />
                                 <input type="hidden" id="transactionID" name="transactionID" value={transactionID} />
                                 <input type="hidden" id="expirytime" name="expirytime" value="5" />
-                                <input type="hidden" id="amount" name="amount" value={selectedSeat?.length * (Number(routeSelected?.price))} />
+                                {
+                                    tripType == 'round-trip' ? <input
+                                        type="hidden"
+                                        id="amount"
+                                        name="amount"
+                                        value={(selectedSeat?.length * (Number(routeSelected?.price))) + (selectedSeatReturn.length * (Number(routeReturnSelected?.price)))}
+                                    /> :
+                                        <input
+                                            type="hidden"
+                                            id="amount"
+                                            name="amount"
+                                            value={selectedSeat?.length * (Number(routeSelected?.price))}
+                                        />
+
+
+                                }
                                 <input type="hidden" id="quantity" name="quantity" value="1" />
                                 <input type="hidden" id="currencytype" name="currencytype" value="USD" />
-                                <input type="hidden" id="description" name="description" value={item} />
+                                <input type="hidden" id="description" name="description" value='booking' />
                                 <input type="hidden" id="item" name="item" value='booking' />
                                 <input type="hidden" id="errorUrl" name="errorUrl"
                                     value="http://localhost:3000/error" />
@@ -737,12 +1132,12 @@ export const AvailableTripItems = ({ trips, cities = [], departureDate, returnDa
                                 <br />
                                 <button
                                     type="submit"
-                                    disabled={!(sessionId && !isLoading && isFormValid && item)}
-                                    className={`w-full text-lg py-3 text-white ${!(sessionId && !isLoading && isFormValid && item)
+                                    disabled={!(sessionId && !isLoading && isFormValid)}
+                                    className={`w-full text-lg py-3 text-white ${!(sessionId && !isLoading && isFormValid)
                                         ? 'bg-gray-400 cursor-not-allowed'
                                         : 'bg-primary hover:bg-primary-dark'
                                         }`}                                >
-                                    {sessionId && !isLoading && isFormValid && item ? 'Submit Payment' : 'Submit Payment'}
+                                    {sessionId && !isLoading && isFormValid ? 'Submit Payment' : 'Submit Payment'}
                                 </button>
                             </form>
                         </div>

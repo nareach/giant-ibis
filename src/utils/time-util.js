@@ -1,0 +1,65 @@
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+
+
+export function addHoursToTime(timeString, timeToAddString) {
+    const hoursToAdd = parseInt(timeToAddString, 10);
+
+    const [time, period] = timeString?.split(" ");
+    const [hour, minute] = time?.split(":");
+
+    let hour24 = parseInt(hour, 10);
+    if (period === "PM" && hour24 !== 12) {
+        hour24 += 12;
+    } else if (period === "AM" && hour24 === 12) {
+        hour24 = 0;
+    }
+
+    const date = new Date(1970, 0, 1, hour24, minute);
+
+    date.setHours(date.getHours() + hoursToAdd);
+
+    const options = { hour: '2-digit', minute: '2-digit', hour12: true };
+    const newTimeString = date.toLocaleTimeString('en-US', options);
+
+    return newTimeString;
+}
+
+
+export function getCurrentTimeFormatted() {
+    return new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
+}
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+export function hasBusLeft(selectedDate, departureTime, timezone = "UTC") {
+    if (!selectedDate || !departureTime) return false;
+  
+    try {
+      // Parse time (e.g., "10:00 PM" -> 22:00)
+      const [timePart, modifier] = departureTime.trim().split(" ");
+      let [hours, minutes] = timePart.split(":").map(Number);
+  
+      if (modifier === "PM" && hours !== 12) hours += 12;
+      else if (modifier === "AM" && hours === 12) hours = 0;
+  
+      // Combine Ant Design date + API time
+      const departureDateTime = selectedDate
+        .hour(hours)
+        .minute(minutes)
+        .tz(timezone);
+  
+      const now = dayjs().tz(timezone);
+      return now.isAfter(departureDateTime);
+    } catch (error) {
+      console.error("Validation error:", error);
+      return false;
+    }
+  }
