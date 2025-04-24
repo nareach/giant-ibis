@@ -248,7 +248,7 @@ export const AvailableTripItems = ({
         if (tripType == 'round-trip') {
 
             // 1. Process the one-trip first
-            await getBusStatusByTrip({
+            const statusOneTrip = await getBusStatusByTrip({
                 bus_id: routeSelected?.busTypeDetail.id,
                 route_id: routeSelected?.id,
                 travel_date: dayjs(departureDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
@@ -257,6 +257,22 @@ export const AvailableTripItems = ({
                 selectedSeatData: selectedSeat,
                 tripType: 'one-trip'
             })
+
+
+            const statusRoundTrip = await getBusStatusByTrip({
+                bus_id: routeReturnSelected?.busTypeDetail.id,
+                route_id: routeReturnSelected?.id,
+                travel_date: dayjs(returnDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
+                travel_time: routeReturnSelected?.timing?.time,
+                routeSelect: routeReturnSelected,
+                selectedSeatData: selectedSeatReturn,
+                tripType: 'round-trip'
+            });
+
+
+            if(!statusOneTrip || !statusRoundTrip){
+                return;
+            }
 
             const travelDateDeparture = dayjs(departureDate, "DD-MM-YYYY").format('DD-MM-YYYY');
             const seatNoDeparture = selectedSeat?.map(item => item.seat).join(',')
@@ -270,7 +286,6 @@ export const AvailableTripItems = ({
                 seat_no: seatNoDeparture,
                 price: selectedSeat.length * routeSelected?.price,
             });
-            console.log('bookedOneWay: ', bookedOnWay);
 
             setOneTripBooking(bookedOnWay);
 
@@ -279,15 +294,7 @@ export const AvailableTripItems = ({
             const travelDate = dayjs(returnDate, "DD-MM-YYYY").format('DD-MM-YYYY');
             const seat_no = selectedSeatReturn?.map(item => item.seat).join(',')
 
-            await getBusStatusByTrip({
-                bus_id: routeReturnSelected?.busTypeDetail.id,
-                route_id: routeReturnSelected?.id,
-                travel_date: dayjs(returnDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
-                travel_time: routeReturnSelected?.timing?.time,
-                routeSelect: routeReturnSelected,
-                selectedSeatData: selectedSeatReturn,
-                tripType: 'round-trip'
-            })
+            
 
             const booked = await addBooking({
                 travel_date: travelDate,
@@ -309,7 +316,7 @@ export const AvailableTripItems = ({
             }
 
         } else {
-            await getBusStatusByTrip({
+            const statusOneTrip = await getBusStatusByTrip({
                 bus_id: routeSelected?.busTypeDetail.id,
                 route_id: routeSelected?.id,
                 travel_date: dayjs(departureDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
@@ -317,7 +324,10 @@ export const AvailableTripItems = ({
                 routeSelect: routeSelected,
                 selectedSeatData: selectedSeat,
                 tripType: 'one-trip'
-            })
+            });
+
+
+            if(!statusOneTrip) return;
 
             const travelDateDeparture = dayjs(departureDate, "DD-MM-YYYY").format('DD-MM-YYYY');
             const seatNoDeparture = selectedSeat?.map(item => item.seat).join(',')
@@ -381,12 +391,6 @@ export const AvailableTripItems = ({
         })
             .filter(Boolean);
 
-        console.log({
-            invalidSeats,
-            tripType
-        });
-
-
         if (invalidSeats.length > 0) {
 
             if (tripType == 'one-trip') {
@@ -426,7 +430,8 @@ export const AvailableTripItems = ({
 
 
                 const unavailableSeats = invalidSeats.map(item => item.seat_id).join(', ');
-                return;
+                toast.error(`These seats are unavailable: ${unavailableSeats}. Please remove them.`);
+                return false;
             } else {
                 const updatedSeatStatus = routeSelect.busStatusReturn?.seats.map(seat => {
                     const invalidMatch = invalidSeats.find(invalid =>
@@ -463,12 +468,11 @@ export const AvailableTripItems = ({
 
                 const unavailableSeats = invalidSeats.map(item => item.seat_id).join(', ');
                 toast.error(`These seats are unavailable: ${unavailableSeats}. Please remove them.`);
-                return;
+                return false;
             }
-
         }
 
-        // return bus_status;
+        return true;
     }
 
 
@@ -504,7 +508,9 @@ export const AvailableTripItems = ({
 
     const openSessionV2 = async () => {
         try {
-
+            setLoading(true);
+            console.log('called open session: ');
+            
             if (!isFormValid) {
                 toast.error('please fill in user information')
                 return;
@@ -518,11 +524,11 @@ export const AvailableTripItems = ({
             }
 
             const uuid = uuidv4();
-
+            const payDate1 =moment(new Date()).format('DD-MM-YYYY');
             setIsLoading(true);
             setError(null);
             setTransactionID(uuid);
-            setPayDate(moment(new Date()).format('DD-MM-YYYY'));            
+            setPayDate(payDate1);            
             setSuccesssUrl(url);
 
             let data = JSON.stringify({
@@ -534,7 +540,7 @@ export const AvailableTripItems = ({
                     "txid": uuid,
                     "purchaseAmount": selectedSeat?.length * (Number(routeSelected?.price)),
                     "purchaseCurrency": "USD",
-                    "purchaseDate": payDate,
+                    "purchaseDate": payDate1,
                     "purchaseDesc": 'booking',
                     "invoiceid": uuid,
                     "item": 'booking',
@@ -543,7 +549,8 @@ export const AvailableTripItems = ({
                     "paymentCard": paymentMethod == 'khqr' ? '0' : '1',
                 }
             });
-
+            console.log('call ed api : ', data);
+            
             const response = await axios.post(
                 ACLEDA_BANK_API,
                 data, {
@@ -551,7 +558,8 @@ export const AvailableTripItems = ({
                     'Content-Type': 'application/json',
                 }
             });
-
+            console.log('open session: ', response);
+            
 
             setPaymentTokenid(response.data?.result?.xTran?.paymentTokenid)
             setSessionId(response.data?.result?.sessionid);
@@ -608,9 +616,6 @@ export const AvailableTripItems = ({
     }, [activeStep]);
 
 
-    if (loading) {
-        return <LoadingComponent />
-    }
 
 
     if (activeStep === "select") {
