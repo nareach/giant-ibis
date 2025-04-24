@@ -1143,6 +1143,7 @@ export const AvailableTripItems = ({
                                         : 'bg-primary hover:bg-primary-dark'
                                         }`}                                >
                                     {sessionId && !isLoading && isFormValid ? 'Submit Payment' : 'Submit Payment'}
+                                    
                                 </button>
                             </form>
                         </div>
