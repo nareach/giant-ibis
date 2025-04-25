@@ -142,6 +142,11 @@ export default function SearchBookForm() {
   if(pathname === '/book'){
     return (<></>);
   }
+  
+
+  if(pathname.includes('success')){
+    return (<></>);
+  }
 
 
 

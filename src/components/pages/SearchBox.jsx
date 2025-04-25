@@ -112,6 +112,7 @@ export default function SearchBookForm() {
    * Result after search
    */
   const [trips, setTrips] = useState([]);
+  const [roundTrips, setRoundTrips] = useState([]);
 
   const handleSearch = async () => {
 
@@ -127,7 +128,6 @@ export default function SearchBookForm() {
         return;
       }
     }
-
 
     if (!origin || !destination || !departureDate) {
       setLoading(false);
@@ -167,8 +167,50 @@ export default function SearchBookForm() {
       return;
     }
 
+    const departureRoute = await getRouteDetail({
+      origin,
+      destination,
+      routeList
+    });
+
+    let roundWayRoutes = [];
+    if (tripType === 'round-trip') {
+      roundWayRoutes = await getRouteDetail({
+        origin: destination,
+        destination: origin,
+        routeList
+      });
+      setRoundTrips(roundWayRoutes);
+    }
+
+    /**
+    * do the maping
+    */
+
+    setTrips(departureRoute);
+    setLoading(false);
+
+    setTimeout(() => {
+      const element = document.getElementById('departure_trip_list');
+      if (element) {
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }
+    }, 50);
+  }
 
 
+  const getRouteDetail = async ({
+    origin, destination, routeList
+  }) => {
+    let routeFilter = [];
+    routeFilter = routeList?.data
+      .filter(route =>
+        route.origin === origin &&
+        route.destination === destination
+      );
 
     routeFilter = (await Promise.all(
       routeFilter?.map(async (route, index) => {
@@ -232,20 +274,12 @@ export default function SearchBookForm() {
           } : null,
           seat_status: bus_status,
           busTypeDetail: busType?.data[0],
-          busStatusReturn: busStatusReturn
         };
       })
     )).filter(Boolean);
 
 
-
-    /**
-     * do the maping
-     */
-
-    console.log('routeFilter: ', routeFilter);
-    setTrips(routeFilter);
-    setLoading(false);
+    return routeFilter;
   }
 
 
@@ -286,12 +320,8 @@ export default function SearchBookForm() {
     fetchData();
   }, [cities]);
 
-  const notify = () => toast("Wow so easy!");
-
-
   return (
     <Suspense fallback={<div>Loading ...</div>}>
-
 
       <div className="mb-10 mx-3 lg:mx-auto">
 
@@ -367,7 +397,7 @@ export default function SearchBookForm() {
                         startFrom={departureDate}
                         value={returnDate}
                         title={'Return'}
-                        onChange={(date, dateString) => {                          
+                        onChange={(date, dateString) => {
                           setReturnDate(date);
                         }} />
 
@@ -403,6 +433,9 @@ export default function SearchBookForm() {
                     departureDate={departureDate}
                     returnDate={returnDate[1]}
                     tripType={tripType}
+                    roundTrips={roundTrips}
+                    destination={destination}
+                    origin={origin}
                   />
                 </> : <></>
               }

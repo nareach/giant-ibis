@@ -1,5 +1,5 @@
 "use client";
-
+import dayjs from 'dayjs';
 import React from 'react'
 
 
@@ -13,9 +13,10 @@ import {
     Wind,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { addHoursToTime, hasBusLeft } from "@/utils/time-util";
+import { addHoursToTime, calculateArrival, calculateArrivalDateTime, hasBusLeft } from "@/utils/time-util";
 import { cn } from '@/lib/utils';
 import { toast, Toaster } from 'sonner';
+import RouteInfor from '@/components/ui/RouteInfor';
 export default function TripListComponent({
     handleTripSelect,
     trip,
@@ -80,12 +81,12 @@ export default function TripListComponent({
                 </div>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                        <div>
-                            <div className="text-lg font-semibold text-gray-900">
-                                {trip.timing?.time || 'no'}
-                            </div>
-                            <div className="text-sm text-gray-500">{trip?.origin_details?.city_name || ''}</div>
-                        </div>
+                        <RouteInfor
+                            city={trip?.origin_details?.city_name}
+                            departure_date={dayjs(departure_date, "DD-MM-YYYY").format('MMMM-DD')}
+                            isStart={true}
+                            time={trip.timing?.time}
+                        />
                     </div>
 
                     <Bus className="w-5 h-5 text-secondary ml-2" />
@@ -100,14 +101,17 @@ export default function TripListComponent({
                     </div>
                     <div className="flex   items-center text-right">
                         <MapPin className="w-5 h-5 text-secondary mr-2" />
-                        <div>
-                            <div className="text-lg font-semibold text-gray-900">
-                                {trip.timing?.time ? addHoursToTime(trip.timing?.time, trip?.duration) : '' || 'no'}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                                {trip?.destination_details?.city_name || ''}
-                            </div>
-                        </div>
+
+                        <RouteInfor
+                            city={trip?.destination_details?.city_name}
+                            departure_date={calculateArrival({
+                                departureTime: dayjs(departure_date, "DD-MM-YYYY").format('YYYY-MM-DD'),
+                                durationHours: trip?.duration,
+                                metaTime: trip.timing?.time
+                            })}
+                            isStart={false}
+                            time={trip.timing?.time ? addHoursToTime(trip.timing?.time, trip?.duration) : '' || 'no'}
+                        />
                     </div>
                 </div>
             </div>

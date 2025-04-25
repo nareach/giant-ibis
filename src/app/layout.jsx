@@ -2,7 +2,6 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { Banner } from "@/components/layout/Banner";
 import LayoutProvider from "./layoutProvider";
-import SearchBookForm from "@/components/pages/SearchBox";
 import SearchBookFormUI from "@/components/pages/SearchBox-UI";
 
 const poppins = Poppins({

@@ -1,31 +1,66 @@
 import { Check, Wifi, Building2, User, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { addHoursToTime, calculateArrival } from "@/utils/time-util";
+import RouteInfor from "../ui/RouteInfor";
+import moment from "moment";
 
-export default function TicketConfirmation() {
+export default function TicketConfirmation({
+  book = {}, routeDetail
+}) {
+
+  const {
+    id = '',
+    agency_id = '',
+    branch_id = '',
+    bus_id = '',
+    canceled_by = null,
+    cancle_date = null,
+    discount = 0,
+    exchange_rate = 1,
+    invoice_no = '',
+    issued_date = '',
+    locked = '',
+    loyality_code = '',
+    meta_id = '',
+    methodofbooking = '',
+    passenger_id = '',
+    pickup = '',
+    price = 0,
+    ref_code = '',
+    ref_id_ticket = '',
+    rmks = '',
+    route_id = '',
+    seat_id = '',
+    seat_status = '',
+    sessidphp = '',
+    tid = '',
+    token = '',
+    totalriel = 0,
+    travel_date = '',
+    travel_time = '',
+    type = '',
+    unpaydate = null,
+    unpaystatus = false,
+    unpayuser = null,
+    updatedtime = null,
+    user_id = '',
+    voucher_no = '',
+    wpay_ststus = ''
+  } = book;
+
   return (
     <div className="bg-mainbg container mx-auto max-w-7xl p-4 sm:p-6">
-      <div className="text-center mb-8 sm:mb-12 mt-16 sm:mt-28">
-        <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#67B467] mb-4">
-          <Check className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-        </div>
-        <h1 className="text-xl sm:text-2xl font-bold text-[#67B467] mb-2">
-          Congratulations! You have successfully booked tickets
-        </h1>
-        <p className="text-sm sm:text-base text-gray-500 max-w-2xl mx-auto">
-          Please remember to bring your booking confirmation and a valid ID for
-          check-in. Have a great trip!
-        </p>
-      </div>
+
       <div className="grid lg:grid-cols-[1fr,auto] gap-4 sm:gap-8">
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div className="space-y-4 w-full sm:w-auto">
               <div className="flex items-center justify-between gap-4">
                 <h2 className="text-lg font-semibold">
-                  Universe Noble-37 (Mini Van 15 Seats)
+                  {routeDetail?.bus_type}
                 </h2>
                 <span className="text-rose-500 font-medium md:ml-48">
-                  Seat Number 1
+                  Seat Number {seat_id}
                 </span>
               </div>
               <div className="flex gap-2   text-secondary flex-wrap">
@@ -38,22 +73,29 @@ export default function TicketConfirmation() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-start gap-6 sm:gap-4 mb-8">
-            <div className="space-y-1 w-full sm:w-auto">
-              <div className="font-medium">Nov 16</div>
-              <div className="text-lg font-medium">08:45 AM</div>
-              <div>Bat Chum Villa Hotel</div>
-              <div className="text-gray-500">Phnom Penh</div>
-            </div>
+            <RouteInfor
+              city={routeDetail?.originDetail?.city_name}
+              departure_date={moment(travel_date).format('MMMM-DD')}
+              isStart={true}
+              time={routeDetail?.timing?.meta_value}
+            />
             <div className="flex-1 flex flex-col items-center w-full sm:pt-6">
-              <div className="text-sm text-gray-500">5 hours</div>
+              <div className="text-sm text-gray-500">{routeDetail?.duration}</div>
               <div className="w-full h-px bg-gray-200 my-2" />
-              <div className="text-sm text-gray-500">295 KM</div>
+              <div className="text-sm text-gray-500">{routeDetail?.kilo_meters} KM</div>
             </div>
             <div className="space-y-1 w-full sm:w-auto">
-              <div className="font-medium">Nov 16</div>
-              <div className="text-lg font-medium">1:00 PM</div>
-              <div>City Lodge Hotel</div>
-              <div className="text-gray-500">Battambang</div>
+              <RouteInfor
+                city={routeDetail?.destinationDetail?.city_name}
+                departure_date={calculateArrival({
+                  departureTime: moment(travel_date).format('YYYY-MM-DD'),
+                  durationHours: routeDetail?.duration,
+                  metaTime: routeDetail?.timing?.meta_value
+                })}
+                isStart={false}
+                time={routeDetail?.timing?.meta_value ? addHoursToTime(routeDetail?.timing?.meta_value, routeDetail?.duration) : '' || 'no'}
+              />
+
             </div>
           </div>
           <div className="space-y-6">
@@ -75,14 +117,14 @@ export default function TicketConfirmation() {
               </div>
 
               <div className="text-gray-600 lg:mt-16">
-                <div>Booking Status : Confirmed (CNF)</div>
-                <div>Seat no. : 1(lower berth), A1</div>
+                <div>Booking Status : {seat_status}</div>
+                <div>Seat no. : {seat_id}</div>
               </div>
             </div>
 
             <div className="flex justify-between items-end pt-4 border-t">
               <div className="text-gray-600">Total Fare</div>
-              <div className="text-xl font-medium">$15</div>
+              <div className="text-xl font-medium">${price}</div>
             </div>
           </div>
         </div>

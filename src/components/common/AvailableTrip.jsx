@@ -33,19 +33,21 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookProgress } from "./BookProgress";
-import { decrypt, encrypt, fetchFromApi } from "@/utils/api";
+import { decrypt, encrypt, fetchFromApi } from "../../utils/api";
 import { ACLEDA_BANK_API, API_KEY, API_URL, CLIENT_URL, loginId, merchantID, password, signature } from "@/constant/constant";
 import axios from "axios";
 import LoadingComponent from "../layout/Loading";
 import moment from "moment";
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from "@/lib/utils";
-import { addHoursToTime } from "@/utils/time-util";
+import { addHoursToTime, calculateArrival, getCityName } from "@/utils/time-util";
 import { SeatLayout } from "../features/seat/SeatLayout";
 import TripListComponent from "../features/trip/ListTrip";
 import Frees from "../features/seat/Frees";
 import AllSeatStatus from "../features/seat/AllSeatStatus";
 import TripListReturnComponent from "../features/trip/ListTripReturn";
+import AvailableTripSectionTitle from "../ui/AvalableTripSection";
+import RouteInfor from "../ui/RouteInfor";
 
 
 export const AvailableTripItems = ({
@@ -56,7 +58,9 @@ export const AvailableTripItems = ({
     tripType,
     isLoadingFetching,
     currentTime,
-
+    roundTrips,
+    origin,
+    destination
 }) => {
 
     const [activeStep, setActiveStep] = useState('select');
@@ -109,7 +113,7 @@ export const AvailableTripItems = ({
                 if (element) {
                     element.scrollIntoView({
                         behavior: 'smooth',
-                        block: 'start' // or 'center', 'end'
+                        block: 'center'
                     });
                 }
             }, 50);
@@ -121,13 +125,12 @@ export const AvailableTripItems = ({
                 if (element) {
                     element.scrollIntoView({
                         behavior: 'smooth',
-                        block: 'start' // or 'center', 'end'
+                        block: 'start'
                     });
                 }
             }, 50);
         }
     };
-
 
     const handleSelectNextReturnTip = (trip) => {
         setRouteReturnSelected(trip);
@@ -176,12 +179,11 @@ export const AvailableTripItems = ({
 
     };
 
-
     const handleSeatReturnSelect = (seatSelected) => {
         console.log(routeReturnSelected);
 
         setRouteReturnSelected((prevRouteSelected) => {
-            const updatedSeats = prevRouteSelected?.busStatusReturn?.seats?.map((seat) => {
+            const updatedSeats = prevRouteSelected?.seat_status?.seats?.map((seat) => {
 
                 if (seat.seat === seatSelected?.seat) {
                     return {
@@ -196,7 +198,7 @@ export const AvailableTripItems = ({
 
             return {
                 ...prevRouteSelected,
-                busStatusReturn: {
+                seat_status: {
                     row: prevRouteSelected?.seat_status?.row,
                     col: prevRouteSelected?.seat_status?.col,
                     seats: updatedSeats
@@ -221,7 +223,6 @@ export const AvailableTripItems = ({
 
     const handleSeatConfirm = async () => {
 
-
         /**
          * call API to check seat status
          */
@@ -241,9 +242,6 @@ export const AvailableTripItems = ({
         /**
          * we have to seperate it 
          */
-        console.log('route select: ', routeSelected);
-
-
 
         if (tripType == 'round-trip') {
 
@@ -270,7 +268,7 @@ export const AvailableTripItems = ({
             });
 
 
-            if(!statusOneTrip || !statusRoundTrip){
+            if (!statusOneTrip || !statusRoundTrip) {
                 return;
             }
 
@@ -294,7 +292,7 @@ export const AvailableTripItems = ({
             const travelDate = dayjs(returnDate, "DD-MM-YYYY").format('DD-MM-YYYY');
             const seat_no = selectedSeatReturn?.map(item => item.seat).join(',')
 
-            
+
 
             const booked = await addBooking({
                 travel_date: travelDate,
@@ -305,7 +303,6 @@ export const AvailableTripItems = ({
                 seat_no: seat_no,
                 price: selectedSeatReturn.length * routeReturnSelected?.price,
             });
-            console.log('bookedRoundTrip: ', booked);
 
             setRoundTripBooking(booked);
 
@@ -327,7 +324,7 @@ export const AvailableTripItems = ({
             });
 
 
-            if(!statusOneTrip) return;
+            if (!statusOneTrip) return;
 
             const travelDateDeparture = dayjs(departureDate, "DD-MM-YYYY").format('DD-MM-YYYY');
             const seatNoDeparture = selectedSeat?.map(item => item.seat).join(',')
@@ -353,7 +350,6 @@ export const AvailableTripItems = ({
 
 
     };
-
 
 
     /**
@@ -433,7 +429,7 @@ export const AvailableTripItems = ({
                 toast.error(`These seats are unavailable: ${unavailableSeats}. Please remove them.`);
                 return false;
             } else {
-                const updatedSeatStatus = routeSelect.busStatusReturn?.seats.map(seat => {
+                const updatedSeatStatus = routeSelect.seat_status?.seats.map(seat => {
                     const invalidMatch = invalidSeats.find(invalid =>
                         String(invalid.seat_id).trim() === String(seat.seat).trim()
                     );
@@ -445,9 +441,9 @@ export const AvailableTripItems = ({
 
                 setRouteReturnSelected(prevRouteSelected => ({
                     ...prevRouteSelected,
-                    busStatusReturn: {
-                        col: prevRouteSelected?.busStatusReturn?.col,
-                        row: prevRouteSelected?.busStatusReturn?.row,
+                    seat_status: {
+                        col: prevRouteSelected?.seat_status?.col,
+                        row: prevRouteSelected?.seat_status?.row,
                         seats: updatedSeatStatus
                     }
                 }));
@@ -506,29 +502,69 @@ export const AvailableTripItems = ({
         return book;
     }
 
-    const openSessionV2 = async () => {
+
+    // When set this data to form success it will trigger to call useEffect submit the form
+    useEffect(() => {
+        const submitTheForm = async () => {
+            if (transactionID && payDate && successsUrl && sessionId) {
+
+                document.getElementById('_xpayTestForm').submit();
+            }
+        };
+        submitTheForm();
+    }, [transactionID, payDate, successsUrl, sessionId])
+
+
+    const handlePay = async () => {
         try {
             setLoading(true);
-            console.log('called open session: ');
-            
-            if (!isFormValid) {
-                toast.error('please fill in user information')
+
+            const isValid = validateForm();
+            if (!isValid) {
+                toast.error('Please fill in traveller details. Please check in message detail');
                 return;
             }
 
-            let url;
+            /**
+             * If the form input correctly we update the passenger information
+             */
+
+            const updatePassenger = await updatePassengerInformation({
+                firstname: fullname,
+                surname: fullname,
+                mobile: phoneNumber,
+                pass_email: email,
+                Passenge_id: oneTripBooking?.Passenge_id
+            });
+
             if (tripType == 'round-trip') {
-                url = `${CLIENT_URL}/success/${oneTripBooking?.Booking_id}/${roundTripBooking?.Booking_id}`
-            } else {
-                url = `${CLIENT_URL}/success/${oneTripBooking?.Booking_id}`
+                const roundTripInfor = await updatePassengerInformation({
+                    firstname: fullname,
+                    surname: fullname,
+                    mobile: phoneNumber,
+                    pass_email: email,
+                    Passenge_id: roundTripBooking?.Passenge_id
+                });
             }
 
+
+            let url;
+            let amount = 0;
+
+            if (tripType == 'round-trip') {
+                url = `${CLIENT_URL}/success/${oneTripBooking?.Booking_id}/${roundTripBooking?.Booking_id}`
+                amount = (selectedSeat?.length * (Number(routeSelected?.price))) + (selectedSeatReturn.length * (Number(routeReturnSelected?.price)));
+            } else {
+                url = `${CLIENT_URL}/success/${oneTripBooking?.Booking_id}`
+                amount = (selectedSeat?.length * (Number(routeSelected?.price)));
+            }
+
+
             const uuid = uuidv4();
-            const payDate1 =moment(new Date()).format('DD-MM-YYYY');
+            const payDate1 = moment(new Date()).format('DD-MM-YYYY');
             setIsLoading(true);
-            setError(null);
             setTransactionID(uuid);
-            setPayDate(payDate1);            
+            setPayDate(payDate1);
             setSuccesssUrl(url);
 
             let data = JSON.stringify({
@@ -538,7 +574,7 @@ export const AvailableTripItems = ({
                 "signature": signature,
                 "xpayTransaction": {
                     "txid": uuid,
-                    "purchaseAmount": selectedSeat?.length * (Number(routeSelected?.price)),
+                    "purchaseAmount": amount,
                     "purchaseCurrency": "USD",
                     "purchaseDate": payDate1,
                     "purchaseDesc": 'booking',
@@ -549,8 +585,7 @@ export const AvailableTripItems = ({
                     "paymentCard": paymentMethod == 'khqr' ? '0' : '1',
                 }
             });
-            console.log('call ed api : ', data);
-            
+
             const response = await axios.post(
                 ACLEDA_BANK_API,
                 data, {
@@ -558,64 +593,82 @@ export const AvailableTripItems = ({
                     'Content-Type': 'application/json',
                 }
             });
-            console.log('open session: ', response);
-            
-
+            setIsLoading(true);
+            setError(null);
+            setTransactionID(uuid);
+            setPayDate(payDate1);
+            setSuccesssUrl(url);
             setPaymentTokenid(response.data?.result?.xTran?.paymentTokenid)
             setSessionId(response.data?.result?.sessionid);
 
-        } catch (err) {
-            console.log('error: ', err);
-
-            if (err instanceof AxiosError) {
-                console.log(err.response);
-            }
-            setError(err.message);
+            /**
+             * After set thhis data to form success it will trigger to call useEffect submit the form
+             */
+        } catch (error) {
+            setLoading(false);
         } finally {
             setIsLoading(false);
-            console.log({
-                sessionId, isLoading, isFormValid, item
-            });
         }
+
+    }
+
+
+    const updatePassengerInformation = async ({
+        firstname, surname, mobile, pass_email, Passenge_id
+    }) => {
+        const passengerDetail = {
+            firstname: firstname,
+            surname: surname,
+            mobile: mobile,
+            pass_email: pass_email,
+            Passenge_id: Passenge_id,
+        };
+
+        const updatePassengerDetail = await fetchFromApi('update_passenger_details', passengerDetail);
+        return updatePassengerDetail;
+    }
+
+
+    const validateForm = () => {
+        let valid = true;
+        const newErrors = { fullname: '', phoneNumber: '', email: '' };
+
+        // Validate fullname
+        if (!fullname || fullname.trim().length < 2) {
+            newErrors.fullname = 'Please enter a valid name';
+            valid = false;
+        }
+
+        // Validate phone
+        const phoneRegex = /^(\+?855|0)[1-9][0-9]{7,8}$/;
+        if (!phoneNumber || !phoneRegex.test(phoneNumber)) {
+            newErrors.phoneNumber = 'Please enter a valid Cambodian phone number';
+            valid = false;
+        }
+
+        // Validate email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email || !emailRegex.test(email)) {
+            newErrors.email = 'Please enter a valid email address';
+            valid = false;
+        }
+
+        setErrors(newErrors);
+
+        if (!valid) {
+            setTimeout(() => {
+                const element = document.getElementById('travellerDetail');
+                if (element) {
+                    element.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+            }, 50);
+        }
+
+        return valid;
     };
-
-
-    useEffect(() => {
-        const fetchData = async () => {
-            if (activeStep === "pay" && isFormValid) {
-                await openSessionV2();
-            }
-        };
-        fetchData();
-    }, [paymentMethod, isFormValid]);
-
-    useEffect(() => {
-        const isValid =
-            fullname.trim() !== "" &&
-            phoneNumber.trim() !== "" &&
-            email.trim() !== "" &&
-            /\S+@\S+\.\S+/.test(email);
-
-        setIsFormValid(isValid);
-
-        const fetchData = async () => {
-            if (activeStep === "pay" && isFormValid) {
-                await openSessionV2();
-            }
-        };
-        fetchData();
-    }, [fullname, phoneNumber, email, pickupOrigin]);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            if (activeStep === "pay" && isFormValid) {
-                await openSessionV2();
-            }
-        };
-        fetchData();
-    }, [activeStep]);
-
-
 
 
     if (activeStep === "select") {
@@ -624,9 +677,15 @@ export const AvailableTripItems = ({
                 <BookProgress activeStep={activeStep} />
                 {
                     !showSecondTrip ? <>
-                        <h1 className="text-xl font-semibold mb-6">
-                            Departure Trips Available  ({trips?.length})
-                        </h1>
+                        <AvailableTripSectionTitle
+                            cities={cities}
+                            date={departureDate}
+                            destination={destination}
+                            origin={origin}
+                            id="departure_trip_list"
+                            title={'Departure Trips Available'}
+                            totalTrip={trips?.length}
+                        />
                         <div className="space-y-4">
                             {
                                 isLoadingFetching ? (<>Loading ...</>) : (<div className="flex flex-col gap-6">
@@ -648,15 +707,20 @@ export const AvailableTripItems = ({
                 }
                 {
                     showSecondTrip ? <>
-                        <h1 className="text-xl font-semibold mb-6" id="return_trip_list">
-                            Return Trips Available  ({trips?.length})
-                        </h1>
+                        <AvailableTripSectionTitle
+                            cities={cities}
+                            date={returnDate}
+                            destination={origin}
+                            origin={destination}
+                            title={'Return Trips Available'}
+                            totalTrip={roundTrips?.length}
+                        />
                         <div className="space-y-4">
                             {
                                 isLoadingFetching ? (<>Loading ...</>) : (<div className="flex flex-col gap-6">
-                                    {trips?.map((trip, index) => trip.timing?.time && (
+                                    {roundTrips?.map((trip, index) => trip.timing?.time && (
                                         (
-                                            <TripListReturnComponent
+                                            <TripListComponent
                                                 departure_date={returnDate}
                                                 key={index}
                                                 handleTripSelect={handleSelectNextReturnTip}
@@ -691,7 +755,7 @@ export const AvailableTripItems = ({
                             tripType === 'round-trip' ? (<div className="p-6 shadow-custom rounded-lg md:col-span-1 mt-5">
                                 <SeatLayout
                                     busType={routeReturnSelected?.bus_type}
-                                    allSeatStatus={routeReturnSelected?.busStatusReturn}
+                                    allSeatStatus={routeReturnSelected?.seat_status}
                                     onSelectSeat={(seat) => handleSeatReturnSelect(seat)}
                                 />
                                 <AllSeatStatus />
@@ -704,8 +768,9 @@ export const AvailableTripItems = ({
                         <div className="p-6 shadow-custom rounded-lg">
                             <div className="space-y-6">
                                 <div>
-                                    <div className="flex justify-between items-start">
-                                        <h2 className="text-xl font-semibold">Trip Details</h2>
+                                    <h2 className="text-xl font-semibold">Departure Trip Details</h2>
+                                    <div className="flex justify-between items-start mt-2">
+                                        <span className="font-bold">{routeSelected?.bus_type}</span>
                                         <span className="text-pink-600 font-bold">
                                             Seat Number: [ {selectedSeat?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
                                         </span>
@@ -714,10 +779,12 @@ export const AvailableTripItems = ({
                                 </div>
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-start">
-                                        <div className="text-left">
-                                            <div className="text-lg font-bold">{routeSelected?.timing?.time || 'no'}</div>
-                                            <div className="text-gray-600">{routeSelected?.origin_details?.city_name}</div>
-                                        </div>
+                                        <RouteInfor
+                                            city={routeSelected?.origin_details?.city_name}
+                                            departure_date={dayjs(departureDate, "DD-MM-YYYY").format('MMMM-DD')}
+                                            isStart={true}
+                                            time={routeSelected?.timing?.time}
+                                        />
                                         <Bus className="w-5 h-5 mt-8 text-secondary ml-6 mr-6 " />
                                         <div className="flex-1 px-4 relative">
                                             <div className="text-center mt-6 text-sm text-gray-500">
@@ -729,10 +796,17 @@ export const AvailableTripItems = ({
                                             </div>
                                         </div>
                                         <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
-                                        <div className="text-right">
-                                            <div className="text-lg font-bold">{addHoursToTime(routeSelected.timing?.time, routeSelected?.duration) || 'no'}</div>
-                                            <div className="text-gray-600">{routeSelected?.destination_details?.city_name}</div>
-                                        </div>
+                                        <RouteInfor
+                                            city={routeSelected?.destination_details?.city_name}
+                                            departure_date={calculateArrival({
+                                                departureTime: dayjs(departureDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
+                                                durationHours: routeSelected?.duration,
+                                                metaTime: routeSelected.timing?.time
+                                            })}
+                                            isStart={false}
+                                            time={routeSelected.timing?.time ? addHoursToTime(routeSelected.timing?.time, routeSelected?.duration) : '' || 'no'}
+
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -745,8 +819,10 @@ export const AvailableTripItems = ({
                                     <div className="p-6 shadow-custom rounded-lg">
                                         <div className="space-y-6">
                                             <div>
+                                                <h2 className="text-xl font-semibold">Return Trip Details</h2>
+
                                                 <div className="flex justify-between items-start">
-                                                    <h2 className="text-xl font-semibold">Trip Details</h2>
+                                                    <span className="font-bold">{routeReturnSelected?.bus_type}</span>
                                                     <span className="text-pink-600 font-bold">
                                                         Seat Number: [ {selectedSeatReturn?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
                                                     </span>
@@ -755,10 +831,12 @@ export const AvailableTripItems = ({
                                             </div>
                                             <div className="space-y-4">
                                                 <div className="flex justify-between items-start">
-                                                    <div className="text-left">
-                                                        <div className="text-lg font-bold">{addHoursToTime(routeReturnSelected?.timing?.time, routeReturnSelected?.duration) || 'no'}</div>
-                                                        <div className="text-gray-600">{routeReturnSelected?.destination_details?.city_name}</div>
-                                                    </div>
+                                                    <RouteInfor
+                                                        city={routeReturnSelected?.origin_details?.city_name}
+                                                        departure_date={dayjs(returnDate, "DD-MM-YYYY").format('MMMM-DD')}
+                                                        isStart={true}
+                                                        time={routeReturnSelected?.timing?.time}
+                                                    />
 
                                                     <Bus className="w-5 h-5 mt-8 text-secondary ml-6 mr-6 " />
                                                     <div className="flex-1 px-4 relative">
@@ -771,10 +849,17 @@ export const AvailableTripItems = ({
                                                         </div>
                                                     </div>
                                                     <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
-                                                    <div>
-                                                        <div className="text-lg font-bold">{routeReturnSelected?.timing?.time || 'no'}</div>
-                                                        <div className="text-gray-600">{routeReturnSelected?.origin_details?.city_name}</div>
-                                                    </div>
+
+                                                    <RouteInfor
+                                                        city={routeReturnSelected?.destination_details?.city_name}
+                                                        departure_date={calculateArrival({
+                                                            departureTime: dayjs(departureDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
+                                                            durationHours: routeReturnSelected?.duration,
+                                                            metaTime: routeReturnSelected.timing?.time
+                                                        })}
+                                                        isStart={false}
+                                                        time={routeReturnSelected.timing?.time ? addHoursToTime(routeReturnSelected.timing?.time, routeReturnSelected?.duration) : '' || 'no'}
+                                                    />
                                                 </div>
                                             </div>
                                         </div>
@@ -835,8 +920,6 @@ export const AvailableTripItems = ({
                         </Button>
                     </div>
 
-
-
                     <Button
                         variant="outline"
                         className="mb-6"
@@ -858,7 +941,7 @@ export const AvailableTripItems = ({
                 <div className="grid md:grid-cols-3 gap-6">
                     <div className="space-y-6 md:col-span-1">
                         <div className="space-y-4 shadow-custom2 p-6 rounded-md">
-                            <h2 className="text-xl font-semibold mb-4">Traveller Details</h2>
+                            <h2 className="text-xl font-semibold mb-4" id="travellerDetail">Traveller Details</h2>
                             <div>
                                 <label className="block text-sm mb-1">
                                     Fullname <span className="text-red-500">*</span>
@@ -970,88 +1053,107 @@ export const AvailableTripItems = ({
                     </div>
 
                     <div className="space-y-6 md:col-span-2">
-                        <div className="mt-8 md:mt-0 space-y-6 md:col-span-2">
-                            <div className="p-6 shadow-custom rounded-lg">
-                                <div className="space-y-6">
-                                    <div>
-                                        <div className="flex justify-between items-start">
-                                            <h2 className="text-xl font-semibold">Departure Trip Details </h2>
-                                            <span className="text-pink-600 font-bold">
-                                                Seat Number: [ {selectedSeat?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
-                                            </span>
-                                        </div>
-                                        <Frees />
+                        <div className="p-6 shadow-custom rounded-lg">
+                            <div className="space-y-6">
+                                <div>
+                                    <h2 className="text-xl font-semibold">Departure Trip Details</h2>
+                                    <div className="flex justify-between items-start mt-2">
+                                        <span className="font-bold">{routeSelected?.bus_type}</span>
+                                        <span className="text-pink-600 font-bold">
+                                            Seat Number: [ {selectedSeat?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
+                                        </span>
                                     </div>
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-start">
-                                            <div className="text-left">
-                                                <div className="text-lg font-bold">{routeSelected?.timing?.time || 'no'}</div>
-                                                <div className="text-gray-600">{routeSelected?.origin_details?.city_name}</div>
+                                    <Frees />
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-start">
+                                        <RouteInfor
+                                            city={routeSelected?.origin_details?.city_name}
+                                            departure_date={dayjs(departureDate, "DD-MM-YYYY").format('MMMM-DD')}
+                                            isStart={true}
+                                            time={routeSelected.timing?.time}
+                                        />
+                                        <Bus className="w-5 h-5 mt-8 text-secondary ml-6 mr-6 " />
+                                        <div className="flex-1 px-4 relative">
+                                            <div className="text-center mt-6 text-sm text-gray-500">
+                                                {routeSelected?.duration}
                                             </div>
-                                            <Bus className="w-5 h-5 mt-8 text-secondary ml-6 mr-6 " />
-                                            <div className="flex-1 px-4 relative">
-                                                <div className="text-center mt-6 text-sm text-gray-500">
-                                                    {routeSelected?.duration}
-                                                </div>
-                                                <div className="absolute inset-x-0 top-11 border-t border-gray-300"></div>
-                                                <div className="text-center text-sm text-gray-500">
-                                                    {routeSelected?.kilo_meters} KM
-                                                </div>
-                                            </div>
-                                            <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
-                                            <div className="text-right">
-                                                <div className="text-lg font-bold">{addHoursToTime(routeSelected.timing?.time, routeSelected?.duration) || 'no'}</div>
-                                                <div className="text-gray-600">{routeSelected?.destination_details?.city_name}</div>
+                                            <div className="absolute inset-x-0 top-11 border-t border-gray-300"></div>
+                                            <div className="text-center text-sm text-gray-500">
+                                                {routeSelected?.kilo_meters} KM
                                             </div>
                                         </div>
+                                        <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
+
+                                        <RouteInfor
+                                            city={routeSelected?.destination_details?.city_name}
+                                            departure_date={calculateArrival({
+                                                departureTime: dayjs(departureDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
+                                                durationHours: routeSelected?.duration,
+                                                metaTime: routeSelected.timing?.time
+                                            })}
+                                            isStart={false}
+                                            time={routeSelected.timing?.time ? addHoursToTime(routeSelected.timing?.time, routeSelected?.duration) : '' || 'no'} />
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* return trip */}
-                            {
-                                tripType == 'round-trip' ?
-                                    <div className="mt-8 md:mt-0 space-y-6 md:col-span-2">
-                                        <div className="p-6 shadow-custom rounded-lg">
-                                            <div className="space-y-6">
-                                                <div>
-                                                    <div className="flex justify-between items-start">
-                                                        <h2 className="text-xl font-semibold"> Return Trip Details</h2>
-                                                        <span className="text-pink-600 font-bold">
-                                                            Seat Number: [ {selectedSeatReturn?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
-                                                        </span>
-                                                    </div>
-                                                    <Frees />
+                        {/* return trip */}
+                        {
+                            tripType == 'round-trip' ?
+                                <div className="mt-8 md:mt-0 space-y-6 md:col-span-2">
+                                    <div className="p-6 shadow-custom rounded-lg">
+                                        <div className="space-y-6">
+                                            <div>
+                                                <h2 className="text-xl font-semibold">Return Trip Details</h2>
+
+                                                <div className="flex justify-between items-start">
+                                                    <span className="font-bold">{routeReturnSelected?.bus_type}</span>
+
+                                                    <span className="text-pink-600 font-bold">
+                                                        Seat Number: [ {selectedSeatReturn?.map((item, index) => (<span key={index}>{item?.seat} , </span>)) || "-"} ]
+                                                    </span>
                                                 </div>
-                                                <div className="space-y-4">
-                                                    <div className="flex justify-between items-start">
-                                                        <div className="text-left">
-                                                            <div className="text-lg font-bold">{addHoursToTime(routeReturnSelected?.timing?.time, routeReturnSelected?.duration) || 'no'}</div>
-                                                            <div className="text-gray-600">{routeReturnSelected?.destination_details?.city_name}</div>
-                                                        </div>
+                                                <Frees />
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-start">
+                                                    <RouteInfor
+                                                        city={routeReturnSelected?.origin_details?.city_name}
+                                                        departure_date={dayjs(returnDate, "DD-MM-YYYY").format('MMMM-DD')}
+                                                        isStart={true}
+                                                        time={routeReturnSelected?.timing?.time}
+                                                    />
 
-                                                        <Bus className="w-5 h-5 mt-8 text-secondary ml-6 mr-6 " />
-                                                        <div className="flex-1 px-4 relative">
-                                                            <div className="text-center mt-6 text-sm text-gray-500">
-                                                                {routeReturnSelected?.duration}
-                                                            </div>
-                                                            <div className="absolute inset-x-0 top-11 border-t border-gray-300"></div>
-                                                            <div className="text-center text-sm text-gray-500">
-                                                                {routeReturnSelected?.kilo_meters} KM
-                                                            </div>
+                                                    <Bus className="w-5 h-5 mt-8 text-secondary ml-6 mr-6 " />
+                                                    <div className="flex-1 px-4 relative">
+                                                        <div className="text-center mt-6 text-sm text-gray-500">
+                                                            {routeReturnSelected?.duration}
                                                         </div>
-                                                        <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
-                                                        <div>
-                                                            <div className="text-lg font-bold">{routeReturnSelected?.timing?.time || 'no'}</div>
-                                                            <div className="text-gray-600">{routeReturnSelected?.origin_details?.city_name}</div>
+                                                        <div className="absolute inset-x-0 top-11 border-t border-gray-300"></div>
+                                                        <div className="text-center text-sm text-gray-500">
+                                                            {routeReturnSelected?.kilo_meters} KM
                                                         </div>
                                                     </div>
+                                                    <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
+
+                                                    <RouteInfor
+                                                        city={routeReturnSelected?.destination_details?.city_name}
+                                                        departure_date={calculateArrival({
+                                                            departureTime: dayjs(departureDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
+                                                            durationHours: routeReturnSelected?.duration,
+                                                            metaTime: routeReturnSelected.timing?.time
+                                                        })}
+                                                        isStart={false}
+                                                        time={routeReturnSelected.timing?.time ? addHoursToTime(routeReturnSelected.timing?.time, routeReturnSelected?.duration) : '' || 'no'}
+                                                    />
                                                 </div>
                                             </div>
                                         </div>
-                                    </div> : <></>
-                            }
-                        </div>
+                                    </div>
+                                </div> : <></>
+                        }
 
                         {
                             tripType == 'round-trip' ? <div className="bg-white rounded-md p-6 shadow-custom2">
@@ -1136,14 +1238,10 @@ export const AvailableTripItems = ({
                                     value={`http://localhost:3000/error/`} />
                                 <br />
                                 <button
-                                    type="submit"
-                                    disabled={!(sessionId && !isLoading && isFormValid)}
-                                    className={`w-full text-lg py-3 text-white ${!(sessionId && !isLoading && isFormValid)
-                                        ? 'bg-gray-400 cursor-not-allowed'
-                                        : 'bg-primary hover:bg-primary-dark'
-                                        }`}                                >
-                                    {sessionId && !isLoading && isFormValid ? 'Submit Payment' : 'Submit Payment'}
-                                    
+                                    type="button"
+                                    onClick={handlePay}
+                                    className={` w-full text-lg py-3 text-white bg-primary hover:bg-primary-dark`}                                >
+                                    Submit Payment
                                 </button>
                             </form>
                         </div>
