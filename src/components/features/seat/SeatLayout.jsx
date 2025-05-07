@@ -57,10 +57,10 @@ export const SeatLayout = ({ onSelectSeat, busType, allSeatStatus }) => {
                 />;
 
             case BusType.N_EXCLUSIVE_VIP_SEATER:
-                return <NExclusiveVipSeater
+                return <ParentSeatLayout
                     busType={busType}
                     onClick={(seat) => onSelectSeat(seat)}
-                    seatData={universeCounty}
+                    seatData={allSeatStatus}
                 />;
 
 

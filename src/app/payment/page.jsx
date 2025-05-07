@@ -147,7 +147,7 @@ export default function PaymentForm() {
                         cursor: 'pointer'
                     }}
                 >
-                    {sessionId ? 'Submit Payment' : 'Processing...'}
+                    {sessionId ? 'Payment' : 'Processing...'}
                 </button>
             </form>
         </>

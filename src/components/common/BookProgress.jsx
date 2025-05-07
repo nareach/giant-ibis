@@ -2,19 +2,6 @@ import {
     Bus,
     Armchair,
     CreditCard,
-    Clock,
-    Coffee,
-    MapPin,
-    Wifi,
-    Monitor,
-    Wind,
-    TableIcon,
-    RockingChair,
-    MapPinCheckInside,
-    Tag,
-    Building2,
-    User,
-    BusFront,
 } from "lucide-react";
 
 export const BookProgress = ({activeStep}) => {

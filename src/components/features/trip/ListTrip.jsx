@@ -13,10 +13,11 @@ import {
     Wind,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { addHoursToTime, calculateArrival, calculateArrivalDateTime, hasBusLeft } from "@/utils/time-util";
+import { hasBusLeft } from "@/utils/time-util";
 import { cn } from '@/lib/utils';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import RouteInfor from '@/components/ui/RouteInfor';
+import FacilityAvailable from '@/components/common/FacilityAvalable';
 export default function TripListComponent({
     handleTripSelect,
     trip,
@@ -27,29 +28,11 @@ export default function TripListComponent({
     return (
         <button
             key={index}
-            className={cn('p-6 flex w-full justify-between items-start cursor-pointer hover:shadow-lg transition-shadow border rounded-lg relative',
-                hasBusLeft(departure_date, trip?.timing?.time) ? 'cursor-not-allowed' : ''
-            )}
+            className={cn('p-6 flex w-full justify-between items-start cursor-pointer hover:shadow-lg transition-shadow border rounded-lg relative',)}
             onClick={() => {
-                if (!hasBusLeft(departure_date, trip?.timing?.time)) {
-                    handleTripSelect(trip);
-                } else {
-                    toast.info('This trip is not allow');
-                }
+                handleTripSelect(trip);
             }}
         >
-            <div className='absolute left-2 top-[-13px] flex'>
-                {
-                    hasBusLeft(departure_date, trip?.timing?.time) ?
-                        (<div className='bg-[#FF0000] mr-2  text-white px-2 rounded-lg'>This trip has already left. 🚍❌</div>) : (<></>)
-                }
-                {
-                    trip?.seat_status?.seats.filter(
-                        seat => seat.status === "Available"
-                    ).length < 1 ?
-                        (<div className='bg-[#FF0000] mr-2  text-white px-2 rounded-lg'>All seats have been booked.</div>) : (<></>)
-                }
-            </div>
             <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-medium flex ">
@@ -72,20 +55,17 @@ export default function TripListComponent({
                     </div>
                 </div>
 
-                <div className="flex gap-3 text-secondary mb-4">
-                    <Wifi className="w-4 h-4" />
-                    <Coffee className="w-4 h-4" />
-                    <Monitor className="w-4 h-4" />
-                    <Wind className="w-4 h-4" />
-                    <Clock className="w-4 h-4" />
-                </div>
+                <FacilityAvailable facilities={trip?.facilities} />
+
                 <div className="flex items-center justify-between">
                     <div className="flex items-center">
                         <RouteInfor
-                            city={trip?.origin_details?.city_name}
-                            departure_date={dayjs(departure_date, "DD-MM-YYYY").format('MMMM-DD')}
+                            city={trip?.originDetail?.city?.city_name}
+                            departure_date={trip?.originDetail?.leaveAt}
                             isStart={true}
-                            time={trip.timing?.time}
+                            time={trip.timing?.meta_value}
+                            routeId={trip?.id}
+                            isShowAddress={false}
                         />
                     </div>
 
@@ -103,14 +83,12 @@ export default function TripListComponent({
                         <MapPin className="w-5 h-5 text-secondary mr-2" />
 
                         <RouteInfor
-                            city={trip?.destination_details?.city_name}
-                            departure_date={calculateArrival({
-                                departureTime: dayjs(departure_date, "DD-MM-YYYY").format('YYYY-MM-DD'),
-                                durationHours: trip?.duration,
-                                metaTime: trip.timing?.time
-                            })}
+                            city={trip?.destinationDetail?.city?.city_name}
+                            departure_date={trip?.destinationDetail?.arriveAt}
+                            isShowAddress={false}
+                            routeId={trip?.id}
                             isStart={false}
-                            time={trip.timing?.time ? addHoursToTime(trip.timing?.time, trip?.duration) : '' || 'no'}
+                            time={trip?.destinationDetail?.time}
                         />
                     </div>
                 </div>

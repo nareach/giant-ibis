@@ -28,6 +28,9 @@ export const kiaGrandBirdSeatDataLayout = {
         { seat: "5-C", status: 'hide' },
         { seat: "5-D", status: 'Available' },
 
+        // 
+        { seat: "1-E", status: 'hide', showTextColSpanRow: true },
+
         { seat: "1-E", status: 'Available' },
         { seat: "1-F", status: 'Available' },
         { seat: "1-G", status: 'hide' },

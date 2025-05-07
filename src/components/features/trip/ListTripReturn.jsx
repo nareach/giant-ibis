@@ -5,17 +5,12 @@ import React from 'react'
 
 import {
     Bus,
-    Clock,
-    Coffee,
     MapPin,
-    Wifi,
-    Monitor,
-    Wind,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { addHoursToTime, hasBusLeft } from "@/utils/time-util";
 import { cn } from '@/lib/utils';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 export default function TripListReturnComponent({
     handleTripSelect,
     trip,
@@ -71,13 +66,8 @@ export default function TripListReturnComponent({
                     </div>
                 </div>
 
-                <div className="flex gap-3 text-secondary mb-4">
-                    <Wifi className="w-4 h-4" />
-                    <Coffee className="w-4 h-4" />
-                    <Monitor className="w-4 h-4" />
-                    <Wind className="w-4 h-4" />
-                    <Clock className="w-4 h-4" />
-                </div>
+                <FacilityAvailable facilities={trip?.facilities}/>
+
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="text-lg font-semibold text-gray-900">

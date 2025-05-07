@@ -19,6 +19,8 @@ export const fetchFromApi = async (apiFunction, bodyData = {}) => {
     headers: myHeaders,
     body: formData,
     redirect: "follow",
+    cache: 'force-cache',
+
   };
 
   try {

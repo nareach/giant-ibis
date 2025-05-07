@@ -1,6 +1,6 @@
-import React from 'react'
+import React from 'react';
 import dayjs from 'dayjs';
-import { getCityName } from '@/utils/time-util';
+
 
 export default function AvailableTripSectionTitle({
     title,
@@ -9,19 +9,27 @@ export default function AvailableTripSectionTitle({
     origin,
     destination,
     id = 'return_trip_list',
-    cities
 }) {
     return (
-        <div className="text-xl font-semibold mb-6 grid grid-cols-3" id={id}>
-            <h1 className="">{title} ({totalTrip})</h1>
-            <div className="text-center pl-10 flex gap-3 col-span-2">
-                <div> {dayjs(date, "DD-MM-YYYY").format('YYYY-MM-DD')}</div>
-                <div className="flex gap-2">
-                    <span>{getCityName({ cities, id: origin })}</span>
-                    -
-                    <span>{getCityName({ cities, id: destination })}</span>
-                </div>
+        <div 
+            className="w-full mb-6 space-y-2 md:space-y-0 md:flex md:items-baseline"
+            id={id}
+        >
+            <h1 className="text-xl font-semibold text-gray-900 max-sm:text-sm">
+                {title} 
+                <span className="text-blue-600 ml-1">({totalTrip})</span>
+            </h1>
+            
+            <div className="md:ml-6 flex items-center text-gray-600 max-sm:text-sm">
+                <span className="hidden md:block mr-2 text-gray-400">|</span>
+                <span className="font-medium">{date}</span>
+                <span className="mx-2 text-gray-400">•</span>
+                <span>
+                    {origin} 
+                    <span className="mx-2 text-gray-400">→</span> 
+                    {destination}
+                </span>
             </div>
         </div>
-    )
+    );
 }

@@ -42,12 +42,12 @@ export const nExclusiveVipSeaterData = {
         { seat: "7-A", status: 'Available' },
         { seat: "7-B", status: 'Available' },
         { seat: "7-C", status: 'hide' },
-        { seat: "7-D", status: 'wc' }, // Changed from 'wc'
+        { seat: "7-D", status: 'wc', rowSpan: 2 }, // Changed from 'wc'
 
         // Row 8 (FIXED)
         { seat: "8-A", status: 'Available' },
         { seat: "8-B", status: 'Available' },
-        { seat: "8-C", status: 'hide' , rowSpan: 2 },
+        { seat: "8-C", status: 'hide' ,  },
         // { seat: "8-D", status: 'Available' }, // Added missing seat
 
         // Row 9

@@ -1,4 +1,3 @@
-import * as crypto from 'crypto';
 
 export const API_URL = process.env.API_URL || "https://www.giantibis.com/beta1/api-booking.php";
 
@@ -15,3 +14,7 @@ export const merchantName = "GIANTIBIS";
 
 export const API_KEY = "ce3e3f95a317e31ac46e98cd32dd00b38b3e1488";
 export const CLIENT_URL = "https://giant-ibis-three.vercel.app";
+export const API_URL_NEXT = process.env.API_URL || `${CLIENT_URL}/api`;
+
+// http://localhost:3000
+// https://giant-ibis-three.vercel.app/

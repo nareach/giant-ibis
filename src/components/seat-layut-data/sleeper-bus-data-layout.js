@@ -27,12 +27,13 @@ export const sleeerBusSeatDataLayout = {
         { seat: "5-B", status: 'Available' },
         { seat: "5-C", status: 'hide' },
         { seat: "5-D", status: 'Available' },
-          
+
         { seat: "6-A", status: 'hide' },
         { seat: "6-B", status: 'hide' },
         { seat: "6-C", status: 'hide' },
         { seat: "6-D", status: 'wc' },
 
+        { seat: "1-E", status: 'hide', showTextColSpanRow: true },
         // top seat  
         { seat: "1-E", status: 'Available' },
         { seat: "1-F", status: 'Available' },

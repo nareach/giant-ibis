@@ -2,8 +2,6 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 
-
-
 export function addHoursToTime(timeString, timeToAddString) {
   const hoursToAdd = parseInt(timeToAddString, 10);
 
@@ -51,7 +49,7 @@ export function hasBusLeft(selectedDate, departureTime, timezone = "UTC") {
     else if (modifier === "AM" && hours === 12) hours = 0;
 
     // Combine Ant Design date + API time
-    const departureDateTime = selectedDate
+    const departureDateTime = dayjs(selectedDate)
       .hour(hours)
       .minute(minutes)
       .tz(timezone);
@@ -69,26 +67,6 @@ export function getCityName({ cities, id }) {
   const city = cities?.data?.find(city => city.city_id === id)
   return city.city_name;
 }
-
-
-
-export const calculateArrivalDateTime = ({ departureTime, durationHours, metaTime }) => {
-  console.log({ departureTime, durationHours, metaTime });
-  return '';
-  const [time, period] = departureTime.split(' ');
-  const [hours, minutes] = time.split(':');
-
-  let hour24 = parseInt(hours, 10);
-  if (period === 'PM' && hour24 !== 12) hour24 += 12;
-  if (period === 'AM' && hour24 === 12) hour24 = 0;
-
-  const departureDate = dayjs()
-    .set('hour', hour24)
-    .set('minute', minutes)
-    .set('second', 0);
-
-  return departureDate.add(durationHours, 'hour');
-};
 
 
 // Extract hours from "6 hours" string
@@ -113,8 +91,8 @@ export const combineDateTime = (isoDate, time12hr) => {
 };
 
 export const calculateArrival = ({ departureTime, durationHours, metaTime }) => {
-  console.log({ departureTime, durationHours, metaTime });
   const departure = combineDateTime(departureTime, metaTime);
+
   const duration = parseDurationHours(durationHours);
-  return departure.add(duration, 'hour').format('MMMM-DD');
+  return departure.add(duration, 'hour').format('MMMM-DD-YYYY');
 };

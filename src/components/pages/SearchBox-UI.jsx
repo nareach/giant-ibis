@@ -1,48 +1,18 @@
 "use client";
-import dayjs from 'dayjs';
 
-import {
-  Bus,
-  Armchair,
-  CreditCard,
-  Clock,
-  Coffee,
-  MapPin,
-  Wifi,
-  Monitor,
-  Wind,
-  TableIcon,
-  RockingChair,
-  MapPinCheckInside,
-  Tag,
-  Building2,
-  User,
-  BusFront,
-} from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { toast, Toaster } from "sonner";
-import Image from "next/image";
 import { TitleFilter } from "../common/TitleFilter";
 import { TripTypeComponent } from "../common/TripType";
 import { SelectProvince } from "../common/SelectProvince";
 import { PickDateFilter } from "../common/PickDate";
-import { Banner } from "../layout/Banner";
 import { useEffect, useState } from "react";
 import { fetchFromApi } from "@/utils/api";
 import { usePathname, useRouter } from "next/navigation";
-import { BookProgress } from "../common/BookProgress";
-import { AvailableTripItems } from "../common/AvailableTrip";
 import moment from "moment";
-import LoadingComponent from "../layout/Loading";
 import { cn } from "@/lib/utils";
+import { useGetAllCityQuery } from "@/store/features/cities";
+import LoadingComponent from "../layout/Loading";
+import LoadingWithText from "../common/LoadingWithText";
 
 export default function SearchBookForm() {
 
@@ -58,7 +28,7 @@ export default function SearchBookForm() {
   const originParam = query?.origin || null; // '1'
   const destinationParam = query?.destination || null; // '2'
   const departureDateParam = query?.departure_date || null; // '14-04-2025'
-
+  const { data: citiesData, isLoading: isLoadingCity } = useGetAllCityQuery();
 
   /**
    * state filter
@@ -68,16 +38,10 @@ export default function SearchBookForm() {
   const [departureDate, setDepartureDate] = useState(departureDateParam);
   const [returnDate, setReturnDate] = useState();
 
-  const [routeList, setRouteList] = useState([]);
-
   /**
    * 
    */
-  const [activeStep, setActiveStep] = useState("select");
-  const [selectedSeat, setSelectedSeat] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState("khqr");
-  const [data, setData] = useState(null);
-  const [cities, setCities] = useState();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -91,8 +55,6 @@ export default function SearchBookForm() {
   /**
    * Result after search
    */
-  const [trips, setTrips] = useState([]);
-
   const handleSearch = async () => {
     setLoading(true);
 
@@ -120,35 +82,14 @@ export default function SearchBookForm() {
   }
 
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        setLoading(true);
-        const result = await fetchFromApi('get_cityList');
-
-        setCities(result);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-        setError(error.toString());
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if(pathname === '/book'){
-    return (<></>);
-  }
-  
-
-  if(pathname.includes('success')){
+  if (pathname === '/book') {
     return (<></>);
   }
 
 
+  if (pathname.includes('success')) {
+    return (<></>);
+  }
 
   return (
     <>
@@ -177,7 +118,7 @@ export default function SearchBookForm() {
                     title="Origin"
                     value={origin}
                     isError={isOriginError}
-                    items={cities?.data}
+                    items={citiesData?.data}
                     onChange={(value) => {
                       setOrigin(value);
                     }}
@@ -187,7 +128,7 @@ export default function SearchBookForm() {
                     title="Destination"
                     value={destination}
                     isError={isDestinationError}
-                    items={cities?.data}
+                    items={citiesData?.data}
                     onChange={(value) => {
                       setDestination(value);
                     }}
@@ -195,7 +136,7 @@ export default function SearchBookForm() {
 
                   {
                     tripType == 'one-way' ? (
-                      <PickDateFilter isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date, dateString) => {
+                      <PickDateFilter isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date) => {
                         setDepartureDate(date);
                       }} />) : (<></>)
                   }
@@ -209,10 +150,10 @@ export default function SearchBookForm() {
                     tripType == 'one-way' ? (<>
                     </>) : (<div className="flex flex-col lg:flex-row w-full lg:col-span-4 gap-6">
 
-                      <PickDateFilter isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date, dateString) => {
+                      <PickDateFilter isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date) => {
                         setDepartureDate(date);
                       }} />
-                      <PickDateFilter isError={isReturneDateError} value={returnDate} title={'Return'} onChange={(date, dateString) => {
+                      <PickDateFilter isError={isReturneDateError} value={returnDate} title={'Return'} onChange={(date) => {
                         setReturnDate(date);
                       }} />
 
@@ -234,6 +175,9 @@ export default function SearchBookForm() {
             </div>
           </div>
         </div>
+        {
+          isLoadingCity ? <LoadingWithText/> : <></>
+        }
       </div>
     </>
   );

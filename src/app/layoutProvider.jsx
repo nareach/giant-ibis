@@ -1,18 +1,19 @@
 "use client";
-import { usePathname } from "next/navigation";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import StoreProvider from "./StoreProvider";
+import Navbar from "@/components/layout/Navbar";
+import { store } from "@/store/store";
+import { usePathname } from "next/navigation";
+import { Provider } from "react-redux";
 
 export default function LayoutProvider({ children }) {
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/signup";
 
   return (
-    <StoreProvider>
+    <Provider store={store}>
       {!isAuthPage && <Navbar />}
       {children}
       {!isAuthPage && <Footer />}
-    </StoreProvider>
+    </Provider>
   );
 }
