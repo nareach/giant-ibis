@@ -46,10 +46,6 @@ export const AvailableTripItems = ({
 
     const [paymentMethod, setPaymentMethod] = useState("khqr");
 
-    const [fullname, setFullname] = useState("");
-    const [phoneNumber, setPhoneNumber] = useState("");
-    const [email, setEmail] = useState("");
-
     /**
      * Loading state
      */
@@ -536,6 +532,8 @@ export const AvailableTripItems = ({
 
             if (!passengerInfoRef.current.validatePassengers()) {
                 toast.error("Please fill in all user information");
+                setLoading(false);
+                return;
             }
 
             const allPassengerData = passengerInfoRef.current.getPassengerData();
@@ -1170,20 +1168,6 @@ export const AvailableTripItems = ({
                                     className={` text-[15px] w-full rounded-md py-2 text-white bg-primary hover:bg-primary-dark`}                                >
                                     {isLoading ? 'Submitting ...' : 'Payment'}
                                 </button>
-
-                                <div className=" w-full mt-5">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => {
-                                            setActiveStep("seat")
-                                            setSelectedSeat([]);
-                                            toast.info('please select the seat again.');
-                                        }}
-                                        className="w-full"
-                                    >
-                                        Back
-                                    </Button>
-                                </div>
                             </form>
                         </div>
 
