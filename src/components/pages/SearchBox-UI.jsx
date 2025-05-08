@@ -84,7 +84,7 @@ export default function SearchBookForm() {
 
   const handleFilterDestination = async (originId) => {
     setOrigin(originId)
-
+    setDestination(null);
     await triggerGetDestination({
       originId: originId,
     }).unwrap();
@@ -128,6 +128,7 @@ export default function SearchBookForm() {
                   <SelectProvince
                     title="Origin"
                     value={origin}
+                    loading={isLoadingCity}
                     isError={isOriginError}
                     items={citiesData?.data}
                     onChange={(value) => handleFilterDestination(value)}
@@ -138,6 +139,7 @@ export default function SearchBookForm() {
                     value={destination}
                     isError={isDestinationError}
                     items={destinations?.data}
+                    loading={isLoadindDestination || isLoadingCity}
                     onChange={(value) => {
                       setDestination(value);
                     }}
