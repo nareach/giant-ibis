@@ -8,8 +8,14 @@ export const citiesApiSlice = apiSlice.injectEndpoints({
                 method: "GET"
             })
         }),
+        getCitesByOrigin: builder.query({
+            query: ({ originId }) => ({
+                url: `/city-detail?originId=${originId}`,
+                method: "GET"
+            })
+        }),
     }),
     overrideExisting: false
 });
 
-export const { useGetAllCityQuery } = citiesApiSlice;
+export const { useGetAllCityQuery, useLazyGetCitesByOriginQuery } = citiesApiSlice;

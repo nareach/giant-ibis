@@ -13,13 +13,15 @@ import LoadingComponent from "../layout/Loading";
 import { cn } from "@/lib/utils";
 import { Toaster } from 'sonner';
 import { useLazyGetRouteQuery } from '@/store/features/route-bus';
-import { useGetAllCityQuery } from '@/store/features/cities';
+import { useGetAllCityQuery, useLazyGetCitesByOriginQuery } from '@/store/features/cities';
 import LoadingWithText from '../common/LoadingWithText';
 
 export default function SearchBookForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [triggerGetRoute, { data: routes, isLoading: isLoading, isError }] = useLazyGetRouteQuery();
+  const [triggerGetDestination, { data: destinations, isLoading: isLoadindDestination }] = useLazyGetCitesByOriginQuery();
+
   const { data: cities, isLoading: isLoadingCity } = useGetAllCityQuery();
 
 
@@ -114,7 +116,13 @@ export default function SearchBookForm() {
       try {
         setLoading(true);
         if (origin && destination && departureDate) {
+
+          await triggerGetDestination({
+            originId: origin,
+          }).unwrap();
+          
           await handleSearch();
+          
           router.replace(window.location.pathname, { scroll: false });
         }
       } catch (error) {
@@ -127,6 +135,16 @@ export default function SearchBookForm() {
 
     fetchData();
   }, []);
+
+  const handleFilterDestination = async (originId) => {
+    setOrigin(originId)
+
+    await triggerGetDestination({
+      originId: originId,
+    }).unwrap();
+
+  }
+
 
   if (isLoadingCity) {
     return <LoadingComponent />
@@ -165,16 +183,14 @@ export default function SearchBookForm() {
                     value={origin}
                     isError={isOriginError}
                     items={cities?.data}
-                    onChange={(value) => {
-                      setOrigin(value);
-                    }}
+                    onChange={(value) => handleFilterDestination(value)}
                   />
 
                   <SelectProvince
                     title="Destination"
                     value={destination}
                     isError={isDestinationError}
-                    items={cities?.data}
+                    items={destinations?.data}
                     onChange={(value) => {
                       setDestination(value);
                     }}

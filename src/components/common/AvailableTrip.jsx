@@ -322,6 +322,9 @@ export const AvailableTripItems = ({
 
                 setOneTripBooking(bookedOnWay);
 
+                console.log("booked one way : ", bookedOnWay);
+                
+
                 if (bookedOnWay.status) {
                     setActiveStep('pay');
                 } else {

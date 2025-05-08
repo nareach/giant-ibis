@@ -10,7 +10,7 @@ import { fetchFromApi } from "@/utils/api";
 import { usePathname, useRouter } from "next/navigation";
 import moment from "moment";
 import { cn } from "@/lib/utils";
-import { useGetAllCityQuery } from "@/store/features/cities";
+import { useGetAllCityQuery, useLazyGetCitesByOriginQuery } from "@/store/features/cities";
 import LoadingComponent from "../layout/Loading";
 import LoadingWithText from "../common/LoadingWithText";
 
@@ -19,6 +19,7 @@ export default function SearchBookForm() {
   const pathname = usePathname();
   const router = useRouter();
   const { query } = router;
+  const [triggerGetDestination, { data: destinations, isLoading: isLoadindDestination }] = useLazyGetCitesByOriginQuery();
 
 
   /**
@@ -81,6 +82,15 @@ export default function SearchBookForm() {
     }
   }
 
+  const handleFilterDestination = async (originId) => {
+    setOrigin(originId)
+
+    await triggerGetDestination({
+      originId: originId,
+    }).unwrap();
+
+  }
+
 
   if (pathname === '/book') {
     return (<></>);
@@ -90,6 +100,7 @@ export default function SearchBookForm() {
   if (pathname.includes('success')) {
     return (<></>);
   }
+
 
   return (
     <>
@@ -119,16 +130,14 @@ export default function SearchBookForm() {
                     value={origin}
                     isError={isOriginError}
                     items={citiesData?.data}
-                    onChange={(value) => {
-                      setOrigin(value);
-                    }}
+                    onChange={(value) => handleFilterDestination(value)}
                   />
 
                   <SelectProvince
                     title="Destination"
                     value={destination}
                     isError={isDestinationError}
-                    items={citiesData?.data}
+                    items={destinations?.data}
                     onChange={(value) => {
                       setDestination(value);
                     }}
@@ -176,7 +185,7 @@ export default function SearchBookForm() {
           </div>
         </div>
         {
-          isLoadingCity ? <LoadingWithText/> : <></>
+          isLoadingCity ? <LoadingWithText /> : <></>
         }
       </div>
     </>

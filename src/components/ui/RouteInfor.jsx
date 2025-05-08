@@ -31,12 +31,12 @@ export default function RouteInfor({
                             target='_blank'
                             rel="noopener noreferrer"
                             className={cn(
-                                'inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors mt-[2px]',
+                                ' border-2 rounded-md p-1 mt-2 px-2 border-primary  inline-flex items-center gap-1 text-sm hover:text-blue-800 transition-colors',
                                 isStart ? 'text-start' : 'text-right'
                             )}
                             aria-label="View location on map"
                         >
-                            View Location <MapPinCheck className='tex-[12px]' />
+                            <span className='text-black'>Get Direction</span><MapPinCheck className='tex-[12px] text-secondary' />
                         </a>
                     )}
                 </div>
