@@ -17,4 +17,4 @@ export const CLIENT_URL = "http://localhost:3000";
 export const API_URL_NEXT = process.env.API_URL || `${CLIENT_URL}/api`;
 
 // http://localhost:3000
-// https://giant-ibis-three.vercel.app/
+// https://giant-ibis-three.vercel.app
