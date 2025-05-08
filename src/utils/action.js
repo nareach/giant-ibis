@@ -40,7 +40,7 @@ export const getBusStatus = async ({
     busStatus = seatsWithStatus;
     const allowedSeats = new Set(seatsWithStatus.map(item => item.seat));
 
-    const updatedSeats = seatStatisLayout.seats.map(seatItem => {
+    const updatedSeats = seatStatisLayout?.seats.map(seatItem => {
 
         // just ignore it because need to design ui base static
         if (seatItem.status === 'hide' || seatItem.status === 'wc') {

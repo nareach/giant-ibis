@@ -48,7 +48,7 @@ export default function TripListComponent({
 
                     <div className="text-right">
                         <span className="text-seatColor text-sm font-semibold">
-                            {trip?.seat_status?.seats.filter(
+                            {trip?.seat_status?.seats?.filter(
                                 seat => seat.status === "Available"
                             ).length} Seats Left
                         </span>

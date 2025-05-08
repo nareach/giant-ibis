@@ -1,6 +1,9 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+import isToday from 'dayjs/plugin/isToday';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 
 export function addHoursToTime(timeString, timeToAddString) {
   const hoursToAdd = parseInt(timeToAddString, 10);
@@ -36,31 +39,47 @@ export function getCurrentTimeFormatted() {
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isToday);
 
-export function hasBusLeft(selectedDate, departureTime, timezone = "UTC") {
+export function hasBusLeft(selectedDate, departureTime, timezone = "Asia/Phnom_Penh") {
   if (!selectedDate || !departureTime) return false;
 
   try {
-    // Parse time (e.g., "10:00 PM" -> 22:00)
-    const [timePart, modifier] = departureTime.trim().split(" ");
-    let [hours, minutes] = timePart.split(":").map(Number);
+    // Normalize time string
+    const normalizedTime = departureTime.trim()
+      .replace(/\s+/g, ' ')
+      .toUpperCase();
+    
+    const [timePart, modifier] = normalizedTime.split(' ');
+    let [hours, minutes] = timePart.split(':').map(Number);
 
-    if (modifier === "PM" && hours !== 12) hours += 12;
-    else if (modifier === "AM" && hours === 12) hours = 0;
+    // Convert 12-hour format to 24-hour format
+    if (modifier === 'PM' && hours !== 12) {
+      hours += 12;
+    } else if (modifier === 'AM' && hours === 12) {
+      hours = 0;
+    }
 
-    // Combine Ant Design date + API time
-    const departureDateTime = dayjs(selectedDate)
+    // Create departure datetime
+    const departureDateTime = dayjs.tz(selectedDate, timezone)
       .hour(hours)
-      .minute(minutes)
-      .tz(timezone);
+      .minute(minutes || 0)
+      .second(0)
+      .millisecond(0);
 
     const now = dayjs().tz(timezone);
+
+    // Simplified comparison logic
     return now.isAfter(departureDateTime);
+
   } catch (error) {
-    console.error("Validation error:", error);
+    console.error("Error checking bus departure time:", error);
     return false;
   }
 }
+
 
 
 export function getCityName({ cities, id }) {

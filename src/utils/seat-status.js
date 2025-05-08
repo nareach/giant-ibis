@@ -8,6 +8,7 @@ import { sleeerBusSeatDataLayoutBottom } from "@/components/seat-layut-data/slee
 import { universeCounty } from "@/components/seat-layut-data/univer-county";
 import { universeLuxury } from "@/components/seat-layut-data/universe-luxury";
 import { universeLuxury27Data } from "@/components/seat-layut-data/universe-luxury-27";
+import { universeNodeData } from "@/components/seat-layut-data/universe-noble";
 import { universeNode37Data } from "@/components/seat-layut-data/universe-noble-37";
 import { BusType } from "@/enum/BusType";
 import { RockingChair, Toilet } from "lucide-react";
@@ -79,6 +80,9 @@ export const getAllSeatLayout = (busType) => {
 
         case BusType.KIA_GRANDBIRD:
             return kiaGrandBirdSeatDataLayout;
+
+        case BusType.UNIVERSE_NOBLE:
+            return universeNodeData;
 
         // return [kiaGrandBirdSeatDataLayoutBottom, kiaGrandBirdSeatDataLayoutTop];
 

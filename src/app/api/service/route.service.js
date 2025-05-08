@@ -21,6 +21,7 @@ export class RouteService {
                     if (!timing?.data?.[index]) return undefined;
 
                     const isBusLeaft = hasBusLeft(travelDate, timing?.data[index]?.meta_value);
+
                     if (isBusLeaft) return undefined;
 
 
@@ -43,9 +44,9 @@ export class RouteService {
                     })
 
                     // address
-                    const addressOrigin =await this.findAddress(routeId, routeTimingMetaValue);
-                    
-                    const destinationAddress =await this.findAddress(routeId, destinationTime);
+                    const addressOrigin = await this.findAddress(routeId, routeTimingMetaValue);
+
+                    const destinationAddress = await this.findAddress(routeId, destinationTime);
 
                     // bus
                     const busType = await this.findBusList(route?.bus_type);
@@ -97,13 +98,13 @@ export class RouteService {
         const str = facilities.split(',');
         return this.isFacilitiesAvailable(str);
     }
-    
+
     isFacilitiesAvailable(facilityArray) {
         const facilities = [
-            "Air Conditioning", "WiFi", "Snack", "Water Bottle", "Wet Towel", "Power Outlet", "GPS", 
+            "Air Conditioning", "WiFi", "Snack", "Water Bottle", "Wet Towel", "Power Outlet", "GPS",
             "Leg Room", "Seat Belt", "Toilet", "TV", "USB Charger", "Sleeping Bed"
         ];
-    
+
         return {
             airConditioning: facilityArray.includes("Air Conditioning"),
             wifi: facilityArray.includes("WiFi"),

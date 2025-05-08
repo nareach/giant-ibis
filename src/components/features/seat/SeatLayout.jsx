@@ -1,16 +1,8 @@
 import { cn } from "@/lib/utils";
 import { BusType } from "@/enum/BusType";
 import ParentSeatLayout from "../all-seat-layout/ParentSeatLayout";
-import { universeCounty } from "@/components/seat-layut-data/univer-county";
-import NExclusiveVipSeater from "../all-seat-layout/NEXclusiveVIPSeater";
-import { universeLuxury27Data } from "@/components/seat-layut-data/universe-luxury-27";
-import { exclusiveVipSeaterData } from "@/components/seat-layut-data/exclusive-vip-seater";
-import SleepeerBus from "../all-seat-layout/SleeperBus";
-import KiaGrandbird from "../all-seat-layout/KiaGrandbird";
-import { universeLuxury } from "@/components/seat-layut-data/universe-luxury";
 
 export const SeatLayout = ({ onSelectSeat, busType, allSeatStatus }) => {
-
 
     const renderBusLayout = () => {
         switch (busType) {
@@ -71,11 +63,19 @@ export const SeatLayout = ({ onSelectSeat, busType, allSeatStatus }) => {
                     seatData={allSeatStatus}
                 />;
 
+            case BusType.UNIVERSE_NOBLE:
+                return <ParentSeatLayout
+                    busType={busType}
+                    onClick={(seat) => onSelectSeat(seat)}
+                    seatData={allSeatStatus}
+                />;
+
 
             default:
                 return <div className="text-center">
                     No layout available for: {busType}
                 </div>;
+
         }
     };
 

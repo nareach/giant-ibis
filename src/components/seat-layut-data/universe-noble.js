@@ -6,8 +6,8 @@ export const universeNodeData = {
         { seat: "1-A", status: 'Available' },
         { seat: "1-B", status: 'Available' },
         { seat: "1-C", status: 'hide' },
-        { seat: "1-D", status: 'Available' },
-        { seat: "1-E", status: 'Available' },
+        { seat: "1-D", status: 'hide' },
+        { seat: "1-E", status: 'hide' },
 
         // Row 2
         { seat: "2-A", status: 'Available' },
