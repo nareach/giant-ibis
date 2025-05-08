@@ -6,12 +6,10 @@ import { TripTypeComponent } from "../common/TripType";
 import { SelectProvince } from "../common/SelectProvince";
 import { PickDateFilter } from "../common/PickDate";
 import { useEffect, useState } from "react";
-import { fetchFromApi } from "@/utils/api";
 import { usePathname, useRouter } from "next/navigation";
-import moment from "moment";
 import { cn } from "@/lib/utils";
 import { useGetAllCityQuery, useLazyGetCitesByOriginQuery } from "@/store/features/cities";
-import LoadingComponent from "../layout/Loading";
+import dayjs from 'dayjs';
 import LoadingWithText from "../common/LoadingWithText";
 
 export default function SearchBookForm() {
@@ -78,7 +76,22 @@ export default function SearchBookForm() {
     }
 
     if (pathname != '/book') {
-      router.push(`/book?origin=${origin}&destination=${destination}&departure_date=${moment(departureDate).format('DD-MM-YYYY')}&trip_type=${tripType}&return_date=${moment(returnDate).format('DD-MM-YYYY')}`);
+
+      const departureDateFormat = dayjs(departureDate, "DD-MM-YYYY").format('DD-MM-YYYY')
+
+      if (tripType != "'one-way") {
+        const returnDateDateFormat = dayjs(returnDate, "DD-MM-YYYY").format('DD-MM-YYYY');
+
+        setLoading(false);
+        router.push(`/book?origin=${origin}&destination=${destination}&departure_date=${departureDateFormat}&trip_type=${tripType}&return_date=${returnDateDateFormat}`);
+
+      } else {
+        
+        setLoading(false);
+        router.push(`/book?origin=${origin}&destination=${destination}&departure_date=${departureDateFormat}&trip_type=${tripType}`);
+      }
+
+
     }
   }
 
