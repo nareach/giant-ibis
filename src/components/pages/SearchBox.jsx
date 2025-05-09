@@ -15,12 +15,14 @@ import { Toaster } from 'sonner';
 import { useLazyGetRouteQuery } from '@/store/features/route-bus';
 import { useGetAllCityQuery, useLazyGetCitesByOriginQuery } from '@/store/features/cities';
 import LoadingWithText from '../common/LoadingWithText';
+import { useLazyGetPickUpByCityIdQuery } from '@/store/features/pick-up';
 
 export default function SearchBookForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [triggerGetRoute, { data: routes, isLoading: isLoading, isError }] = useLazyGetRouteQuery();
   const [triggerGetDestination, { data: destinations, isLoading: isLoadindDestination }] = useLazyGetCitesByOriginQuery();
+  const [triggerGetPickUp, { data: pickup, isLoading: isLoadingPickUp }] = useLazyGetPickUpByCityIdQuery();
 
   const { data: cities, isLoading: isLoadingCity } = useGetAllCityQuery();
 
@@ -120,9 +122,9 @@ export default function SearchBookForm() {
           await triggerGetDestination({
             originId: origin,
           }).unwrap();
-          
+
           await handleSearch();
-          
+
           router.replace(window.location.pathname, { scroll: false });
         }
       } catch (error) {
@@ -208,7 +210,7 @@ export default function SearchBookForm() {
                 </div>
 
                 <div className={cn(
-                  'lflex flex-col lg:flex-row w-full lg:col-span-4 gap-6',
+                  'flex flex-col lg:flex-row w-full lg:col-span-4 gap-6',
                   tripType == 'one-way' ? 'lg:col-span-2' : ''
                 )}>
                   {

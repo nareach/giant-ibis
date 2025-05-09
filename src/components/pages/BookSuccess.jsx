@@ -64,6 +64,16 @@ export default function TicketConfirmation({
             </div>
           </div>
           <div className="space-y-6">
+            {
+              book?.pickup ? (<>
+                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                  <div className="text-gray-600">Pick Up At:</div>
+                  <div className="font-medium sm:text-end">
+                    <div>{book?.pickup?.title}</div>
+                  </div>
+                </div></>) : (<></>)
+            }
+
             <div className="flex flex-col sm:flex-row justify-between gap-4">
               <div className="text-gray-600">E-Tickets has been sent to:</div>
               <div className="font-medium sm:text-end">

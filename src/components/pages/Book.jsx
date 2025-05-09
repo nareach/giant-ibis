@@ -8,7 +8,7 @@ export default function BusBookingFlow() {
 
   return (
     <div className="">
-          <SearchBookForm />
+      <SearchBookForm />
     </div>
   );
 }

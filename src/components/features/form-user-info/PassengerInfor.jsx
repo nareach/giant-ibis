@@ -1,47 +1,47 @@
 import React, { useState, useEffect, forwardRef } from 'react';
 import { Checkbox } from 'antd';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange }, ref) => {
+const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, pickupDeparture, pickupReturn }, ref) => {
     const [passengers, setPassengers] = useState([]);
     const [errors, setErrors] = useState([]);
     const [isOneForm, setIsOneForm] = useState(false);
     const [originalPassengers, setOriginalPassengers] = useState([]);
 
-    // Initialize passengers when seatCount changes
+    // Initialize passengers when seatCount or tripType changes
     useEffect(() => {
         const initialPassengers = Array(seatCount).fill().map(() => ({
             firstname: '',
             lastname: '',
             phoneNumber: '',
-            email: ''
+            email: '',
+            pickupLocation: '',
+            returnPickupLocation: tripType === 'round-trip' ? '' : undefined
         }));
         setPassengers(initialPassengers);
-        setOriginalPassengers(initialPassengers);
+        setOriginalPassengers(JSON.parse(JSON.stringify(initialPassengers)));
         setErrors(Array(seatCount).fill().map(() => ({})));
-    }, [seatCount]);
+    }, [seatCount, tripType]);
 
     const handleChange = (index, field, value) => {
         let updatedPassengers;
-        
+
         if (isOneForm) {
-            // When in "same details" mode, update all passengers
             updatedPassengers = passengers.map(passenger => ({
                 ...passenger,
                 [field]: value
             }));
         } else {
-            // Normal update for individual passenger
             updatedPassengers = [...passengers];
             updatedPassengers[index][field] = value;
         }
-        
+
         setPassengers(updatedPassengers);
 
         // Clear error when user types
         if (errors[index]?.[field]) {
             const updatedErrors = [...errors];
             if (isOneForm) {
-                // Clear errors for all passengers for this field
                 updatedErrors.forEach(error => {
                     error[field] = '';
                 });
@@ -51,9 +51,44 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange }, ref) => 
             setErrors(updatedErrors);
         }
 
-        // Notify parent component of changes
         if (onPassengerDataChange) {
             onPassengerDataChange(updatedPassengers);
+        }
+    };
+
+    const handleOneFormToggle = (e) => {
+        const checked = e.target.checked;
+        setIsOneForm(checked);
+
+        if (checked) {
+            // Store current passengers before applying same details
+            setOriginalPassengers([...passengers]);
+
+            // Apply first passenger's details to all
+            if (passengers.length > 0) {
+                const firstPassenger = passengers[0];
+                const updatedPassengers = passengers.map(() => ({ ...firstPassenger }));
+                setPassengers(updatedPassengers);
+                if (onPassengerDataChange) {
+                    onPassengerDataChange(updatedPassengers);
+                }
+            }
+        } else {
+            // Restore original passengers with current pickup locations
+            if (originalPassengers.length > 0) {
+                const restoredPassengers = originalPassengers.map((passenger, index) => ({
+                    ...passenger,
+                    pickupLocation: passengers[index]?.pickupLocation || '',
+                    returnPickupLocation: tripType === 'round-trip'
+                        ? (passengers[index]?.returnPickupLocation || '')
+                        : undefined
+                }));
+
+                setPassengers(restoredPassengers);
+                if (onPassengerDataChange) {
+                    onPassengerDataChange(restoredPassengers);
+                }
+            }
         }
     };
 
@@ -71,7 +106,6 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange }, ref) => 
                 isValid = false;
             }
 
-            // Only validate phone and email for first passenger
             if (index === 0) {
                 if (!passenger.phoneNumber.trim()) {
                     error.phoneNumber = 'Phone number is required';
@@ -97,8 +131,8 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange }, ref) => 
                 if (firstErrorIndex >= 0) {
                     const firstErrorField = Object.keys(newErrors[firstErrorIndex])[0];
                     const element = document.getElementById(
-                        isOneForm 
-                            ? `passenger-all-${firstErrorField}` 
+                        isOneForm
+                            ? `passenger-all-${firstErrorField}`
                             : `passenger-${firstErrorIndex}-${firstErrorField}`
                     );
                     if (element) {
@@ -115,39 +149,52 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange }, ref) => 
         return isValid;
     };
 
-    const handleOneFormToggle = (e) => {
-        const checked = e.target.checked;
-        setIsOneForm(checked);
-        
-        if (checked) {
-            // Store the current passengers before applying the same details
-            setOriginalPassengers([...passengers]);
-            
-            // Apply first passenger's details to all
-            if (passengers.length > 0) {
-                const firstPassenger = passengers[0];
-                const updatedPassengers = passengers.map(() => ({ ...firstPassenger }));
-                setPassengers(updatedPassengers);
-                if (onPassengerDataChange) {
-                    onPassengerDataChange(updatedPassengers);
-                }
-            }
-        } else {
-            // Restore the original passengers
-            if (originalPassengers.length > 0) {
-                setPassengers([...originalPassengers]);
-                if (onPassengerDataChange) {
-                    onPassengerDataChange([...originalPassengers]);
-                }
-            }
-        }
-    };
-
     React.useImperativeHandle(ref, () => ({
         validatePassengers,
         getPassengerData: () => passengers,
         isOneForm: isOneForm
     }));
+
+    const renderPickupLocationSelect = (field, label, passengerIndex = 0) => (
+        <div>
+            <label className="block text-sm mb-1">
+                {label} <span className="text-red-500">*</span>
+            </label>
+            <Select
+                value={passengers[passengerIndex]?.[field] || ''}
+                className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
+                onValueChange={(value) => handleChange(passengerIndex, field, value)}
+            >
+                <SelectTrigger
+                    id={`passenger-${isOneForm ? 'all' : passengerIndex}-${field}`}
+                    className="w-full p-3 bg-[#F8F7FD] border-none"
+                >
+                    <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 overflow-auto">
+                    {
+                        field == "pickupLocation" ? (<>
+                            {pickupDeparture?.map((location) => (
+                                <SelectItem key={location.id} value={location.id}>
+                                    {location.title}
+                                </SelectItem>
+                            ))}
+                        </>) : (<>
+                            {pickupReturn.map((location) => (
+                                <SelectItem key={location.id} value={location.id}>
+                                    {location.title}
+                                </SelectItem>
+                            ))}
+                        </>)
+                    }
+
+                </SelectContent>
+            </Select>
+            {errors[passengerIndex]?.[field] && (
+                <p className="text-red-500 text-xs mt-1">{errors[passengerIndex][field]}</p>
+            )}
+        </div>
+    );
 
     return (
         <div className="space-y-6 shadow-custom2 p-6 rounded-md">
@@ -156,7 +203,11 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange }, ref) => 
             </h2>
 
             <div className="mb-4">
-                <Checkbox onChange={handleOneFormToggle} checked={isOneForm} className='text-medium font-semibold underline'>
+                <Checkbox
+                    onChange={handleOneFormToggle}
+                    checked={isOneForm}
+                    className='text-medium font-semibold underline'
+                >
                     Use same details for all passengers
                 </Checkbox>
             </div>
@@ -230,12 +281,18 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange }, ref) => 
                             <p className="text-red-500 text-xs mt-1">{errors[0].email}</p>
                         )}
                     </div>
+
+                    {renderPickupLocationSelect('pickupLocation', 'Departure Pickup Location')}
+
+                    {tripType === 'round-trip' && (
+                        renderPickupLocationSelect('returnPickupLocation', 'Return Pickup Location')
+                    )}
                 </div>
             ) : (
                 passengers.map((passenger, index) => (
                     <div key={index} className="space-y-4 border-b pb-4 mb-4 last:border-b-0">
                         <h3 className="font-medium">Passenger {index + 1}</h3>
-    
+
                         <div>
                             <label className="block text-sm mb-1">
                                 First name <span className="text-red-500">*</span>
@@ -269,45 +326,49 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange }, ref) => 
                                 <p className="text-red-500 text-xs mt-1">{errors[index].lastname}</p>
                             )}
                         </div>
-    
-                        {/* Only show phone number for first passenger */}
+
                         {index === 0 && (
-                            <div>
-                                <label className="block text-sm mb-1">
-                                    Phone Number <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="tel"
-                                    id={`passenger-${index}-phoneNumber`}
-                                    placeholder="012 345 678"
-                                    value={passenger.phoneNumber}
-                                    onChange={(e) => handleChange(index, 'phoneNumber', e.target.value)}
-                                    className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
-                                />
-                                {errors[index]?.phoneNumber && (
-                                    <p className="text-red-500 text-xs mt-1">{errors[index].phoneNumber}</p>
+                            <>
+                                <div>
+                                    <label className="block text-sm mb-1">
+                                        Phone Number <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        id={`passenger-${index}-phoneNumber`}
+                                        placeholder="012 345 678"
+                                        value={passenger.phoneNumber}
+                                        onChange={(e) => handleChange(index, 'phoneNumber', e.target.value)}
+                                        className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
+                                    />
+                                    {errors[index]?.phoneNumber && (
+                                        <p className="text-red-500 text-xs mt-1">{errors[index].phoneNumber}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm mb-1">
+                                        Email <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="email"
+                                        id={`passenger-${index}-email`}
+                                        placeholder="example@gmail.com"
+                                        value={passenger.email}
+                                        onChange={(e) => handleChange(index, 'email', e.target.value)}
+                                        className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
+                                    />
+                                    {errors[index]?.email && (
+                                        <p className="text-red-500 text-xs mt-1">{errors[index].email}</p>
+                                    )}
+                                </div>
+
+                                {renderPickupLocationSelect('pickupLocation', 'Departure Pickup Location', index)}
+
+                                {tripType === 'round-trip' && (
+                                    renderPickupLocationSelect('returnPickupLocation', 'Return Pickup Location', index)
                                 )}
-                            </div>
-                        )}
-    
-                        {/* Only show email for first passenger */}
-                        {index === 0 && (
-                            <div>
-                                <label className="block text-sm mb-1">
-                                    Email <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="email"
-                                    id={`passenger-${index}-email`}
-                                    placeholder="example@gmail.com"
-                                    value={passenger.email}
-                                    onChange={(e) => handleChange(index, 'email', e.target.value)}
-                                    className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
-                                />
-                                {errors[index]?.email && (
-                                    <p className="text-red-500 text-xs mt-1">{errors[index].email}</p>
-                                )}
-                            </div>
+                            </>
                         )}
                     </div>
                 ))

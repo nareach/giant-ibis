@@ -28,7 +28,7 @@ export const getAddressDetail = async (routeId: string, travelTime: string) => {
         route_id: routeId,
         travel_time: travelTime
     });
-    
+
     return await callGiantIbisApi(
         'get_address', {
         route_id: routeId,
@@ -86,5 +86,16 @@ export const getBusStatusDetail = async ({
         bus_id: busId,
         travel_date: travelDate,
         travel_time: travelTime
+    })
+}
+
+
+
+export const getPickUpList = async ({
+    city_id
+}) => {
+    return callGiantIbisApi(
+        'get_pickupList', {
+        city_id: city_id
     })
 }

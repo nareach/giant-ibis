@@ -24,6 +24,7 @@ import AvailableTripSectionTitle from "../ui/AvalableTripSection";
 import RouteInfor from "../ui/RouteInfor";
 import PassengerInfo from "../features/form-user-info/PassengerInfor";
 import FacilityAvailable from './FacilityAvalable';
+import { useGetPickUpByCityIdQuery } from '@/store/features/pick-up';
 
 
 export const AvailableTripItems = ({
@@ -36,6 +37,12 @@ export const AvailableTripItems = ({
     origin,
     destination
 }) => {
+
+    const { data: pickupDeparture, isLoading: isLoadingPickUp, isError: isErrorPickUp } =
+        useGetPickUpByCityIdQuery({ cityId: origin }, { skip: !origin });
+
+    const { data: pickupReturn, isLoading: isLoadingPickUpReturn, isError: isErrorPickUpReturn } =
+        useGetPickUpByCityIdQuery({ cityId: destination }, { skip: !destination });
 
     const [activeStep, setActiveStep] = useState('select');
     const [routeSelected, setRouteSelected] = useState();
@@ -284,113 +291,6 @@ export const AvailableTripItems = ({
         }
     };
 
-    const checkSeatStatus = async () => {
-        /**
-         * we have to seperate it 
-         */
-
-        if (tripType == 'round-trip') {
-
-            // 1. Process the one-trip first
-            const statusOneTrip = await getBusStatusByTrip({
-                bus_id: routeSelected?.busTypeDetail.id,
-                route_id: routeSelected?.id,
-                travel_date: dayjs(departureDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
-                travel_time: routeSelected?.timing?.meta_value,
-                routeSelect: routeSelected,
-                selectedSeatData: selectedSeat,
-                tripType: 'one-trip'
-            });
-
-
-            const statusRoundTrip = await getBusStatusByTrip({
-                bus_id: routeReturnSelected?.busTypeDetail.id,
-                route_id: routeReturnSelected?.id,
-                travel_date: dayjs(returnDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
-                travel_time: routeReturnSelected?.timing?.meta_value,
-                routeSelect: routeReturnSelected,
-                selectedSeatData: selectedSeatReturn,
-                tripType: 'round-trip'
-            });
-
-
-            if (!statusOneTrip || !statusRoundTrip) {
-                return;
-            }
-
-            const travelDateDeparture = dayjs(departureDate, "DD-MM-YYYY").format('DD-MM-YYYY');
-            const seatNoDeparture = selectedSeat?.map(item => item.seat).join(',')
-            const bookedOnWay = await addBooking({
-                travel_date: travelDateDeparture,
-                travel_time: routeSelected?.timing?.meta_value,
-                bus_type: routeSelected?.busTypeDetail?.meta_key,
-                route_id: routeSelected?.id,
-                bus_id: routeSelected?.busTypeDetail?.id,
-                seat_no: seatNoDeparture,
-                price: selectedSeat.length * routeSelected?.price,
-            });
-
-            setOneTripBooking(bookedOnWay);
-
-            // 2. Process the round-trip
-            const travelDate = dayjs(returnDate, "DD-MM-YYYY").format('DD-MM-YYYY');
-            const seat_no = selectedSeatReturn?.map(item => item.seat).join(',')
-            const booked = await addBooking({
-                travel_date: travelDate,
-                travel_time: routeReturnSelected?.timing?.meta_value,
-                bus_type: routeReturnSelected?.busTypeDetail?.meta_key,
-                route_id: routeReturnSelected?.id,
-                bus_id: routeReturnSelected?.busTypeDetail?.meta_id,
-                seat_no: seat_no,
-                price: selectedSeatReturn.length * routeReturnSelected?.price,
-            });
-
-            setRoundTripBooking(booked);
-
-            if (booked?.status && bookedOnWay.status) {
-                setActiveStep('pay');
-            } else {
-                toast.warning('Other User select user seat please try again');
-            }
-
-        } else {
-
-            const statusOneTrip = await getBusStatusByTrip({
-                bus_id: routeSelected?.busTypeDetail.meta_id,
-                route_id: routeSelected?.id,
-                travel_date: dayjs(departureDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
-                travel_time: routeSelected?.timing?.meta_value,
-                routeSelect: routeSelected,
-                selectedSeatData: selectedSeat,
-                tripType: 'one-trip'
-            });
-
-
-            if (!statusOneTrip) return;
-
-            const travelDateDeparture = dayjs(departureDate, "DD-MM-YYYY").format('DD-MM-YYYY');
-            const seatNoDeparture = selectedSeat?.map(item => item.seat).join(',')
-
-            const bookedOnWay = await addBooking({
-                travel_date: travelDateDeparture,
-                travel_time: routeSelected?.timing?.meta_value,
-                bus_type: routeSelected?.busTypeDetail?.bus_type,
-                route_id: routeSelected?.id,
-                bus_id: routeSelected?.busTypeDetail?.id,
-                seat_no: seatNoDeparture,
-                price: selectedSeat.length * routeSelected?.price,
-            });
-
-            setOneTripBooking(bookedOnWay);
-
-            if (bookedOnWay.status) {
-                setActiveStep('pay');
-            } else {
-                toast.warning('Other User select user seat please try again');
-            }
-        }
-    }
-
 
     /**
      * if the seat bus already reserved or bookek, it will return from here the function is stop
@@ -538,7 +438,8 @@ export const AvailableTripItems = ({
         price,
         bus_id,
         bus_type,
-        seat_no
+        seat_no,
+        tripType
     }) => {
 
         const allPassengerData = passengerInfoRef.current.getPassengerData();
@@ -546,6 +447,15 @@ export const AvailableTripItems = ({
         const uFirstname = allPassengerData?.map((item, index) => item?.firstname).join(",");
         const uLastname = allPassengerData?.map((item, index) => item?.lastname).join(",");
         const uPhoneNumber = allPassengerData?.map((item, index) => item?.phoneNumber).join(",");
+        let pickUp = '';
+        if (tripType == 'one-trip') {
+            let pickUpTemp = allPassengerData?.map((item, index) => item?.pickupLocation);
+            pickUp = pickUpTemp?.length > 0 ? pickUpTemp[0] : ''
+        } else {
+            let pickUpTemp = allPassengerData?.map((item, index) => item?.returnPickupLocation);
+            pickUp = pickUpTemp?.length > 0 ? pickUpTemp[0] : '';
+        }
+        
 
         const books = {
             route_id: route_id,
@@ -561,8 +471,12 @@ export const AvailableTripItems = ({
             pass_email: uEmail,
             firstname: uFirstname,
             surname: uLastname,
+            pickup: pickUp,
             remarks: ''
         };
+
+        console.log("booked infor: ",books);
+        
 
 
         const book = await fetchFromApi('add_booking', books);
@@ -634,7 +548,8 @@ export const AvailableTripItems = ({
                     route_id: routeSelected?.id,
                     bus_id: routeSelected?.busTypeDetail?.id,
                     seat_no: seatNoDeparture,
-                    price: selectedSeat.length * routeSelected?.price,
+                    price: routeSelected?.price,
+                    tripType: "one-trip",
                 });
                 setOneTripBooking(bookedOnWay);
 
@@ -649,6 +564,7 @@ export const AvailableTripItems = ({
                     bus_id: routeReturnSelected?.busTypeDetail?.meta_id,
                     seat_no: seat_no,
                     price: selectedSeatReturn.length * routeReturnSelected?.price,
+                    tripType: "round-trip",
                 });
 
                 setRoundTripBooking(booked);
@@ -691,6 +607,7 @@ export const AvailableTripItems = ({
                     bus_id: routeSelected?.busTypeDetail?.id,
                     seat_no: seatNoDeparture,
                     price: selectedSeat.length * routeSelected?.price,
+                    tripType: "one-trip",
                 });
 
                 setOneTripBooking(bookedOnWay);
@@ -705,7 +622,6 @@ export const AvailableTripItems = ({
                 url = `${CLIENT_URL}/success/${bookedOnWay?.Booking_id}`
                 amount = (selectedSeat?.length * (Number(routeSelected?.price)));
             }
-
 
             const uuid = uuidv4();
             const payDate1 = moment(new Date()).format('DD-MM-YYYY');
@@ -758,22 +674,6 @@ export const AvailableTripItems = ({
         }
     }
 
-
-    const updatePassengerInformation = async ({
-        firstname, surname, mobile, pass_email, Passenge_id
-    }) => {
-
-        const passengerDetail = {
-            firstname: firstname,
-            surname: surname,
-            mobile: mobile,
-            pass_email: pass_email,
-            Passenge_id: Passenge_id,
-        };
-
-        const updatePassengerDetail = await fetchFromApi('update_passenger_details', passengerDetail);
-        return updatePassengerDetail;
-    }
 
     if (activeStep === "select") {
         return (
@@ -1030,6 +930,9 @@ export const AvailableTripItems = ({
                         <PassengerInfo
                             seatCount={selectedSeat.length}
                             ref={passengerInfoRef}
+                            tripType={tripType}
+                            pickupDeparture={pickupDeparture?.data}
+                            pickupReturn={pickupReturn?.data}
                         />
 
                     </div>

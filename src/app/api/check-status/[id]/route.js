@@ -21,9 +21,7 @@ export async function GET(request, { params }) {
             message: "Your payment was not successful. Please try again."
         }, { status: 400 });
     }
-
-    const confirmRef = await confirmBooking(refCode);
-
+    
     let booklist = await getAllBookDetail();
 
     const bookOneWay = booklist?.data?.filter((item, index) => item.ref_code === refCode);
@@ -41,6 +39,5 @@ export async function GET(request, { params }) {
         status: true,
         message: "Retrive route detail successfull.",
         data: confirmBookedOneWay,
-        confirmRef: confirmRef?.data,
     })
 }

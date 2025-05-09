@@ -1,5 +1,5 @@
 import { ACLEDA_BANK_API_CHECK_STATUS, loginId, merchantID, merchantName, password, signature } from "@/constant/constant";
-import { getAddressDetail, getAllBookDetail, getBusList, getCity, getRouteBus, getRouteList, getRouteTiming, printTicket } from "@/services/giantIbisServiceCall";
+import { getAddressDetail, getAllBookDetail, getBusList, getCity, getPickUpList, getRouteBus, getRouteList, getRouteTiming, printTicket } from "@/services/giantIbisServiceCall";
 import { addHoursToTime, calculateArrival } from "@/utils/time-util";
 import axios from "axios";
 import moment from "moment";
@@ -53,6 +53,13 @@ export class PaymentService {
         const facility = this.getFacilities(busDetail?.data?.length > 0 ? busDetail?.data[0].facilities : null)
         const printTicket = await this.printTicketDetail(bookList[0].ref_code);
         let ticketInfor = null;
+        let pickup = bookList[0].pickup;
+        let pickupObj = null;
+        if (pickup) {
+            const getPickUpListData = await getPickUpList({ city_id: route?.origin });
+            pickupObj = getPickUpListData?.data?.filter((item) => item?.id == pickup);
+            pickupObj = pickupObj?.length > 0 ? pickupObj[0] : null;
+        }
 
         if (printTicket?.data?.length > 0) {
             ticketInfor = printTicket?.data?.filter((item) => item?.first_name != "guest_name0")?.map((item) => {
@@ -74,6 +81,7 @@ export class PaymentService {
 
         return {
             ticket: ticketInfor?.length > 0 ? ticketInfor[0] : null,
+            pickup: pickupObj || null,
             facilities: facility,
             kilo_meters: route?.kilo_meters,
             bus_type: route?.bus_type,

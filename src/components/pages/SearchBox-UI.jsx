@@ -79,7 +79,7 @@ export default function SearchBookForm() {
 
       const departureDateFormat = dayjs(departureDate, "DD-MM-YYYY").format('DD-MM-YYYY')
 
-      if (tripType != "'one-way") {
+      if (tripType != "one-way") {
         const returnDateDateFormat = dayjs(returnDate, "DD-MM-YYYY").format('DD-MM-YYYY');
 
         setLoading(false);
