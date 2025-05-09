@@ -1,12 +1,24 @@
+"use client"
 import { Button } from "@/components/ui/button";
 import RouteInfor from "../ui/RouteInfor";
 import moment from "moment";
 import FacilityAvailable from "../common/FacilityAvalable";
+import { usePathname, useSearchParams } from "next/navigation";
+import QRCode from "react-qr-code";
+import { useEffect, useState } from "react";
 
 export default function TicketConfirmation({
   book
 }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [fullUrl, setUrl] = useState(null);
 
+  useEffect(() => {
+    const fullUrl = window.location.href;
+    console.log(fullUrl);
+    setUrl(fullUrl);
+  }, [pathname, searchParams]);
 
   return (
     <div className="bg-mainbg container mx-auto max-w-7xl p-4 sm:p-6">
@@ -23,7 +35,7 @@ export default function TicketConfirmation({
                   Seat Number {book?.seat_no}
                 </span>
               </div>
-             <FacilityAvailable facilities={book?.facilities}/>
+              <FacilityAvailable facilities={book?.facilities} />
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-start gap-6 sm:gap-4 mb-8">
@@ -84,11 +96,19 @@ export default function TicketConfirmation({
         </div>
         <div className="  p-4 sm:p-6 justify-center flex flex-col items-center">
           <div className="relative mb-6">
-            <img
-              src="/assets/qr-code.webp"
-              alt="QR Code"
-              className="w-36 h-36 sm:w-48 sm:h-48 object-contain"
-            />
+
+            <div className="w-36 h-36 sm:w-48 sm:h-48 object-contain">
+              {
+                fullUrl ? <QRCode
+                  size={256}
+                  style={{ height: "100%", maxWidth: "100%", width: "100%" }}
+                  value={fullUrl}
+                  viewBox={`0 0 256 256`}
+                /> : <></>
+              }
+            </div>
+
+
           </div>
 
           <p className="text-gray-500 text-sm text-center mb-6">

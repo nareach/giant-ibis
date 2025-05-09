@@ -17,11 +17,6 @@ export class PaymentService {
         return book;
     }
 
-
-    confirmRoundTrip = async () => {
-
-    }
-
     confirmOneWay = async (bookList) => {
 
         const seatNumbers = bookList?.map(item => item?.seat_id).join(",");
@@ -48,7 +43,7 @@ export class PaymentService {
 
 
         // address
-        const addressOriginAddress =await this.findAddress(route?.id, bookList[0].travel_time);
+        const addressOriginAddress = await this.findAddress(route?.id, bookList[0].travel_time);
         const destinationAddress = await this.findAddress(route?.id, destinationTime);
         const busDetail = await this.findRouteBus(
             bookList[0].route_id,
@@ -57,9 +52,28 @@ export class PaymentService {
 
         const facility = this.getFacilities(busDetail?.data?.length > 0 ? busDetail?.data[0].facilities : null)
         const printTicket = await this.printTicketDetail(bookList[0].ref_code);
+        let ticketInfor = null;
+
+        if (printTicket?.data?.length > 0) {
+            ticketInfor = printTicket?.data?.filter((item) => item?.first_name != "guest_name0")?.map((item) => {
+
+                const email = item?.email?.split(",");
+                const first_name = item?.first_name.split(",");
+                const last_name = item?.last_name.split(",");
+                const mobile = item?.mobile.split(",");
+
+                return {
+                    ...item,
+                    email: email?.length > 0 ? email[0] : null,
+                    first_name: first_name?.length > 0 ? first_name[0] : null,
+                    last_name: last_name?.length > 0 ? last_name[0] : null,
+                    mobile: mobile?.length > 0 ? mobile[0] : null,
+                }
+            })
+        }
 
         return {
-            ticket: printTicket?.data?.length > 0 ? printTicket?.data[0] : null,
+            ticket: ticketInfor?.length > 0 ? ticketInfor[0] : null,
             facilities: facility,
             kilo_meters: route?.kilo_meters,
             bus_type: route?.bus_type,

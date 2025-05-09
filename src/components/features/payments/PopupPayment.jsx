@@ -109,7 +109,7 @@ export default function PopupPayment({ isOpen, onClose, selectedSeat, routeSelec
                     pass_email: "nareachkr@gmail.com",
                     firstname: fullname,
                     surname: fullname,
-                    remarks: 'I love giantibis'
+                    remarks: ''
                 };
 
                 const book = await fetchFromApi('add_booking', books);
