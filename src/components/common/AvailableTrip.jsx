@@ -563,7 +563,7 @@ export const AvailableTripItems = ({
                     route_id: routeReturnSelected?.id,
                     bus_id: routeReturnSelected?.busTypeDetail?.meta_id,
                     seat_no: seat_no,
-                    price: selectedSeatReturn.length * routeReturnSelected?.price,
+                    price: routeReturnSelected?.price,
                     tripType: "round-trip",
                 });
 
@@ -606,7 +606,7 @@ export const AvailableTripItems = ({
                     route_id: routeSelected?.id,
                     bus_id: routeSelected?.busTypeDetail?.id,
                     seat_no: seatNoDeparture,
-                    price: selectedSeat.length * routeSelected?.price,
+                    price: routeSelected?.price,
                     tripType: "one-trip",
                 });
 
