@@ -22,6 +22,7 @@ export async function GET(request, { params }) {
         }, { status: 400 });
     }
     
+
     let booklist = await getAllBookDetail();
 
     const bookOneWay = booklist?.data?.filter((item, index) => item.ref_code === refCode);
@@ -32,6 +33,7 @@ export async function GET(request, { params }) {
             message: "Ref code not found."
         }, { status: 400 });
     }
+    const confirmRef = await confirmBooking(refCode);
 
     const confirmBookedOneWay = await paymentService.confirmOneWay(bookOneWay);
 

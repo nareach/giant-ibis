@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+// import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@heroui/react";
+import { Select } from "antd";
 
 export const SelectProvince = ({
     title,
@@ -13,14 +14,14 @@ export const SelectProvince = ({
     isError,
     colspan = 'lg:col-span-2',
     value,
-    loading = false, // New loading prop (optional)
+    loading = false,
 }) => {
     return (
         <div className={cn('w-full', colspan)}>
             <Label htmlFor="origin" className="block text-sm font-normal pb-1 text-label mb-2">
                 {title}
             </Label>
-            
+
             {loading ? (
                 <div className="space-y-2">
                     <Skeleton className="h-10 w-full rounded-md" />
@@ -31,23 +32,23 @@ export const SelectProvince = ({
                     )}
                 </div>
             ) : (
-                <Select onValueChange={onChange} value={value ?? ""}>
-                    <SelectTrigger className="w-full">
-                        <SelectValue placeholder={`Select ${title}`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {items?.map((item, index) => (
-                            <SelectItem key={index} value={item?.city_id}>
-                                {item?.city_name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                    {isError && (
-                        <span className="text-red-500 mt-3 text-[14px]">
-                            {title} is required.
-                        </span>
-                    )}
-                </Select>
+                <Select
+                    showSearch
+                    value={value}
+                    placeholder={`Select ${title}`}
+                    optionFilterProp="label"
+                    className="w-full h-[39px]"
+                    filterOption={(input, option) =>
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    onChange={onChange}
+                    options={
+                        items?.map(item => ({
+                            value: item.city_id.toString(),
+                            label: item.city_name
+                        })) || []
+                    }
+                />
             )}
         </div>
     );
