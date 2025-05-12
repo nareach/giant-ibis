@@ -1,8 +1,11 @@
-import { ACLEDA_BANK_API_CHECK_STATUS, loginId, merchantID, merchantName, password, signature } from "@/constant/constant";
-import { getAddressDetail, getAllBookDetail, getBusList, getCity, getPickUpList, getRouteBus, getRouteList, getRouteTiming, printTicket } from "@/services/giantIbisServiceCall";
+import { ACLEDA_BANK_API_CHECK_STATUS, fromMail, loginId, merchantID, merchantName, password, signature } from "@/constant/constant";
+import { confirmBooking, getAddressDetail, getAllBookDetail, getBusList, getCity, getPickUpList, getRouteBus, getRouteList, getRouteTiming, printTicket } from "@/services/giantIbisServiceCall";
 import { addHoursToTime, calculateArrival } from "@/utils/time-util";
 import axios from "axios";
 import moment from "moment";
+import { TemplateMail } from "../send/template2";
+import nodemailer from 'nodemailer';
+import puppeteer from "puppeteer";
 
 export class PaymentService {
 
@@ -17,10 +20,14 @@ export class PaymentService {
         return book;
     }
 
-    confirmOneWay = async (bookList) => {
+
+    confirmOneWay = async (bookList, refCode) => {
+
+        const confirmRef = await confirmBooking(refCode);
+        // confirm fail skip
+        console.log("confirm: ", confirmRef);
 
         const seatNumbers = bookList?.map(item => item?.seat_id).join(",");
-
 
         const routeList = await getRouteList();
         const cities = await getCity();
@@ -79,7 +86,76 @@ export class PaymentService {
             })
         }
 
+        let passengers = ticketInfor?.map((item) => {
+            return {
+                username: `${item?.first_name || ""} ${item?.last_name || ""}`,
+                mobile: item?.mobile || "",
+                email: item?.email || "",
+                pickup: pickupObj?.title || "",
+            }
+        })
+
+        if (confirmRef?.status) {
+            await this.sendMail({
+                busType: route?.bus_type || "",
+                kilometer: route?.kilo_meters || "",
+                duration: route?.duration || "",
+                seatNo: seatNumbers || "",
+                toEmail: ticketInfor?.length > 0 ? ticketInfor[0]?.email : "",
+                ticketId: refCode,
+                passengers: passengers,
+                dateSend: ticketInfor?.length > 0 ? ticketInfor[0]?.issued_date : "",
+                originCity: originCity[0]?.city_name || "",
+                originDate: moment(bookList[0]?.travel_date)?.format('MMMM-DD-YYYY') || "",
+                originTime: bookList[0]?.travel_time || "",
+                originAddress: addressOriginAddress?.data?.length > 0 ? addressOriginAddress?.data[0]?.url : null,
+                destinationCity: destinationCity[0]?.city_name || "",
+                destinationDate: arrivalDate || "",
+                destinationTime: destinationTime || ""
+            })
+        }
+
+        await this.sendMail({
+            busType: route?.bus_type || "",
+            kilometer: route?.kilo_meters || "",
+            duration: route?.duration || "",
+            seatNo: seatNumbers || "",
+            toEmail: ticketInfor?.length > 0 ? ticketInfor[0]?.email : "",
+            ticketId: refCode,
+            passengers: passengers,
+            dateSend: ticketInfor?.length > 0 ? ticketInfor[0]?.issued_date : "",
+            originCity: originCity[0]?.city_name || "",
+            originDate: moment(bookList[0]?.travel_date)?.format('MMMM-DD-YYYY') || "",
+            originTime: bookList[0]?.travel_time || "",
+            originAddress: addressOriginAddress?.data?.length > 0 ? addressOriginAddress?.data[0]?.url : null,
+            destinationCity: destinationCity[0]?.city_name || "",
+            destinationDate: arrivalDate || "",
+            destinationTime: destinationTime || ""
+        })
+
+
+
+
         return {
+            passenger: {
+                busType: route?.bus_type || "",
+                kilometer: route?.kilo_meters || "",
+                duration: route?.duration || "",
+                seatNo: seatNumbers || "",
+                toEmail: ticketInfor?.length > 0 ? ticketInfor[0]?.email : "",
+                ticketId: refCode,
+                passengers: passengers,
+                dateSend: ticketInfor?.length > 0 ? ticketInfor[0]?.issued_date : "",
+                originCity: originCity[0]?.city_name || "",
+                originDate: moment(bookList[0]?.travel_date)?.format('MMMM-DD-YYYY') || "",
+                originTime: bookList[0]?.travel_time || "",
+                destinationCity: destinationCity[0]?.city_name || "",
+                destinationDate: arrivalDate || "",
+                destinationTime: destinationTime || "",
+                originAddress: addressOriginAddress?.data?.length > 0 ? addressOriginAddress?.data[0]?.url : null,
+
+            },
+            confirmRef: confirmRef,
             ticket: ticketInfor?.length > 0 ? ticketInfor[0] : null,
             pickup: pickupObj || null,
             facilities: facility,
@@ -208,6 +284,93 @@ export class PaymentService {
             sleepingBed: facilityArray.includes("Sleeping Bed")
         };
     }
+
+    async sendMail({
+        toEmail,
+        ticketId,
+        busType,
+        seatNo,
+        originDate,
+        originTime,
+        originCity,
+        originAddress,
+        duration,
+        kilometer,
+        destinationDate,
+        destinationTime,
+        destinationCity,
+        dateSend,
+        passengers = []
+    }) {
+
+        console.log('to mail: ', toEmail);
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER || "chentochea2002@gmail.com",
+                pass: process.env.EMAIL_PASS || "gplrmjmqewdrgodu"
+            },
+        });
+
+        try {
+            const htmlContent = TemplateMail({
+                originAddress,
+                toEmail,
+                ticketId,
+                busType,
+                seatNo,
+                originDate,
+                originTime,
+                originCity,
+                duration,
+                kilometer,
+                destinationDate,
+                destinationTime,
+                destinationCity,
+                passengers,
+                dateSend
+            });
+
+            // Generate PDF using puppeteer
+            const browser = await puppeteer.launch({
+                headless: true,
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+            const page = await browser.newPage();
+            await page.setContent(htmlContent);
+            const pdfBuffer = await page.pdf({
+                format: 'A4',
+                margin: {
+                    top: '10mm',
+                    right: '10mm',
+                    bottom: '10mm',
+                    left: '10mm'
+                }
+            });
+            await browser.close();
+
+            transporter.sendMail({
+                from: "chentochea2002@gmail.com",
+                to: toEmail,
+                subject: 'Giant Ibis E-Ticket',
+                text: "message",
+                html: htmlContent,
+                attachments: [
+                    {
+                        filename: 'e-ticket.pdf',
+                        content: pdfBuffer,
+                        contentType: 'application/pdf'
+                    }
+                ]
+            });
+
+        } catch (error) {
+            console.log("error send mail : ", error);
+
+        }
+    }
+
 
 }
 

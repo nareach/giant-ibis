@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Red+Rose:wght@300..700&display=swap"
+        rel="stylesheet">
+    <style type="text/css">
+        body {
+            font-family: "Poppins", sans-serif;
+            padding: 0 25px;
+        }
+
+        .head-mail {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .head-mail .to {
+            display: flex;
+            justify-content: end;
+            align-items: end;
+            flex-direction: column;
+        }
+
+        .logo-sectioon {
+            border-bottom: 1px solid #A6A6A6;
+            border-top: 1px solid #A6A6A6;
+            padding: 10px;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .logo-sectioon .e-ticket {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            font-weight: bold;
+            flex-direction: column;
+            gap: 10px;
+            color: #0057A8;
+            font-size: 18px;
+        }
+
+        .logo-sectioon img {
+            height: 100px;
+        }
+
+        .detail-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+
+        }
+
+        .detail-box .trip-detail .head {
+            font-weight: 700;
+            font-size: 25px;
+            color: #0057A8;
+        }
+
+        .detail-box .trip-detail {
+            width: 100%;
+        }
+
+        .detail-box .trip-detail .bus-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .detail-box .trip-detail .bus-title .bus-type {
+            font-weight: 600;
+        }
+
+        .detail-box .trip-detail .bus-title .seat-no {
+            color: red;
+            font-weight: 600;
+        }
+
+
+        .detail-box .trip-detail .trip-info {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .detail-box .trip-detail .trip-info .middle {
+            width: 80%;
+            margin: 0 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .detail-box .trip-detail .trip-info .middle .line {
+            height: 1px;
+            background-color: black;
+            width: 100%;
+        }
+
+        /* [START] for origin style */
+        .detail-box .trip-detail .trip-info .origin {
+            display: flex;
+            flex-direction: column;
+
+        }
+
+        .detail-box .trip-detail .trip-info .origin .travel-time {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .detail-box .trip-detail .trip-info .origin .travel-date {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .detail-box .trip-detail .trip-info .origin .city {
+            font-size: 17px;
+            font-weight: 500;
+            font-size: 18px;
+        }
+
+        /* [END] for origin style */
+
+        /* [START] style destination */
+        .detail-box .trip-detail .trip-info .destination {
+            display: flex;
+            flex-direction: column;
+
+        }
+
+        .detail-box .trip-detail .trip-info .destination .travel-time {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .detail-box .trip-detail .trip-info .destination .travel-date {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .detail-box .trip-detail .trip-info .destination .city {
+            font-size: 17px;
+            font-weight: 500;
+            font-size: 18px;
+        }
+
+        /* [END] style destination */
+
+
+        .full-line {
+            margin-top: 40px;
+            width: 100%;
+            background-color: #A6A6A6;
+            height: 1px;
+        }
+
+        .passenger-detail {
+            margin: 30px 0;
+            width: 100%;
+        }
+
+        .passenger-detail .title {
+            font-weight: 700;
+            font-size: 25px;
+            color: #0057A8;
+        }
+
+        /* passenger table */
+        .passenger-detail .table-passenger {
+            width: 100%;
+        }
+
+        .table-passenger {
+            width: 100%;
+            border-collapse: separate;
+            /* Changed from collapse */
+            border-spacing: 0;
+            /* Removes space between cells */
+            margin-top: 15px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid black;
+        }
+
+        .table-passenger th,
+        .table-passenger td {
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 500;
+            border: 1px solid black;
+        }
+
+        .table-passenger th {
+            background-color: #D0E8FF;
+            color: black;
+            border-bottom: 1px solid black;
+            /* Ensures bottom border */
+        }
+
+        .table-passenger td {
+            background-color: white;
+            color: black;
+        }
+
+        /* Special border handling for first/last cells */
+        .table-passenger tr:first-child th:first-child {
+            border-top-left-radius: 10px;
+        }
+
+        .table-passenger tr:first-child th:last-child {
+            border-top-right-radius: 10px;
+        }
+
+        .table-passenger tr:last-child td:first-child {
+            border-bottom-left-radius: 10px;
+        }
+
+        .table-passenger tr:last-child td:last-child {
+            border-bottom-right-radius: 10px;
+        }
+
+        /* end passenger table */
+        .inform-detail .title {
+            font-weight: 700;
+            font-size: 25px;
+            color: #0057A8;
+        }
+
+        .inform-detail ul {
+            list-style-type: disc;
+        }
+
+        .inform-detail ul li {
+            padding: 5px 0;
+        }
+    </style>
+
+    <title>E-Ticket</title>
+</head>
+
+<body>
+    <div class="head-mail">
+        <div class="from">
+            <div>FROM: cheachento@gmail.com</div>
+            <div>Subject: E-Ticket ID #12121</div>
+        </div>
+        <div class="to">
+            <div>Date: 9 January 2025 3:12 AM</div>
+            <div>To: cheachento@gmail.com</div>
+        </div>
+    </div>
+
+    <div class="logo-sectioon">
+        <img src="https://giantibis.com/img/logo.png" alt="">
+        <div class="e-ticket">
+            <div>Your E-TICKET</div>
+            <div>ID : #121</div>
+        </div>
+    </div>
+
+    <div class="detail-box">
+        <div class="trip-detail">
+            <div class="head">Play detail</div>
+            <div class="bus-title">
+                <div class="bus-type">Universe Node 37 (Mini van 35 seats)</div>
+                <div class="seat-no">Seat number: </div>
+            </div>
+            <div class="trip-info">
+                <div class="origin">
+                    <div class="travel-date">Nov 16 2025</div>
+                    <div class="travel-time">08:35 AM</div>
+                    <div class="city">Phnom Penh</div>
+                </div>
+                <div class="middle">
+                    <div>5 hours</div>
+                    <div class="line"></div>
+                    <div>5 KM</div>
+                </div>
+                <div class="destination">
+                    <div class="travel-date">Nov 16 2025</div>
+                    <div class="travel-time">08:35 AM</div>
+                    <div class="city">Phnom Penh</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="full-line"></div>
+
+    <div class="passenger-detail">
+        <div class="title">Passenger Detail</div>
+        <table class="table-passenger">
+            <tr>
+                <th>Name</th>
+                <th>Phone Number</th>
+                <th>Email</th>
+                <th>Pickup</th>
+            </tr>
+            <tr>
+                <td>
+                    Chea Chento
+                </td>
+                <td>
+                    092 655 182
+                </td>
+                <td>
+                    chento@gmail.com
+                </td>
+                <td>
+                    Siem Reap Hotel
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="full-line"></div>
+
+
+    <div class="inform-detail">
+        <div class="title">Please be Informed</div>
+        <div>
+            <div>The following rules apply to all Giant Ibis Transport passengers and is subject to change at any time
+                without prior notice:</div>
+            <ul>
+                <li>Tickets are non-refundable but exchangeable for 1 time only up to one year from the date of
+                    purchase. Note: Please inform us 24 hours before departure time via email: info@giantibis.com or
+                    Hotline: +855 96 999 3333.</li>
+                <li>Online tickets may be purchased at any time before departure as long as seats are still available.
+                </li>
+                <li>Complimentary pick up may be arranged when tickets are purchased one day in advance of departure
+                </li>
+                <li>Complimentary pick up is only available for customer who stays in the listed partner hotels and
+                    guesthouses.</li>
+                <li>Passengers must be ready and wait for pickup service bus at the lobby in their hotel or guesthouse 1
+                    hour before departure time. Our pickup guys would talk to the hotel's receptionist, please always
+                    inform the receptionist when using our service.</li>
+                <li>Giant Ibis Transport is not liable for no-show and/or late passengers who miss their pick up or
+                    scheduled departure.</li>
+                <li>
+                    Complimentary pick up is NOT available for night bus departures.
+                </li>
+                <li>
+                    Passengers should arrive at the bus terminal 35 minutes before their scheduled departure time.
+                </li>
+                <li>
+                    Passengers must present their ticket or valid identification in order to board the bus.
+                </li>
+                <li>
+                    Parents may hold infants without purchasing an additional ticket for local routes and are charged
+                    15$/pax for international routes. Children aged 3+ must have a ticket
+                </li>
+                <li>
+                    Giant Ibis Transport will not make any refund related to our complimentary services such as Pick up,
+                    Wi-Fi, Snack, and outlet.
+                </li>
+                <li>
+                    The duration of the trip will depend largely on road conditions at the time of your journey, Giant
+                    Ibis Transport will not responsible for any early/late arrival.
+                </li>
+                <li>
+                    Please keep in mind that our company does not accept liability for any damage to personal belongings
+                    and luggage that may occur during our services. Thank you for your understanding.
+                </li>
+                <li>
+                    tickets need not be printed, but may be presented electronically.
+                </li>
+                <li>
+                    A car seat may be provided free of charge given advanced notice of the requirement; however a ticket
+                    must be purchased for infants that will use a car seat.
+                </li>
+                <li>
+                    Each passenger is permitted 1 carry on and a maximum of 2 pieces of stored luggage not exceeding
+                    25kg. Stored luggage exceeding 25kg may be subject to additional charges.
+                </li>
+                <li>
+                    Livestock, pet, weapons, illegal products and hazardous material are prohibited aboard the bus.
+                </li>
+                <li>
+                    Passengers may not bring strong smelling food items onto the bus (ie. durian, prohok, etc.).
+                </li>
+                <li>
+                    All passengers should mind their manners and language in the presence of fellow passengers and
+                    company staff.
+                </li>
+                <li>
+                    Smoking aboard the bus is prohibited.
+                </li>
+                <li>
+                    The passenger hereby acknowledges and agrees that personal data has been given to Giant Ibis
+                    Transport for the purposes of purchasing online tickets, providing and developing ancillary services
+                    and facilities, accounting, billing and auditing, security, administrative and legal purposes,
+                    systems testing, maintenance and development, statistical analysis, and helping us in any future
+                    dealings with you. For these purposes, by entering into purchasing online ticket with us you
+                    authorize us to retain and use your data.
+                </li>
+                <li>
+                    Note for Phnom Penh - Ho Chi Minh: Passenger should have Vietnam Visa before boarding the bus due to
+                    Vietnam Visa cannot apply at the border. In case passenger did not have Vietnam Visa on the date of
+                    traveling, they cannot claim to refund or delay travel schedule.
+                </li>
+            </ul>
+        </div>
+    </div>
+
+
+
+</body>
+
+</html>
