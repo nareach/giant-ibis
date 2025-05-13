@@ -106,12 +106,12 @@ export default function SearchBookForm() {
   }
 
 
-  if (pathname === '/book') {
+  if (pathname === '/book' ) {
     return (<></>);
   }
 
 
-  if (pathname.includes('success')) {
+  if (pathname.includes('success') || pathname === '/error' ) {
     return (<></>);
   }
 
