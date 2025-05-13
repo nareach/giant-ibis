@@ -16,13 +16,13 @@ export async function GET(request, { params }) {
     const { searchParams } = new URL(request.url);
     const refCode = searchParams.get('refCode');
 
-    const paymentStatus = await paymentService.checkPaymentStatus(id);
-    if (paymentStatus?.result.errorDetails != 'SUCCESS') {
-        return NextResponse.json({
-            status: false,
-            message: "Your payment was not successful. Please try again."
-        }, { status: 400 });
-    }
+    // const paymentStatus = await paymentService.checkPaymentStatus(id);
+    // if (paymentStatus?.result.errorDetails != 'SUCCESS') {
+    //     return NextResponse.json({
+    //         status: false,
+    //         message: "Your payment was not successful. Please try again."
+    //     }, { status: 400 });
+    // }
     
 
     let booklist = await getAllBookDetail();
