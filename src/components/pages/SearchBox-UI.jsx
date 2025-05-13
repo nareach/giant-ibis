@@ -62,6 +62,7 @@ export default function SearchBookForm() {
     setDepartureDateError(!departureDate);
 
     if (tripType != 'one-way') {
+
       setReturnDateError(!returnDate);
       if (!origin || !destination || !departureDate || !returnDate) {
         setLoading(false);
@@ -86,7 +87,7 @@ export default function SearchBookForm() {
         router.push(`/book?origin=${origin}&destination=${destination}&departure_date=${departureDateFormat}&trip_type=${tripType}&return_date=${returnDateDateFormat}`);
 
       } else {
-        
+
         setLoading(false);
         router.push(`/book?origin=${origin}&destination=${destination}&departure_date=${departureDateFormat}&trip_type=${tripType}`);
       }
@@ -160,8 +161,9 @@ export default function SearchBookForm() {
 
                   {
                     tripType == 'one-way' ? (
-                      <PickDateFilter isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date) => {
+                      <PickDateFilter isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date, dateString) => {
                         setDepartureDate(date);
+                        setReturnDate(null);
                       }} />) : (<></>)
                   }
                 </div>
@@ -174,12 +176,24 @@ export default function SearchBookForm() {
                     tripType == 'one-way' ? (<>
                     </>) : (<div className="flex flex-col lg:flex-row w-full lg:col-span-4 gap-6">
 
-                      <PickDateFilter isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date) => {
-                        setDepartureDate(date);
-                      }} />
-                      <PickDateFilter isError={isReturneDateError} value={returnDate} title={'Return'} onChange={(date) => {
-                        setReturnDate(date);
-                      }} />
+                      <PickDateFilter
+                        isError={isDepartureDateError}
+                        value={departureDate}
+                        title={'Departure'}
+                        onChange={(date, dateString) => {
+                          setDepartureDate(date);
+                          setReturnDate(null);
+                        }} />
+
+
+                      <PickDateFilter
+                        isError={isReturneDateError}
+                        value={returnDate ? returnDate : null}
+                        title={'Return'}
+                        startFrom={departureDate}
+                        onChange={(date, dateString) => {
+                          setReturnDate(date);
+                        }} />
 
                     </div>)
                   }
