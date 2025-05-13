@@ -2,7 +2,6 @@ import nodemailer from 'nodemailer';
 import { NextResponse } from 'next/server';
 import { htmlToPdf } from './htmlToPdf';
 import { pdf } from "html-pdf"
-import pdfkit  from 'pdfkit';
 
 export async function POST(request) {
   const { name, email, message } = await request.json();
