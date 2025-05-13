@@ -15,21 +15,19 @@ const poppins = Poppins({
 });
 
 
-export const PickDateFilter = ({ title, onChange, isError, value, colspan = 'lg:col-span-2', startFrom}) => {
+export const PickDateFilter = ({ title, onChange, isError, value, colspan = 'lg:col-span-2', startFrom }) => {
 
     const disabledDate = (current) => {
-            // Disable dates before today
-            if (current && current < dayjs().startOf('day')) {
-                return true;
-            }
-            
-            // If startFrom is provided, disable dates before startFrom + 1 day for the end date
-            if (startFrom && current && current <= dayjs(startFrom).endOf('day')) {
-                return true;
-            }
-            
-            return false;
-        };
+        if (current && current < dayjs().startOf('day')) {
+            return true;
+        }
+
+        if (startFrom && current && current <= dayjs(startFrom).endOf('day')) {
+            return true;
+        }
+
+        return false;
+    };
 
     return (
         <div className={cn('w-full', colspan)}>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, forwardRef } from 'react';
-import { Checkbox } from 'antd';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox, Select } from 'antd';
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, pickupDeparture, pickupReturn }, ref) => {
+const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, pickupDeparture, pickupReturn, allowedpickUpDeparture, allowedpickUpReturn }, ref) => {
     const [passengers, setPassengers] = useState([]);
     const [errors, setErrors] = useState([]);
     const [isOneForm, setIsOneForm] = useState(false);
@@ -25,7 +25,8 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
 
     const handleChange = (index, field, value) => {
         let updatedPassengers;
-
+        console.log("change: ",{index, field, value});
+        
         if (isOneForm) {
             updatedPassengers = passengers.map(passenger => ({
                 ...passenger,
@@ -160,7 +161,47 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
             <label className="block text-sm mb-1">
                 {label} <span className="text-red-500">*</span>
             </label>
-            <Select
+
+            {
+                field == "pickupLocation" ? (
+                    <Select
+                        showSearch
+                        placeholder={`${label}`}
+                        optionFilterProp="label"
+                        className="w-full h-[39px]"
+                        filterOption={(input, option) =>
+                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                        onChange={(value) => handleChange(passengerIndex, field, value)}
+                        options={
+                            pickupDeparture?.map(item => ({
+                                value: item.id,
+                                label: item.title
+                            })) || []
+                        }
+                    />
+                ) : (<>
+                    <Select
+                        showSearch
+                        placeholder={`${label}`}
+                        optionFilterProp="label"
+                        className="w-full h-[39px]"
+                        filterOption={(input, option) =>
+                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                        onChange={(value) => handleChange(passengerIndex, field, value)}
+                        options={
+                            pickupReturn?.map(item => ({
+                                value: item.id,
+                                label: item.title
+                            })) || []
+                        }
+                    />
+                </>)
+            }
+
+
+            {/* <Select
                 value={passengers[passengerIndex]?.[field] || ''}
                 className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
                 onValueChange={(value) => handleChange(passengerIndex, field, value)}
@@ -189,7 +230,7 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
                     }
 
                 </SelectContent>
-            </Select>
+            </Select> */}
             {errors[passengerIndex]?.[field] && (
                 <p className="text-red-500 text-xs mt-1">{errors[passengerIndex][field]}</p>
             )}
@@ -282,9 +323,16 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
                         )}
                     </div>
 
-                    {renderPickupLocationSelect('pickupLocation', 'Departure Pickup Location')}
+                    {
+                        allowedpickUpDeparture && (
+                            renderPickupLocationSelect('pickupLocation', 'Departure Pickup Location')
+                        )
+                    }
 
-                    {tripType === 'round-trip' && (
+                        {
+                            allowedpickUpReturn ? "Hello":"Ji"
+                        }
+                    {tripType === 'round-trip' && allowedpickUpReturn && (
                         renderPickupLocationSelect('returnPickupLocation', 'Return Pickup Location')
                     )}
                 </div>
@@ -362,10 +410,11 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
                                         <p className="text-red-500 text-xs mt-1">{errors[index].email}</p>
                                     )}
                                 </div>
+                                {
+                                    allowedpickUpDeparture && renderPickupLocationSelect('pickupLocation', 'Departure Pickup Location', index)
+                                }
 
-                                {renderPickupLocationSelect('pickupLocation', 'Departure Pickup Location', index)}
-
-                                {tripType === 'round-trip' && (
+                                {tripType === 'round-trip' && allowedpickUpReturn && (
                                     renderPickupLocationSelect('returnPickupLocation', 'Return Pickup Location', index)
                                 )}
                             </>

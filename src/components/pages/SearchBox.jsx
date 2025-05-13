@@ -16,6 +16,7 @@ import { useLazyGetRouteQuery } from '@/store/features/route-bus';
 import { useGetAllCityQuery, useLazyGetCitesByOriginQuery } from '@/store/features/cities';
 import LoadingWithText from '../common/LoadingWithText';
 import { useLazyGetPickUpByCityIdQuery } from '@/store/features/pick-up';
+import NoBusComponent from '../common/NoBusComponent';
 
 export default function SearchBookForm() {
   const router = useRouter();
@@ -32,8 +33,8 @@ export default function SearchBookForm() {
    */
   const originParam = searchParams.get('origin') || null;
   const destinationParam = searchParams.get('destination') || null;
-  const departureDateParam = searchParams.get('departure_date') ? dayjs(searchParams.get('departure_date'), "DD-MM-YYYY") : dayjs();
-  const return_date_param = searchParams.get('return_date') ? dayjs(searchParams.get('return_date'), "DD-MM-YYYY") : dayjs();
+  const departureDateParam = searchParams.get('departure_date') ? dayjs(searchParams.get('departure_date'), "DD-MM-YYYY") : null;
+  const return_date_param = searchParams.get('return_date') ? dayjs(searchParams.get('return_date'), "DD-MM-YYYY") : null;
   const trip_type_param = searchParams.get('trip_type') || 'one-way';
 
 
@@ -56,6 +57,8 @@ export default function SearchBookForm() {
   const [isOriginError, setOriginError] = useState(false);
   const [isDestinationError, setDestinationError] = useState(false);
   const [isDepartureDateError, setDepartureDateError] = useState(false);
+  const [isReturneDateError, setReturnDateError] = useState(false);
+
   const [tripType, setTripType] = useState(trip_type_param);
 
 
@@ -72,14 +75,24 @@ export default function SearchBookForm() {
     setDestinationError(!destination);
     setDepartureDateError(!departureDate);
 
+
     if (tripType === 'round-trip') {
-      setReturnDate(!returnDate);
+      setReturnDateError(!returnDate);
     }
 
     if (!origin || !destination || !departureDate) {
       setLoading(false);
       return;
     }
+
+    if (tripType === 'round-trip') {
+      if (!departureDate) {
+        setLoading(false);
+        return;
+      }
+    }
+
+
 
     const result = await triggerGetRoute({
       origin: origin,
@@ -95,6 +108,9 @@ export default function SearchBookForm() {
         destination: origin,
         travelDate: dayjs(returnDate, "DD-MM-YYYY").format('YYYY-MM-DD'),
       }).unwrap();
+
+      console.log("result round trip: ", result);
+      
 
       setRoundTrips(result?.data);
     }
@@ -205,6 +221,7 @@ export default function SearchBookForm() {
                     tripType == 'one-way' ? (
                       <PickDateFilter isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date, dateString) => {
                         setDepartureDate(date);
+                        setReturnDate(null);
                       }} />) : (<></>)
                   }
                 </div>
@@ -223,19 +240,18 @@ export default function SearchBookForm() {
                         title={'Departure'}
                         onChange={(date, dateString) => {
                           setDepartureDate(date);
+                          setReturnDate(null);
                         }} />
 
 
                       <PickDateFilter
-                        isError={isDepartureDateError}
-                        value={returnDate}
+                        isError={isReturneDateError}
+                        value={returnDate ? returnDate : null}
                         title={'Return'}
                         startFrom={departureDate}
                         onChange={(date, dateString) => {
                           setReturnDate(date);
                         }} />
-
-
                     </div>)
                   }
                 </div>
@@ -272,15 +288,7 @@ export default function SearchBookForm() {
                       destination={destination}
                       origin={origin}
                     />
-                  </> : <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-sm border border-gray-100 text-center">
-                    <div className="flex justify-center mb-4">
-                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-800 mb-1">No Trips Available</h3>
-                    <p className="text-gray-500">We couldn't find any trips matching your criteria.</p>
-                  </div>
+                  </> : <NoBusComponent/>
                 }
               </div>
             </>

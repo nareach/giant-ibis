@@ -12,6 +12,9 @@ export class RouteService {
             const { origin, destination, travelDate } = params;
 
             let routes = await this.findByOriginAndDestination({ destination, origin });
+            if(routes?.length < 1){
+                return null;
+            }
             const timing = await this.findTimingByRouteId(routes[0]?.id);
             const cities = await this.findAllCity();
 
@@ -61,13 +64,15 @@ export class RouteService {
                         busDetail: busDetail
                     });
 
-
+                    let allowedpickUp = busDetail?.data?.length > 0 ? busDetail?.data[0].allowedpick : '';
+                    allowedpickUp = allowedpickUp == '0' ? false : true ;
                     const facility = this.getFacilities(busDetail?.data?.length > 0 ? busDetail?.data[0].facilities : null)
 
                     // route detail
                     return {
                         ...route,
                         facilities: facility,
+                        allowedpickUp: allowedpickUp,
                         timing: timing.data[index],
                         busTypeDetail: busType?.data?.length > 0 ? busType?.data[0] : null,
                         seat_status: bus_status,

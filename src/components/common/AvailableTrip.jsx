@@ -18,13 +18,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { cn } from "@/lib/utils";
 import { SeatLayout } from "../features/seat/SeatLayout";
 import TripListComponent from "../features/trip/ListTrip";
-import Frees from "../features/seat/Frees";
 import AllSeatStatus from "../features/seat/AllSeatStatus";
 import AvailableTripSectionTitle from "../ui/AvalableTripSection";
 import RouteInfor from "../ui/RouteInfor";
 import PassengerInfo from "../features/form-user-info/PassengerInfor";
 import FacilityAvailable from './FacilityAvalable';
 import { useGetPickUpByCityIdQuery } from '@/store/features/pick-up';
+import NoBusComponent from './NoBusComponent';
 
 
 export const AvailableTripItems = ({
@@ -163,7 +163,6 @@ export const AvailableTripItems = ({
     };
 
     const handleSeatReturnSelect = (seatSelected) => {
-        console.log(routeReturnSelected);
 
         setRouteReturnSelected((prevRouteSelected) => {
             const updatedSeats = prevRouteSelected?.seat_status?.seats?.map((seat) => {
@@ -176,8 +175,6 @@ export const AvailableTripItems = ({
                 }
                 return seat;
             });
-
-
 
             return {
                 ...prevRouteSelected,
@@ -455,7 +452,7 @@ export const AvailableTripItems = ({
             let pickUpTemp = allPassengerData?.map((item, index) => item?.returnPickupLocation);
             pickUp = pickUpTemp?.length > 0 ? pickUpTemp[0] : '';
         }
-        
+
 
         const books = {
             route_id: route_id,
@@ -475,9 +472,7 @@ export const AvailableTripItems = ({
             remarks: ''
         };
 
-        console.log("booked infor: ",books);
-        
-
+        console.log("booked infor: ", books);
 
         const book = await fetchFromApi('add_booking', books);
         return book;
@@ -708,31 +703,35 @@ export const AvailableTripItems = ({
                     </> : <></>
                 }
                 {
-                    showSecondTrip && roundTrips.length > 0 ? <>
-                        <AvailableTripSectionTitle
-                            date={roundTrips[0]?.originDetail?.leaveAt}
-                            destination={roundTrips[0]?.destinationDetail?.city?.city_name}
-                            origin={roundTrips[0]?.originDetail?.city?.city_name}
-                            title={'Return Trips Available'}
-                            totalTrip={roundTrips?.length}
-                        />
-                        <div className="space-y-4">
-                            {
-                                isLoadingFetching ? (<>Loading ...</>) : (<div className="flex flex-col gap-6">
-                                    {roundTrips?.map((trip, index) =>
-                                    (
-                                        <TripListComponent
-                                            departure_date={returnDate}
-                                            key={index}
-                                            handleTripSelect={handleSelectNextReturnTip}
-                                            trip={trip}
-                                            index={index}
-                                        />
-                                    )
-                                    )}
-                                </div>)
-                            }
-                        </div>
+                    showSecondTrip ? <>
+                        {
+                            roundTrips?.length > 0 ? <>
+                                <AvailableTripSectionTitle
+                                    date={roundTrips[0]?.originDetail?.leaveAt}
+                                    destination={roundTrips[0]?.destinationDetail?.city?.city_name}
+                                    origin={roundTrips[0]?.originDetail?.city?.city_name}
+                                    title={'Return Trips Available'}
+                                    totalTrip={roundTrips?.length}
+                                />
+                                <div className="space-y-4">
+                                    {
+                                        isLoadingFetching ? (<>Loading ...</>) : (<div className="flex flex-col gap-6">
+                                            {roundTrips?.map((trip, index) => (
+                                                <TripListComponent
+                                                    departure_date={returnDate}
+                                                    key={index}
+                                                    handleTripSelect={handleSelectNextReturnTip}
+                                                    trip={trip}
+                                                    index={index}
+                                                />
+                                            ))}
+                                        </div>)
+                                    }
+                                </div>
+                            </> : <>
+                                <NoBusComponent />
+                            </>
+                        }
                     </> : <></>
                 }
             </div>
@@ -931,6 +930,8 @@ export const AvailableTripItems = ({
                             seatCount={selectedSeat.length}
                             ref={passengerInfoRef}
                             tripType={tripType}
+                            allowedpickUpReturn={routeReturnSelected?.allowedpickUp}
+                            allowedpickUpDeparture={routeSelected?.allowedpickUp}
                             pickupDeparture={pickupDeparture?.data}
                             pickupReturn={pickupReturn?.data}
                         />
