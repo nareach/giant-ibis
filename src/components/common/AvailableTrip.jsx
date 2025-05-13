@@ -11,8 +11,7 @@ import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import { BookProgress } from "./BookProgress";
 import { fetchFromApi } from "../../utils/api";
-import { ACLEDA_BANK_API, CLIENT_URL, loginId, merchantID, password, signature } from "@/constant/constant";
-import axios from "axios";
+import { CLIENT_URL, merchantID } from "@/constant/constant";
 import moment from "moment";
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from "@/lib/utils";
@@ -25,6 +24,8 @@ import PassengerInfo from "../features/form-user-info/PassengerInfor";
 import FacilityAvailable from './FacilityAvalable';
 import { useGetPickUpByCityIdQuery } from '@/store/features/pick-up';
 import NoBusComponent from './NoBusComponent';
+import { useGenerateQRMutation } from '@/store/features/payment';
+import PaymentFailedPopup from '../features/payments/PaymentFailedPopup';
 
 
 export const AvailableTripItems = ({
@@ -43,6 +44,10 @@ export const AvailableTripItems = ({
 
     const { data: pickupReturn, isLoading: isLoadingPickUpReturn, isError: isErrorPickUpReturn } =
         useGetPickUpByCityIdQuery({ cityId: destination }, { skip: !destination });
+
+    const [generatQR, { isError: isErrorPayment, isLoading: isLoadingGeneratePayment, error: errorPayment }] = useGenerateQRMutation();
+    const [showPopup, setShowPopup] = useState(false);
+
 
     const [activeStep, setActiveStep] = useState('select');
     const [routeSelected, setRouteSelected] = useState();
@@ -625,49 +630,39 @@ export const AvailableTripItems = ({
             setPayDate(payDate1);
             setSuccesssUrl(url);
 
-            let data = JSON.stringify({
-                "loginId": loginId,
-                "password": password,
-                "merchantID": merchantID,
-                "signature": signature,
-                "xpayTransaction": {
-                    "txid": uuid,
-                    "purchaseAmount": amount,
-                    "purchaseCurrency": "USD",
-                    "purchaseDate": payDate1,
-                    "purchaseDesc": 'booking',
-                    "invoiceid": uuid,
-                    "item": 'booking',
-                    "quantity": "1",
-                    "expiryTime": "5",
-                    "paymentCard": paymentMethod == 'khqr' ? '0' : '1',
-                }
-            });
+            const body = {
+                "uuid": uuid,
+                "amount": amount,
+                "purchaseDate": payDate1,
+                "paymentMethod": paymentMethod == 'khqr' ? '0' : '1',
+            }
 
-            const response = await axios.post(
-                ACLEDA_BANK_API,
-                data, {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
+            const qr = await generatQR(body).unwrap();
+
 
             setError(null);
             setTransactionID(uuid);
             setPayDate(payDate1);
             setSuccesssUrl(url);
-            setPaymentTokenid(response.data?.result?.xTran?.paymentTokenid)
-            setSessionId(response.data?.result?.sessionid);
+            setPaymentTokenid(qr.data?.result?.xTran?.paymentTokenid)
+            setSessionId(qr.data?.result?.sessionid);
 
             /**
              * After set thhis data to form success it will trigger to call useEffect submit the form
              */
         } catch (error) {
+
+            if (error?.data?.type == "payment") {
+                setShowPopup(true);
+            }
+
             setLoading(false);
         } finally {
             setIsLoading(false);
         }
     }
+
+
 
 
     if (activeStep === "select") {
@@ -924,6 +919,21 @@ export const AvailableTripItems = ({
         return (
             <div>
                 <BookProgress activeStep={activeStep} />
+
+                {
+                    showPopup ? <PaymentFailedPopup
+                        isVisible={showPopup}
+                        onClose={() => {
+                            setShowPopup(false);
+                        }}
+                        onRetry={() => {
+                            setShowPopup(false);
+                        }}
+                        errorMessage={errorPayment.data?.message}
+                    /> :
+                        <></>
+                }
+
                 <div className="grid md:grid-cols-3 gap-6">
                     <div className="space-y-6 md:col-span-1">
                         <PassengerInfo

@@ -329,9 +329,6 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
                         )
                     }
 
-                        {
-                            allowedpickUpReturn ? "Hello":"Ji"
-                        }
                     {tripType === 'round-trip' && allowedpickUpReturn && (
                         renderPickupLocationSelect('returnPickupLocation', 'Return Pickup Location')
                     )}

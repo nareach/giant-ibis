@@ -1,0 +1,64 @@
+import { ACLEDA_BANK_API, loginId, merchantID, password, signature } from "@/constant/constant";
+import axios from "axios";
+
+export async function POST(request) {
+    try {
+
+        const { uuid, amount, purchaseDate, paymentMethod } = await request.json();
+
+        let data = JSON.stringify({
+            "loginId": loginId,
+            "password": password,
+            "merchantID": merchantID,
+            "signature": signature,
+            "xpayTransaction": {
+                "txid": uuid,
+                "purchaseAmount": amount,
+                "purchaseCurrency": "USD",
+                "purchaseDate": purchaseDate,
+                "purchaseDesc": 'booking',
+                "invoiceid": uuid,
+                "item": 'booking',
+                "quantity": "1",
+                "expiryTime": "5",
+                "paymentCard": paymentMethod == 'khqr' ? '0' : '1',
+            }
+        });
+
+        const response = await axios.post(
+            ACLEDA_BANK_API,
+            data, {
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (response.data?.result?.errorDetails !== "SUCCESS") {
+
+            return Response.json(
+                {
+                    status: false,
+                    type: "payment",
+                    message: "The payment gateway encountered an issue. Please try again later or contact support for assistance.",
+                },
+                {
+                    status: 500,
+                    statusText: "Payment Gateway Error"
+                }
+            );
+        }
+
+        if (response.data) {
+            return Response.json({
+                status: true,
+                response: response.data,
+                data: JSON.parse(data)
+            })
+        }
+
+
+    } catch (error) {
+
+    }
+
+}

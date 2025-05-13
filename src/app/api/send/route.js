@@ -1,7 +1,8 @@
 import nodemailer from 'nodemailer';
 import { NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
-import { emailTemplate, TemplateMail } from './template2';
+import { htmlToPdf } from './htmlToPdf';
+import { pdf } from "html-pdf"
+import pdfkit  from 'pdfkit';
 
 export async function POST(request) {
   const { name, email, message } = await request.json();
@@ -15,42 +16,32 @@ export async function POST(request) {
   });
 
   try {
-    const htmlContent = TemplateMail({
-      
-    });
 
-    // Generate PDF using puppeteer
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    const page = await browser.newPage();
-    await page.setContent(htmlContent);
-    const pdfBuffer = await page.pdf({
+    const options = {
       format: 'A4',
-      margin: {
-        top: '10mm',
-        right: '10mm',
-        bottom: '10mm',
-        left: '10mm'
-      }
-    });
-    await browser.close();
+      orientation: 'portrait',
+      border: '10mm',
+      header: {
+        height: '20mm',
+      },
+      footer: {
+        height: '20mm',
+        contents: {
+          default: 'This is the footer text.',
+        },
+      },
+    };
 
-    transporter.sendMail({
-      from: `"${name}" <${email}>`,
-      to: email,
-      subject: 'E-Ticket',
-      text: message,
-      html: htmlContent,
-      attachments: [
-        {
-          filename: 'e-ticket.pdf',
-          content: pdfBuffer,
-          contentType: 'application/pdf'
-        }
-      ]
-    });
+
+
+    pdf.create(htmlToPdf, options)
+      .then((res) => {
+        console.log('PDF created:', res);
+      })
+      .catch((error) => {
+        console.error('Error creating PDF:', error);
+      });
+
 
     return NextResponse.json({ message: 'Email sent successfully' });
   } catch (error) {
