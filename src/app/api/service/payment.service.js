@@ -282,8 +282,6 @@ export class PaymentService {
         passengers = []
     }) {
 
-        console.log('to mail: ', toEmail);
-
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -314,7 +312,7 @@ export class PaymentService {
             const browser = await puppeteer.launch();
             const page = await browser.newPage();
 
-            await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+            await page.setContent(`<h1>Hello hi</h1>`, { waitUntil: "networkidle0" });
             const pdfBuffer = await page.pdf({
                 format: 'A4',
                 margin: {
