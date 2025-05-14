@@ -280,13 +280,14 @@ export class PaymentService {
         destinationTime,
         destinationCity,
         dateSend,
-        passengers = [],
+        passengers = []
     }) {
+
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
+                user: process.env.EMAIL_USER || "chentochea2002@gmail.com",
+                pass: process.env.EMAIL_PASS || "gplrmjmqewdrgodu"
             },
         });
 
@@ -306,65 +307,54 @@ export class PaymentService {
                 destinationTime,
                 destinationCity,
                 passengers,
-                dateSend,
+                dateSend
             });
 
-            // Set up Chromium for Vercel
-            chromium.setGraphicsMode = false; // Disable GPU for serverless
-            const executablePath = await chromium.executablePath();
-
-            // Launch Puppeteer
             const browser = await puppeteer.launch({
-                args: [
-                    ...chromium.args,
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-gpu',
-                    '--hide-scrollbars',
-                    '--disable-web-security',
-                ],
+                args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
                 defaultViewport: chromium.defaultViewport,
-                executablePath,
-                headless: 'new', // Use new headless mode for better compatibility
+                executablePath: await chromium.executablePath(
+                    `https://github.com/Sparticuz/chromium/releases/download/v116.0.0/chromium-v116.0.0-pack.tar`
+                ),
+                headless: chromium.headless,
                 ignoreHTTPSErrors: true,
             });
-
             const page = await browser.newPage();
-            await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+
+            await page.setContent(`<h1>Hello hiw
+                </h1>`, { waitUntil: "networkidle0" });
             const pdfBuffer = await page.pdf({
                 format: 'A4',
                 margin: {
                     top: '10mm',
                     right: '10mm',
                     bottom: '10mm',
-                    left: '10mm',
-                },
+                    left: '10mm'
+                }
             });
             await browser.close();
 
-            await transporter.sendMail({
-                from: process.env.EMAIL_USER,
+            transporter.sendMail({
+                from: "chentochea2002@gmail.com",
                 to: toEmail,
                 subject: 'Giant Ibis E-Ticket',
-                text: 'Your e-ticket is attached.',
+                text: "message",
                 html: htmlContent,
                 attachments: [
                     {
                         filename: 'e-ticket.pdf',
                         content: pdfBuffer,
-                        contentType: 'application/pdf',
-                    },
-                ],
+                        contentType: 'application/pdf'
+                    }
+                ]
             });
 
-            console.log('Email sent successfully to', toEmail);
-            return { success: true };
         } catch (error) {
-            console.error('Error sending mail:', error);
-            throw error;
+            console.log("error send mail : ", error);
+
         }
     }
+
 
 }
 
