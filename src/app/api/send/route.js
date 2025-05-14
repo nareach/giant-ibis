@@ -1,25 +1,21 @@
 import { NextResponse } from 'next/server';
 import puppeteer from 'puppeteer';
 
-export async function GET(request) {
+export async function GET() {
+  const invoiceHtml = `<h1>hello</h1>`;
 
-  const browser = await puppeteer.launch({
-    headless: "new", // important for newer versions
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
-
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
-  await page.setContent( '<h1>Hello from Puppeteer</h1>');
 
-  const pdfBuffer = await page.pdf({ format: 'A4' });
+  await page.setContent(invoiceHtml, { waitUntil: 'load' });
 
+  const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
   await browser.close();
 
   return new NextResponse(pdfBuffer, {
-    status: 200,
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': 'attachment; filename="output.pdf"',
+      'Content-Disposition': 'attachment; filename=invoice.pdf',
     },
   });
 }
