@@ -317,8 +317,7 @@ export class PaymentService {
                 headless: chromium.headless,
                 ignoreHTTPSErrors: true,
             });
-            const page = await browser.newPage();
-
+            await page.setContent(htmlContent, { waitUntil: 'networkidle0' })
             await page.setContent(`<h1>Hello hiw
                 </h1>`, { waitUntil: "networkidle0" });
             const pdfBuffer = await page.pdf({
