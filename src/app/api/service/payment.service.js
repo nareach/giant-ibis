@@ -284,7 +284,7 @@ export class PaymentService {
     }) {
 
         console.log("send mail");
-        
+
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -312,11 +312,19 @@ export class PaymentService {
                 dateSend
             });
 
+            chromium.setGraphicsMode = false;
+
+            // Optional: Load any fonts you need.
+            await chromium.font(
+                "https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf"
+            );
+
 
             const browser = await puppeteer.launch({
                 args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
+                executablePath: await chromium.executablePath(),
                 defaultViewport: chromium.defaultViewport,
-                headless: chromium.headless,
+                headless: "shell",
                 ignoreHTTPSErrors: true,
             });
             const page = await browser.newPage();
