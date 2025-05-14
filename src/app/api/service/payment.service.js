@@ -6,7 +6,7 @@ import moment from "moment";
 import { TemplateMail } from "../send/template2";
 import nodemailer from 'nodemailer';
 import puppeteer from "puppeteer";
-import chromium from "@sparticuz/chromium-min";
+import chromium from "@sparticuz/chromium";
 
 export class PaymentService {
 
@@ -280,16 +280,13 @@ export class PaymentService {
         destinationTime,
         destinationCity,
         dateSend,
-        passengers = []
+        passengers = [],
     }) {
-
-        console.log("send mail");
-
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: process.env.EMAIL_USER || "chentochea2002@gmail.com",
-                pass: process.env.EMAIL_PASS || "gplrmjmqewdrgodu"
+                user: process.env.EMAIL_USER || 'chentochea2002@gmail.com',
+                pass: process.env.EMAIL_PASS || 'gplrmjmqewdrgodu',
             },
         });
 
@@ -309,60 +306,65 @@ export class PaymentService {
                 destinationTime,
                 destinationCity,
                 passengers,
-                dateSend
+                dateSend,
             });
 
-            chromium.setGraphicsMode = false;
+            // Launch Puppeteer with default Chromium (local) or @sparticuz/chromium (production)
+            const isProduction = process.env.NODE_ENV === 'production';
+            let browser;
+            if (isProduction) {
+                const chromium = await import('@sparticuz/chromium');
+                browser = await puppeteer.launch({
+                    args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
+                    defaultViewport: chromium.defaultViewport,
+                    executablePath: await chromium.executablePath(
+                        'https://github.com/Sparticuz/chromium/releases/download/v116.0.0/chromium-v116.0.0-pack.tar'
+                    ),
+                    headless: chromium.headless,
+                    ignoreHTTPSErrors: true,
+                });
+            } else {
+                browser = await puppeteer.launch({
+                    headless: 'new', // Use new headless mode for local development
+                    args: ['--hide-scrollbars', '--disable-web-security'],
+                    ignoreHTTPSErrors: true,
+                });
+            }
 
-            // Optional: Load any fonts you need.
-            await chromium.font(
-                "https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf"
-            );
-
-
-            const browser = await puppeteer.launch({
-                args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
-                executablePath: await chromium.executablePath(),
-                defaultViewport: chromium.defaultViewport,
-                headless: "shell",
-                ignoreHTTPSErrors: true,
-            });
             const page = await browser.newPage();
-
-            await page.setContent(`<h1>Hello hiw
-                </h1>`, { waitUntil: "networkidle0" });
+            await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
             const pdfBuffer = await page.pdf({
                 format: 'A4',
                 margin: {
                     top: '10mm',
                     right: '10mm',
                     bottom: '10mm',
-                    left: '10mm'
-                }
+                    left: '10mm',
+                },
             });
             await browser.close();
 
-            transporter.sendMail({
-                from: "chentochea2002@gmail.com",
+            await transporter.sendMail({
+                from: 'chentochea2002@gmail.com',
                 to: toEmail,
                 subject: 'Giant Ibis E-Ticket',
-                text: "message",
+                text: 'Please find your e-ticket attached.',
                 html: htmlContent,
                 attachments: [
                     {
                         filename: 'e-ticket.pdf',
                         content: pdfBuffer,
-                        contentType: 'application/pdf'
-                    }
-                ]
+                        contentType: 'application/pdf',
+                    },
+                ],
             });
 
+            console.log('Email sent successfully!');
         } catch (error) {
-            console.log("error send mail : ", error);
-
+            console.error('Error sending mail:', error);
+            throw error;
         }
     }
-
 
 }
 
