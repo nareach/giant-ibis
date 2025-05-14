@@ -310,6 +310,12 @@ export class PaymentService {
                 dateSend
             });
 
+            chromium.setGraphicsMode = false;
+
+            await chromium.font(
+                "https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf"
+            );
+
             const browser = await puppeteer.launch({
                 args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
                 defaultViewport: chromium.defaultViewport,
