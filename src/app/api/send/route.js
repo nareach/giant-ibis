@@ -1,53 +1,34 @@
-import nodemailer from 'nodemailer';
-import { NextResponse } from 'next/server';
-import { htmlToPdf } from './htmlToPdf';
-import { pdf } from "html-pdf"
+// app/api/send/route.js
+import { renderToString, render } from '@react-pdf/renderer';
+import MyDocument from './MyDocument';
+import { Readable } from 'stream';
+import { renderToHTML } from 'next/dist/server/render';
 
-export async function POST(request) {
-  const { name, email, message } = await request.json();
-
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER || "chentochea2002@gmail.com",
-      pass: process.env.EMAIL_PASS || "gplrmjmqewdrgodu"
-    },
-  });
-
+export async function GET() {
   try {
-
-    const options = {
-      format: 'A4',
-      orientation: 'portrait',
-      border: '10mm',
-      header: {
-        height: '20mm',
-      },
-      footer: {
-        height: '20mm',
-        contents: {
-          default: 'This is the footer text.',
-        },
-      },
-    };
-
-
-
-    pdf.create(htmlToPdf, options)
-      .then((res) => {
-        console.log('PDF created:', res);
-      })
-      .catch((error) => {
-        console.error('Error creating PDF:', error);
-      });
-
-
-    return NextResponse.json({ message: 'Email sent successfully' });
+    // Render to string first
+    const pdfString = await renderToHTML(`<h1>Hi</h1>`);
+    
+    // Convert to buffer
+    const pdfBuffer = Buffer.from(pdfString);
+    
+    // Create response
+    return new Response(pdfBuffer, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="document.pdf"'
+      }
+    });
   } catch (error) {
-    console.error('Error sending email:', error);
-    return NextResponse.json(
-      { message: 'Error sending email', error: error.message },
-      { status: 500 }
-    );
+    console.error('PDF generation error:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to generate PDF',
+      details: error.message 
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 }
