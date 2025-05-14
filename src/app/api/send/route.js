@@ -5,8 +5,9 @@ export async function GET() {
   const invoiceHtml = `<h1>hello</h1>`;
 
   const browser = await puppeteer.launch({
-    headless: 'shell',
-    args: ['--enable-gpu'],
+    headless: true,
+    executablePath: `/usr/bin/google-chrome`,
+    args: [`--no-sandbox`, `--headless`, `--disable-gpu`, `--disable-dev-shm-usage`],
   });
   const page = await browser.newPage();
 
