@@ -313,9 +313,7 @@ export class PaymentService {
             const browser = await puppeteer.launch({
                 args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
                 defaultViewport: chromium.defaultViewport,
-                executablePath: await chromium.executablePath(
-                    `https://github.com/Sparticuz/chromium/releases/download/v116.0.0/chromium-v116.0.0-pack.tar`
-                ),
+                executablePath: await chromium.executablePath,
                 headless: chromium.headless,
                 ignoreHTTPSErrors: true,
             });
