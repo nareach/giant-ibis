@@ -283,6 +283,8 @@ export class PaymentService {
         passengers = []
     }) {
 
+        console.log("send mail");
+        
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -310,19 +312,10 @@ export class PaymentService {
                 dateSend
             });
 
-            
-            chromium.setGraphicsMode = false;
-
-            await chromium.font(
-                "https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf"
-            );
 
             const browser = await puppeteer.launch({
                 args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
                 defaultViewport: chromium.defaultViewport,
-                executablePath: await chromium.executablePath(
-                    `https://github.com/Sparticuz/chromium/releases/download/v116.0.0/chromium-v116.0.0-pack.tar`
-                ),
                 headless: chromium.headless,
                 ignoreHTTPSErrors: true,
             });
