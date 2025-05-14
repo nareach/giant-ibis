@@ -310,6 +310,7 @@ export class PaymentService {
                 dateSend
             });
 
+            
             chromium.setGraphicsMode = false;
 
             await chromium.font(
