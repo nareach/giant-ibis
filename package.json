@@ -20,6 +20,7 @@
     "@react-pdf/renderer": "^4.3.0",
     "@reduxjs/toolkit": "^2.5.1",
     "@sparticuz/chromium": "^133.0.0",
+    "@sparticuz/chromium-min": "^133.0.0",
     "antd": "^5.24.6",
     "axios": "^1.9.0",
     "bakong-khqr": "^1.0.18",

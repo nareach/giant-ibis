@@ -6,6 +6,7 @@ import moment from "moment";
 import { TemplateMail } from "../send/template2";
 import nodemailer from 'nodemailer';
 import puppeteer from "puppeteer";
+import chromium from "@sparticuz/chromium-min";
 
 export class PaymentService {
 
@@ -94,7 +95,7 @@ export class PaymentService {
                 pickup: pickupObj?.title || "",
             }
         })
-        
+
         if (confirmRef?.status) {
             await this.sendMail({
                 busType: route?.bus_type || "",
@@ -115,23 +116,23 @@ export class PaymentService {
             })
         }
 
-         await this.sendMail({
-                busType: route?.bus_type || "",
-                kilometer: route?.kilo_meters || "",
-                duration: route?.duration || "",
-                seatNo: seatNumbers || "",
-                toEmail: ticketInfor?.length > 0 ? ticketInfor[0]?.email : "",
-                ticketId: refCode,
-                passengers: passengers,
-                dateSend: ticketInfor?.length > 0 ? ticketInfor[0]?.issued_date : "",
-                originCity: originCity[0]?.city_name || "",
-                originDate: moment(bookList[0]?.travel_date)?.format('MMMM-DD-YYYY') || "",
-                originTime: bookList[0]?.travel_time || "",
-                originAddress: addressOriginAddress?.data?.length > 0 ? addressOriginAddress?.data[0]?.url : null,
-                destinationCity: destinationCity[0]?.city_name || "",
-                destinationDate: arrivalDate || "",
-                destinationTime: destinationTime || ""
-            })
+        await this.sendMail({
+            busType: route?.bus_type || "",
+            kilometer: route?.kilo_meters || "",
+            duration: route?.duration || "",
+            seatNo: seatNumbers || "",
+            toEmail: ticketInfor?.length > 0 ? ticketInfor[0]?.email : "",
+            ticketId: refCode,
+            passengers: passengers,
+            dateSend: ticketInfor?.length > 0 ? ticketInfor[0]?.issued_date : "",
+            originCity: originCity[0]?.city_name || "",
+            originDate: moment(bookList[0]?.travel_date)?.format('MMMM-DD-YYYY') || "",
+            originTime: bookList[0]?.travel_time || "",
+            originAddress: addressOriginAddress?.data?.length > 0 ? addressOriginAddress?.data[0]?.url : null,
+            destinationCity: destinationCity[0]?.city_name || "",
+            destinationDate: arrivalDate || "",
+            destinationTime: destinationTime || ""
+        })
 
         return {
             confirmRef: confirmRef,
@@ -309,7 +310,12 @@ export class PaymentService {
                 dateSend
             });
 
-            const browser = await puppeteer.launch();
+            const browser = await puppeteer.launch({
+                args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
+                defaultViewport: chromium.defaultViewport,
+                headless: chromium.headless,
+                ignoreHTTPSErrors: true,
+            });
             const page = await browser.newPage();
 
             await page.setContent(`<h1>Hello hiw
