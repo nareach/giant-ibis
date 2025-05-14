@@ -313,11 +313,12 @@ export class PaymentService {
             const browser = await puppeteer.launch({
                 args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
                 defaultViewport: chromium.defaultViewport,
-                executablePath: await chromium.executablePath,
+                executablePath: await chromium.executablePath(),
                 headless: chromium.headless,
                 ignoreHTTPSErrors: true,
             });
-            await page.setContent(htmlContent, { waitUntil: 'networkidle0' })
+            const page = await browser.newPage();
+
             await page.setContent(`<h1>Hello hiw
                 </h1>`, { waitUntil: "networkidle0" });
             const pdfBuffer = await page.pdf({
