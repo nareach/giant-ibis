@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import PDFDocument from 'pdfkit/js/pdfkit.standalone.js';
 
-export async function GET() {
+export async function GET(request) {
   try {
-    // Create a new PDF document
+    const { searchParams } = new URL(request.url);
+    const isPreview = searchParams.get('preview') === 'true';
     let doc = new PDFDocument({ margin: 50 });
 
-    // Collect PDF data into a buffer
     const buffers = [];
     doc.on('data', buffers.push.bind(buffers));
     const pdfBufferPromise = new Promise((resolve) => {
@@ -15,30 +15,13 @@ export async function GET() {
       });
     });
 
-    // Generate PDF content
     generateHeader(doc);
     generateFooter(doc);
-    generateInvoiceTable(doc, {
-      items: [
-        {
-          item: 'Item 1',
-          description: 'Description of item 1',
-          amount: 100,
-          quantity: 2,
-        },
-        {
-          item: 'Item 2',
-          description: 'Description of item 2',
-          amount: 200,
-          quantity: 1,
-        },
-      ],
-    });
+
 
     // Finalize the PDF
     doc.end();
 
-    // Wait for the PDF buffer to be ready
     const pdfBuffer = await pdfBufferPromise;
 
     // Return the PDF as a binary response
@@ -46,7 +29,7 @@ export async function GET() {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename=invoice.pdf',
+        'Content-Disposition': isPreview ? 'inline' : 'attachment; filename=invoice.pdf',
       },
     });
   } catch (error) {
@@ -60,14 +43,18 @@ export async function GET() {
 
 function generateHeader(doc) {
   doc
-    .text('ACME Inc.', 50, 57, { align: 'left' })
-    .font('Helvetica-Bold')
-    .fillColor('#444444')
+    .fontSize(9)
+    .text('From: Giantibis.com', 50, 57, { align: 'left' })
+    .text('Subject: E-Ticket ID #API682236378bfc13.16118443', 50, 75, { align: 'left' })
+    .text('Date: 9 January 2025 3:12 AM', 200, 57, { align: 'right' })
+    .text('To: sunjessica05@gmail.com', 200, 75, { align: 'right' })
+    .moveTo(0, 100)
+    .lineTo(1000, 100, { align: 'center' })
+    .stroke()
     .fontSize(20)
-    .text('ACME Inc.', 110, 57)
-    .fontSize(10)
-    .text('123 Main Street', 200, 65, { align: 'right' })
-    .text('New York, NY, 10025', 200, 80, { align: 'right' })
+    .fill("#0057A8")
+    .font('Helvetica-Bold')
+    .text('Trip Detail', 50, 120, { align: 'left' })
     .moveDown();
 }
 
