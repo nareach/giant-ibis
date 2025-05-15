@@ -55,6 +55,21 @@ function generateHeader(doc) {
     .fill("#0057A8")
     .font('Helvetica-Bold')
     .text('Trip Detail', 50, 120, { align: 'left' })
+    .fontSize(10)
+    .fill("black")
+    .font('Helvetica')
+    .text('Universe Noble-37 (Mini Van 15 Seats)', 50, 150, { align: 'left' })
+    .fill("red")
+    .text('Seat No: 2-A,3-A', 50, 150, { align: 'right' })
+    .fill("black")
+    .text('Nov, 16', 50, 190, { align: 'left' })
+    .text('08:45 AM', 50, 205, { align: 'left' })
+    .text('Phnom Penh', 50, 220, { align: 'left' })
+    .moveTo(0, 220)
+    .lineTo(220, 220, { align: 'center' })
+    .text('Nov, 16', 50, 190, { align: 'right' })
+    .text('08:45 AM', 50, 205, { align: 'right' })
+    .text('Phnom Penh', 50, 220, { align: 'right' })
     .moveDown();
 }
 
