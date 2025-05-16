@@ -7,6 +7,7 @@ import { TemplateMail } from "../send/template2";
 import nodemailer from 'nodemailer';
 import puppeteer from "puppeteer";
 import chromium from "@sparticuz/chromium";
+import { generateInvoicePdf } from "./utils/generate-invoice";
 
 export class PaymentService {
 
@@ -104,7 +105,7 @@ export class PaymentService {
                 seatNo: seatNumbers || "",
                 toEmail: ticketInfor?.length > 0 ? ticketInfor[0]?.email : "",
                 ticketId: refCode,
-                passengers: passengers,
+                passenger: passengers?.length > 0 ? passengers[0] : null,
                 dateSend: ticketInfor?.length > 0 ? ticketInfor[0]?.issued_date : "",
                 originCity: originCity[0]?.city_name || "",
                 originDate: moment(bookList[0]?.travel_date)?.format('MMMM-DD-YYYY') || "",
@@ -116,23 +117,6 @@ export class PaymentService {
             })
         }
 
-        await this.sendMail({
-            busType: route?.bus_type || "",
-            kilometer: route?.kilo_meters || "",
-            duration: route?.duration || "",
-            seatNo: seatNumbers || "",
-            toEmail: ticketInfor?.length > 0 ? ticketInfor[0]?.email : "",
-            ticketId: refCode,
-            passengers: passengers,
-            dateSend: ticketInfor?.length > 0 ? ticketInfor[0]?.issued_date : "",
-            originCity: originCity[0]?.city_name || "",
-            originDate: moment(bookList[0]?.travel_date)?.format('MMMM-DD-YYYY') || "",
-            originTime: bookList[0]?.travel_time || "",
-            originAddress: addressOriginAddress?.data?.length > 0 ? addressOriginAddress?.data[0]?.url : null,
-            destinationCity: destinationCity[0]?.city_name || "",
-            destinationDate: arrivalDate || "",
-            destinationTime: destinationTime || ""
-        })
 
         return {
             confirmRef: confirmRef,
@@ -280,6 +264,7 @@ export class PaymentService {
         destinationTime,
         destinationCity,
         dateSend,
+        passenger,
         passengers = [],
     }) {
         const transporter = nodemailer.createTransport({
@@ -291,6 +276,7 @@ export class PaymentService {
         });
 
         try {
+
             const htmlContent = TemplateMail({
                 originAddress,
                 toEmail,
@@ -309,42 +295,28 @@ export class PaymentService {
                 dateSend,
             });
 
-            // Launch Puppeteer with default Chromium (local) or @sparticuz/chromium (production)
-            const isProduction = process.env.NODE_ENV === 'production';
-            let browser;
-            if (isProduction) {
-                const chromium = await import('@sparticuz/chromium');
-                browser = await puppeteer.launch({
-                    args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
-                    defaultViewport: chromium.defaultViewport,
-                    executablePath: await chromium.executablePath(
-                        'https://github.com/Sparticuz/chromium/releases/download/v116.0.0/chromium-v116.0.0-pack.tar'
-                    ),
-                    headless: chromium.headless,
-                    ignoreHTTPSErrors: true,
-                });
-            } else {
-                browser = await puppeteer.launch({
-                    headless: 'new', // Use new headless mode for local development
-                    args: ['--hide-scrollbars', '--disable-web-security'],
-                    ignoreHTTPSErrors: true,
-                });
-            }
 
-            const page = await browser.newPage();
-            await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-            const pdfBuffer = await page.pdf({
-                format: 'A4',
-                margin: {
-                    top: '10mm',
-                    right: '10mm',
-                    bottom: '10mm',
-                    left: '10mm',
-                },
+
+            const pdfBuffer = await generateInvoicePdf({
+                ticketId,
+                toEmail,
+                busType,
+                seatNo,
+                originDate,
+                originTime,
+                originCity,
+                originAddress,
+                duration,
+                kilometer,
+                destinationDate,
+                destinationTime,
+                destinationCity,
+                dateSend,
+                passenger
             });
-            await browser.close();
 
-            await transporter.sendMail({
+
+            transporter.sendMail({
                 from: 'chentochea2002@gmail.com',
                 to: toEmail,
                 subject: 'Giant Ibis E-Ticket',
