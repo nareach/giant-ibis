@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import PDFDocument from 'pdfkit/js/pdfkit.standalone.js';
 import path from 'path';
 import fs from 'fs/promises';
@@ -17,7 +18,7 @@ import { usbChargerBase64 } from '@/constant/facibilities/usa-charger';
 import { sleepBedIconBase64 } from '@/constant/facibilities/sleep-bed-icon';
 import { googleMapIconBase64 } from '@/constant/facibilities/google-map';
 
-export async function generateInvoicePdf({
+export async function generateInvoiceRoundTripPdf({
     ticketCount,
     price,
     toEmail,
@@ -35,7 +36,24 @@ export async function generateInvoicePdf({
     destinationCity,
     dateSend,
     passengers = [],
-    facibilities = []
+    facibilities = [],
+    ticketCountReturn,
+    priceReturn,
+    ticketIdReturn,
+    busTypeReturn,
+    seatNoReturn,
+    originDateReturn,
+    originTimeReturn,
+    originCityReturn,
+    originAddressReturn,
+    durationReturn,
+    kilometerReturn,
+    destinationDateReturn,
+    destinationTimeReturn,
+    destinationCityReturn,
+    dateSendReturn,
+    passengersReturn = [],
+    facibilitiesReturn = []
 }) {
 
     let doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -73,6 +91,23 @@ export async function generateInvoicePdf({
         dateSend,
         passengers,
         facibilities,
+        ticketCountReturn,
+        priceReturn,
+        ticketIdReturn,
+        busTypeReturn,
+        seatNoReturn,
+        originDateReturn,
+        originTimeReturn,
+        originCityReturn,
+        originAddressReturn,
+        durationReturn,
+        kilometerReturn,
+        destinationDateReturn,
+        destinationTimeReturn,
+        destinationCityReturn,
+        dateSendReturn,
+        passengersReturn,
+        facibilitiesReturn
     });
 
     doc.end();
@@ -81,7 +116,7 @@ export async function generateInvoicePdf({
     return pdfBuffer;
 }
 
-function generateHeader(doc, {
+async function generateHeader(doc, {
     ticketCount,
     price,
     toEmail,
@@ -98,8 +133,26 @@ function generateHeader(doc, {
     destinationTime,
     destinationCity,
     dateSend,
-    facibilities,
-    passengers = []
+    facibilities = [],
+    passengers = [],
+    // return 
+    ticketCountReturn,
+    priceReturn,
+    ticketIdReturn,
+    busTypeReturn,
+    seatNoReturn,
+    originDateReturn,
+    originTimeReturn,
+    originCityReturn,
+    originAddressReturn,
+    durationReturn,
+    kilometerReturn,
+    destinationDateReturn,
+    destinationTimeReturn,
+    destinationCityReturn,
+    dateSendReturn,
+    passengersReturn = [],
+    facibilitiesReturn = []
 }) {
     // Initialize dynamic Y position
     let y = 50; // Start from top margin
@@ -112,7 +165,6 @@ function generateHeader(doc, {
     doc.fontSize(9)
         .text('From: Giantibis.com', 50, y, { align: 'left' })
         .text(`Date: ${dateSend}`, 200, y, { align: 'right' });
-
     y = sumY(doc, y, 25);
 
     doc.text(`Subject: E-Ticket ID ${ticketId}`, 50, y, { align: 'left' })
@@ -143,7 +195,6 @@ function generateHeader(doc, {
     doc.moveTo(50, y)
         .lineTo(555, y)
         .stroke();
-
     y = sumY(doc, y, 20);
 
     // Departure Trip Detail
@@ -151,12 +202,11 @@ function generateHeader(doc, {
         .fill("#0057A8")
         .font('poppins-bold')
         .text('Departure Trip Detail', 50, y, { align: 'left' });
-
     y = sumY(doc, y, 30);
 
-    const seatText = `Seat No: ${seatNo}`;
-    const rightMargin = 50;
-    const textWidth = 250;
+    let seatText = `Seat No: ${seatNo}`;
+    let rightMargin = 50;
+    let textWidth = 250;
 
     doc.fontSize(11)
         .fill("black")
@@ -168,11 +218,11 @@ function generateHeader(doc, {
             align: 'right'
         }).fontSize(10);
 
-    const textHeight = doc.heightOfString(seatText, { width: textWidth });
+    let textHeight = doc.heightOfString(seatText, { width: textWidth });
     y = sumY(doc, y, textHeight + 10);
 
-    doc.fontSize(11).text(`$ ${price}`, 50, y, { align: 'right' }).fontSize(10)
     addFacibilities(doc, y, facibilities)
+    doc.fontSize(11).text(`$ ${price}`, 50, y, { align: 'right' }).fontSize(10)
 
     y = sumY(doc, y, 60);
 
@@ -183,20 +233,19 @@ function generateHeader(doc, {
         .text(`${originDate}`, 50, y, { align: 'left' })
         .text(`${duration}`, 50, y + 10, { align: 'center' })
         .text(`${destinationDate}`, 50, y, { align: 'right' });
-
     y = sumY(doc, y, 15);
 
     doc.font('poppins-regular')
         .text(`${originTime}`, 50, y, { align: 'left' })
         .text(`${kilometer} KM`, 50, y + 10, { align: 'center' })
         .text(`${destinationTime}`, 50, y, { align: 'right' });
-    const yLineCenter = y;
-
+    let yLineCenter = y;
     y = sumY(doc, y, 15);
 
     doc.font('poppins-regular')
         .text(`${originCity}`, 50, y, { align: 'left' })
         .text(`${destinationCity}`, 50, y, { align: 'right' });
+
 
     if (originAddress) {
         doc.font('poppins-bold')
@@ -218,14 +267,114 @@ function generateHeader(doc, {
     y = sumY(doc, y, 40);
 
 
-    const pageWidth2 = 595.28;
-    const lineLength2 = 250;
-    const startX2 = (pageWidth2 - lineLength2) / 2;
-    const yPosition = yLineCenter + 10;
+    let pageWidth2 = 595.28;
+    let lineLength2 = 250;
+    let startX2 = (pageWidth2 - lineLength2) / 2;
+    let yPosition = yLineCenter + 10;
 
-    const centerX = startX + lineLength;
-    const centerY = yPosition;
-    const radius = 2;
+    let centerX = startX + lineLength;
+    let centerY = yPosition;
+    let radius = 2;
+
+    doc.fill('red').moveTo(startX2, yPosition)
+        .lineTo(startX + lineLength, yPosition)
+        .stroke()
+        .lineWidth(4)
+        .lineCap('round')
+        .circle(centerX, centerY, radius)
+        .stroke()
+        .lineWidth(4)
+        .lineCap('round')
+        .circle(startX, centerY, radius)
+        .stroke()
+
+
+    doc
+        .lineWidth(1)
+        .moveTo(50, y)
+        .lineTo(555, y)
+        .stroke();
+    y = sumY(doc, y, 20);
+
+    // [Start] Return Trip Detail
+
+    doc.fontSize(18)
+        .fill("#0057A8")
+        .font('poppins-bold')
+        .text('Return Trip Detail', 50, y, { align: 'left' });
+    y = sumY(doc, y, 30);
+
+    seatText = `Seat No: ${seatNoReturn}`;
+    rightMargin = 50;
+    textWidth = 250;
+
+    doc.fontSize(11)
+        .fill("black")
+        .font('poppins-bold')
+        .text(`${busTypeReturn}`, 50, y, { align: 'left' })
+        .fill("red")
+        .text(seatText, pageWidth - rightMargin - textWidth, y, {
+            width: textWidth,
+            align: 'right'
+        }).fontSize(10);
+
+    textHeight = doc.heightOfString(seatText, { width: textWidth });
+    y = sumY(doc, y, textHeight + 10);
+
+    addFacibilities(doc, y, facibilitiesReturn)
+    doc.fontSize(11).text(`$ ${priceReturn}`, 50, y, { align: 'right' }).fontSize(10)
+
+    y = sumY(doc, y, 60);
+
+    // Trip information
+    doc.font('poppins-regular')
+        .fill("black")
+        .text(`${originDateReturn}`, 50, y, { align: 'left' })
+        .text(`${durationReturn}`, 50, y + 10, { align: 'center' })
+        .text(`${destinationDateReturn}`, 50, y, { align: 'right' });
+
+    y = sumY(doc, y, 15);
+
+    doc.font('poppins-regular')
+        .text(`${originTimeReturn}`, 50, y, { align: 'left' })
+        .text(`${kilometerReturn}`, 50, y + 10, { align: 'center' })
+        .text(`${destinationTimeReturn}`, 50, y, { align: 'right' });
+    yLineCenter = y;
+
+    y = sumY(doc, y, 15);
+
+    doc.font('poppins-regular')
+        .text(`${originCityReturn}`, 50, y, { align: 'left' })
+        .text(`${destinationCityReturn}`, 50, y, { align: 'right' });
+
+    if (originAddressReturn) {
+        doc.font('poppins-bold')
+            .fill("#0057A8")
+            .text('Get Direction', 50, y + 15, {
+                align: 'left',
+                link: `${originAddressReturn}`,
+                continued: true,
+                underline: true
+            })
+            .text("", 0, 0, {
+                align: 'left',
+                link: null,
+                continued: null,
+                underline: null
+            }).image(googleMapIconBase64, 120, y + 17, { width: 6 });
+    }
+
+    y = sumY(doc, y, 40);
+
+
+    pageWidth2 = 595.28;
+    lineLength2 = 250;
+    startX2 = (pageWidth2 - lineLength2) / 2;
+    yPosition = yLineCenter + 10;
+
+    centerX = startX + lineLength;
+    centerY = yPosition;
+    radius = 2;
 
     doc.fill('red').moveTo(startX2, yPosition)
         .lineTo(startX + lineLength, yPosition)
@@ -248,12 +397,14 @@ function generateHeader(doc, {
 
     y = sumY(doc, y, 20);
 
+    // [End] Return Trip Detail
+
+
     // Passenger Details
     doc.fontSize(18)
         .fill("#0057A8")
         .font('poppins-bold')
         .text('Passenger Details', 50, y, { align: 'left' });
-
     y = sumY(doc, y, 40);
 
     // Table headers
@@ -282,8 +433,12 @@ function generateHeader(doc, {
         y = sumY(doc, y, 30);
     });
 
-    y = sumY(doc, y, 20);
-    
+    if (y >= 680) {
+        doc.addPage();
+        y = 50;
+    }
+
+
     doc.font('poppins-bold')
         .fontSize(18)
         .fill("#0057A8")
@@ -293,29 +448,34 @@ function generateHeader(doc, {
         .fill("black")
         .font('poppins-bold')
         .text('Total Ticket Departure:', 50, y + 30, { align: 'left' })
-        .text('Amount Departure:', 50, y + 50, { align: 'left' })
-        .text('Total:', 50, y + 80, { align: 'left' })
+        .text('Total Ticket Return:', 50, y + 50, { align: 'left' })
+        .text('Amount Departure:', 50, y + 70, { align: 'left' })
+        .text('Amount Return:', 50, y + 90, { align: 'left' })
+        .text('Total:', 50, y + 115, { align: 'left' })
         .font('poppins-regular')
         .text(`${ticketCount}`, 270, y + 30,) // departure 
-        .text(`$ ${price}`, 270, y + 50,) // price departure
-        .text(`$ ${price * ticketCount}`, 270, y + 80) // price return
+        .text(`${ticketCountReturn}`, 270, y + 50,) // return
+        .text(`$ ${price}`, 270, y + 70,) // price departure
+        .text(`$ ${priceReturn}`, 270, y + 90) // price return
+        .text(`$ ${((ticketCount * price) + (ticketCountReturn * priceReturn))}`, 270, y + 115) // price return
         .strokeColor("black")
         .lineWidth(1)
-        .moveTo(50, y + 70)
-        .lineTo(300, y + 70)
+        .moveTo(50, y + 110)
+        .lineTo(290, y + 110)
         .stroke();
-
+        
     y = sumY(doc, y, 120)
 
-
     generateFooter(doc, y);
+
     return y;
 }
-
 
 function generateFooter(doc, startFrom2 = 650) {
 
     let startFrom = sumY(doc, startFrom2, 20);
+    console.log("startFrom", startFrom);
+
 
     const items = [
         "Tickets are non-refundable but exchangeable for 1 time only up to one year from the date of purchase. Note: Please inform us 24 hours before departure time via email: info@giantibis.com or Hotline: +855 96 999 3333.",
@@ -380,15 +540,13 @@ function generateFooter(doc, startFrom2 = 650) {
 
 }
 
-
 const sumY = (doc, y, valueSum) => {
-    console.log({ y, valueSum });
-
+    y = y + valueSum;
     if (y >= 730) {
         doc.addPage();
         y = 50;
     }
-    return y + valueSum;
+    return y;
 }
 
 function addFacibilities(doc, y, facilities) {

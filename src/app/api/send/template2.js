@@ -1,4 +1,17 @@
 import { fromMail } from "@/constant/constant"
+import { airConBase64 } from "@/constant/facibilities/air-con"
+import { gpsBase64 } from "@/constant/facibilities/gps"
+import { legRoomBase64 } from "@/constant/facibilities/legroom"
+import { powerOutlet } from "@/constant/facibilities/power-outlet"
+import { seatBeltBase64 } from "@/constant/facibilities/seat-bekt"
+import { sleepBedIconBase64 } from "@/constant/facibilities/sleep-bed-icon"
+import { snakeIconBase64 } from "@/constant/facibilities/snack"
+import { toiletIconBase64 } from "@/constant/facibilities/toilet"
+import { tvBase64 } from "@/constant/facibilities/tv"
+import { usbChargerBase64 } from "@/constant/facibilities/usa-charger"
+import { waterBottleBase64 } from "@/constant/facibilities/water-bottle"
+import { wetTowerBase64 } from "@/constant/facibilities/wet-tower"
+import { wifiBase64 } from "@/constant/facibilities/wifi"
 
 export const TemplateMail = ({
     toEmail,
@@ -15,8 +28,10 @@ export const TemplateMail = ({
     destinationDate,
     destinationTime,
     destinationCity,
+    facibilities,
     passengers = []
 }) => {
+    console.log("facibilities email", facibilities);
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -122,6 +137,27 @@ export const TemplateMail = ({
                                     <td
                                         style="text-align: right; color: red; font-weight: 600; font-size: 10px; font-family: Poppins, sans-serif;">
                                         Seat number: ${seatNo}</td>
+                                </tr>
+                            </table>
+                            <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
+                                <tr>
+                                    <td style="font-weight: 600; font-size: 10px; font-family: Poppins, sans-serif;">
+                                        <img style="width: 25px;" src="${airConBase64}" alt="air conditioning">
+                                        ${facibilities?.airConditioning ? `<img style="width: 25px;" src="${airConBase64}" alt=""> ` : ""}
+                                        ${facibilities?.wifi ? `<img style="width: 25px;" src="${wifiBase64}" alt=""> ` : ""}
+                                        ${facibilities?.snack ? `<img style="width: 25px;" src="${snakeIconBase64}" alt=""> ` : ""}
+                                        ${facibilities?.waterBottle ? `<img style="width: 25px;" src="${waterBottleBase64}" alt=""> ` : ""}
+                                        ${facibilities?.wetTowel ? `<img style="width: 25px;" src="${wetTowerBase64}" alt=""> ` : ""}
+                                        ${facibilities?.powerOutlet ? `<img style="width: 25px;" src="${powerOutlet}" alt=""> ` : ""}
+                                        ${facibilities?.gps ? `<img style="width: 25px;" src="${gpsBase64}" alt=""> ` : ""}
+                                        ${facibilities?.legRoom ? `<img style="width: 25px;" src="${legRoomBase64}" alt=""> ` : ""}
+                                        ${facibilities?.seatBelt ? `<img style="width: 25px;" src="${seatBeltBase64}" alt=""> ` : ""}
+                                        ${facibilities?.toilet ? `<img style="width: 25px;" src="${toiletIconBase64}" alt=""> ` : ""}
+                                        ${facibilities?.tv ? `<img style="width: 25px;" src="${tvBase64}" alt=""> ` : ""}
+                                        ${facibilities?.usbCharger ? `<img style="width: 25px;" src="${usbChargerBase64}" alt=""> ` : ""}
+                                        ${facibilities?.sleepingBed ? `<img style="width: 25px;" src="${sleepBedIconBase64}" alt=""> ` : ""}
+                                    </td>
+
                                 </tr>
                             </table>
                             <table style="width: 100%; margin-top: 20px; border-collapse: collapse;" class="trip-info">

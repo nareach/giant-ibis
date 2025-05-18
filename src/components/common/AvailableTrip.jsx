@@ -499,14 +499,13 @@ export const AvailableTripItems = ({
     const handlePay = async () => {
         try {
             setLoading(true);
-
+            
             if (!passengerInfoRef.current.validatePassengers()) {
                 toast.error("Please fill in all user information");
                 setLoading(false);
                 return;
             }
-
-            let url;
+            let url = ''
             let amount = 0;
 
             if (tripType == 'round-trip') {
@@ -637,9 +636,13 @@ export const AvailableTripItems = ({
                 "paymentMethod": paymentMethod == 'khqr' ? '0' : '1',
             }
 
+            console.log("body: ", body);
+            
+
             const qr = await generatQR(body).unwrap();
 
-
+            console.log("qr: ", qr?.data);
+            
             setError(null);
             setTransactionID(uuid);
             setPayDate(payDate1);
@@ -651,7 +654,8 @@ export const AvailableTripItems = ({
              * After set thhis data to form success it will trigger to call useEffect submit the form
              */
         } catch (error) {
-
+            console.log("error: ", error);
+            
             if (error?.data?.type == "payment") {
                 setShowPopup(true);
             }

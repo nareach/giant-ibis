@@ -8,8 +8,14 @@ export const checkStatusApiSlice = apiSlice.injectEndpoints({
                 method: "GET"
             })
         }),
+        checkStatusRoundTrip: builder.query({
+            query: ({ tranId, refCode, refCodeRoundTrip }) => ({
+                url: `/check-status/${tranId}?refCode=${refCode}&refCodeRoundTrip=${refCodeRoundTrip}&tripType=round-trip`,
+                method: "GET"
+            })
+        })
     }),
     overrideExisting: false
 });
 
-export const { useCheckStatusQuery } = checkStatusApiSlice;
+export const { useCheckStatusQuery, useCheckStatusRoundTripQuery } = checkStatusApiSlice;

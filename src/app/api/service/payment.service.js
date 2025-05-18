@@ -8,6 +8,7 @@ import nodemailer from 'nodemailer';
 import puppeteer from "puppeteer";
 import chromium from "@sparticuz/chromium";
 import { generateInvoicePdf } from "./utils/generate-invoice";
+import { generateInvoiceRoundTripPdf } from "./utils/generate-invoice-round-trip";
 
 export class PaymentService {
 
@@ -30,7 +31,6 @@ export class PaymentService {
         console.log("confirm: ", confirmRef);
 
         const seatNumbers = bookList?.map(item => item?.seat_id).join(",");
-
         const routeList = await getRouteList();
         const cities = await getCity();
 
@@ -99,13 +99,13 @@ export class PaymentService {
 
         if (confirmRef?.status) {
             await this.sendMail({
+                ticketCount: ticketInfor?.length || 0,
                 busType: route?.bus_type || "",
                 kilometer: route?.kilo_meters || "",
                 duration: route?.duration || "",
                 seatNo: seatNumbers || "",
                 toEmail: ticketInfor?.length > 0 ? ticketInfor[0]?.email : "",
                 ticketId: refCode,
-                passenger: passengers?.length > 0 ? passengers[0] : null,
                 dateSend: ticketInfor?.length > 0 ? ticketInfor[0]?.issued_date : "",
                 originCity: originCity[0]?.city_name || "",
                 originDate: moment(bookList[0]?.travel_date)?.format('MMMM-DD-YYYY') || "",
@@ -113,13 +113,41 @@ export class PaymentService {
                 originAddress: addressOriginAddress?.data?.length > 0 ? addressOriginAddress?.data[0]?.url : null,
                 destinationCity: destinationCity[0]?.city_name || "",
                 destinationDate: arrivalDate || "",
-                destinationTime: destinationTime || ""
+                destinationTime: destinationTime || "",
+                passengers: passengers,
+                facibilities: facility,
+
             })
         }
 
+        await this.sendMail({
+            ticketCount: ticketInfor?.length || 0,
+            price: ticketInfor[0].price,
+            busType: route?.bus_type || "",
+            kilometer: route?.kilo_meters || "",
+            duration: route?.duration || "",
+            seatNo: seatNumbers || "",
+            toEmail: ticketInfor?.length > 0 ? ticketInfor[0]?.email : "",
+            ticketId: refCode,
+            passenger: passengers?.length > 0 ? passengers[0] : null,
+            dateSend: ticketInfor?.length > 0 ? ticketInfor[0]?.issued_date : "",
+            originCity: originCity[0]?.city_name || "",
+            originDate: moment(bookList[0]?.travel_date)?.format('MMMM-DD-YYYY') || "",
+            originTime: bookList[0]?.travel_time || "",
+            originAddress: addressOriginAddress?.data?.length > 0 ? addressOriginAddress?.data[0]?.url : null,
+            destinationCity: destinationCity[0]?.city_name || "",
+            destinationDate: arrivalDate || "",
+            destinationTime: destinationTime || "",
+            passengers: passengers,
+            facibilities: facility,
+        })
+
 
         return {
+            passengers,
             confirmRef: confirmRef,
+            ticketCount: ticketInfor?.length || 0,
+            price: ticketInfor[0].price,
             ticket: ticketInfor?.length > 0 ? ticketInfor[0] : null,
             pickup: pickupObj || null,
             facilities: facility,
@@ -154,6 +182,271 @@ export class PaymentService {
         };
     }
 
+    confirmRoundTrip1 = async (bookListOneWay, bookListRoundTrip, refCode, refCodeRoundTrip) => {
+
+        try {
+
+            // make a confirm to API
+            const confirmOneWayRef = await confirmBooking(refCode);
+            const confirmRoundRef = await confirmBooking(refCodeRoundTrip);
+
+            // select seat
+            const seatOneWayNumbers = bookListOneWay?.map(item => item?.seat_id).join(",");
+            const seatRoundTripNumbers = bookListRoundTrip?.map(item => item?.seat_id).join(",");
+
+            const routeList = await getRouteList();
+            const cities = await getCity();
+
+            // find the route
+            const routeOneWayFilter = routeList?.data?.filter((route, index) => route?.id == bookListOneWay[0].route_id);
+            const routeRoundTripFilter = routeList?.data?.filter((route, index) => route?.id == bookListRoundTrip[0].route_id);
+
+            let routeOneWay;
+            if (routeOneWayFilter?.length > 0) {
+                routeOneWay = routeOneWayFilter[0];
+            }
+
+            let routeRoundTrip;
+            if (routeRoundTripFilter?.length > 0) {
+                routeRoundTrip = routeRoundTripFilter[0];
+            }
+
+
+            // select the city
+            const originOneWayCity = cities?.data?.filter((city, index) => city?.city_id == routeOneWay?.origin)
+            const destinationOneWayCity = cities?.data?.filter((city, index) => city?.city_id == routeOneWay?.destination)
+
+            const originRoundTripCity = cities?.data?.filter((city, index) => city?.city_id == routeRoundTrip?.origin)
+            const destinationRoundTripCity = cities?.data?.filter((city, index) => city?.city_id == routeRoundTrip?.destination)
+
+            // select the time
+            const destinationOneWayTime = addHoursToTime(bookListOneWay[0].travel_time, routeOneWay?.destination);
+            const arrivalOneWayDate = calculateArrival({
+                departureTime: bookListOneWay[0].travel_date,
+                durationHours: routeOneWay?.duration,
+                metaTime: bookListOneWay[0].travel_time
+            });
+
+            const destinationRoundTripTime = addHoursToTime(bookListRoundTrip[0].travel_time, routeRoundTrip?.destination);
+            const arrivalRoundTripDate = calculateArrival({
+                departureTime: bookListRoundTrip[0].travel_date,
+                durationHours: routeRoundTrip?.duration,
+                metaTime: bookListRoundTrip[0].travel_time
+            });
+
+
+            // pick up address
+            let ticketOneWayInfor = null;
+            let ticketRoundTripInfor = null;
+
+            let pickupOneWay = bookListOneWay[0].pickup;
+            let pickupRoundTrip = bookListRoundTrip[0].pickup;
+
+            let pickupOneWayObj = null;
+            let pickupRoundTripObj = null;
+
+            if (pickupOneWay) {
+                const getPickUpListData = await getPickUpList({ city_id: routeOneWay?.origin });
+                pickupOneWayObj = getPickUpListData?.data?.filter((item) => item?.id == pickupOneWay);
+                pickupOneWayObj = pickupOneWayObj?.length > 0 ? pickupOneWayObj[0] : null;
+            }
+
+            if (pickupRoundTrip) {
+                const getPickUpListData = await getPickUpList({ city_id: routeRoundTrip?.origin });
+                pickupRoundTripObj = getPickUpListData?.data?.filter((item) => item?.id == pickupRoundTrip);
+                pickupRoundTripObj = pickupRoundTripObj?.length > 0 ? pickupRoundTripObj[0] : null;
+            }
+
+
+
+            // const facilityOneWay = this.getFacilities(busDetail?.data?.length > 0 ? busDetail?.data[0].facilities : null)
+            const printTicketOneWay = await this.printTicketDetail(bookListOneWay[0].ref_code);
+            if (printTicketOneWay?.data?.length > 0) {
+                ticketInfor = printTicket?.data?.filter((item) => item?.first_name != "guest_name0")?.map((item) => {
+
+                    const email = item?.email?.split(",");
+                    const first_name = item?.first_name.split(",");
+                    const last_name = item?.last_name.split(",");
+                    const mobile = item?.mobile.split(",");
+
+                    return {
+                        ...item,
+                        email: email?.length > 0 ? email[0] : null,
+                        first_name: first_name?.length > 0 ? first_name[0] : null,
+                        last_name: last_name?.length > 0 ? last_name[0] : null,
+                        mobile: mobile?.length > 0 ? mobile[0] : null,
+                    }
+                })
+            }
+
+
+        } catch (error) {
+
+        }
+    }
+
+    confirmBookingWithoutSendMail = async (bookList, refCode) => {
+
+        const seatNumbers = bookList?.map(item => item?.seat_id).join(",");
+        const routeList = await getRouteList();
+        const cities = await getCity();
+
+        const routeFilter = routeList?.data?.filter((route, index) => route?.id == bookList[0].route_id);
+        let route;
+        if (routeFilter?.length > 0) {
+            route = routeFilter[0];
+        }
+
+        const originCity = cities?.data?.filter((city, index) => city?.city_id == route?.origin)
+        const destinationCity = cities?.data?.filter((city, index) => city?.city_id == route?.destination)
+
+        const destinationTime = addHoursToTime(bookList[0].travel_time, route?.destination);
+        const arrivalDate = calculateArrival({
+            departureTime: bookList[0].travel_date,
+            durationHours: route?.duration,
+            metaTime: bookList[0].travel_time
+        });
+
+
+        // address
+        const addressOriginAddress = await this.findAddress(route?.id, bookList[0].travel_time);
+        const destinationAddress = await this.findAddress(route?.id, destinationTime);
+        const busDetail = await this.findRouteBus(
+            bookList[0].route_id,
+            bookList[0].travel_time
+        );
+
+        const facility = this.getFacilities(busDetail?.data?.length > 0 ? busDetail?.data[0].facilities : null)
+        const printTicket = await this.printTicketDetail(bookList[0].ref_code);
+        let ticketInfor = null;
+        let pickup = bookList[0].pickup;
+        let pickupObj = null;
+
+        if (pickup) {
+            const getPickUpListData = await getPickUpList({ city_id: route?.origin });
+            pickupObj = getPickUpListData?.data?.filter((item) => item?.id == pickup);
+            pickupObj = pickupObj?.length > 0 ? pickupObj[0] : null;
+        }
+
+        if (printTicket?.data?.length > 0) {
+            ticketInfor = printTicket?.data?.filter((item) => item?.first_name != "guest_name0")?.map((item) => {
+
+                const email = item?.email?.split(",");
+                const first_name = item?.first_name.split(",");
+                const last_name = item?.last_name.split(",");
+                const mobile = item?.mobile.split(",");
+
+                return {
+                    ...item,
+                    email: email?.length > 0 ? email[0] : null,
+                    first_name: first_name?.length > 0 ? first_name[0] : null,
+                    last_name: last_name?.length > 0 ? last_name[0] : null,
+                    mobile: mobile?.length > 0 ? mobile[0] : null,
+                }
+            })
+        }
+
+        let passengers = ticketInfor?.map((item) => {
+            return {
+                username: `${item?.first_name || ""} ${item?.last_name || ""}`,
+                mobile: item?.mobile || "",
+                email: item?.email || "",
+                pickup: pickupObj?.title || "",
+            }
+        })
+
+        return {
+            notification: {
+                ticketCount: ticketInfor?.length || 0,
+                price: ticketInfor[0].price,
+                busType: route?.bus_type || "",
+                kilometer: route?.kilo_meters || "",
+                duration: route?.duration || "",
+                seatNo: seatNumbers || "",
+                toEmail: ticketInfor?.length > 0 ? ticketInfor[0]?.email : "",
+                ticketId: refCode,
+                dateSend: ticketInfor?.length > 0 ? ticketInfor[0]?.issued_date : "",
+                originCity: originCity[0]?.city_name || "",
+                originDate: moment(bookList[0]?.travel_date)?.format('MMMM-DD-YYYY') || "",
+                originTime: bookList[0]?.travel_time || "",
+                originAddress: addressOriginAddress?.data?.length > 0 ? addressOriginAddress?.data[0]?.url : null,
+                destinationCity: destinationCity[0]?.city_name || "",
+                destinationDate: arrivalDate || "",
+                destinationTime: destinationTime || "",
+                passengers: passengers,
+                facibilities: facility,
+            },
+            ticketCount: ticketInfor?.length || 0,
+            price: ticketInfor[0].price,
+            ticket: ticketInfor?.length > 0 ? ticketInfor[0] : null,
+            pickup: pickupObj || null,
+            facilities: facility,
+            kilo_meters: route?.kilo_meters,
+            bus_type: route?.bus_type,
+            duration: route?.duration,
+            ref_code: bookList[0].ref_code,
+            passenger_id: bookList[0].passenger_id,
+            route_id: bookList[0].route_id,
+            bus_id: bookList[0].bus_id,
+            travel_date: bookList[0].travel_date,
+            travel_time: bookList[0].travel_time,
+            seat_status: bookList[0].seat_status,
+            price: bookList[0].price,
+            meta_id: bookList[0].meta_id,
+            ref_id_ticket: bookList[0].ref_id_ticket,
+            seat_no: seatNumbers,
+            routeBus: busDetail?.data?.length > 0 ? busDetail?.data[0] : null,
+            originDetail: {
+                city: originCity[0],
+                time: bookList[0].travel_time,
+                leaveAt: moment(bookList[0].travel_date).format('MMMM-DD-YYYY'),
+                address: addressOriginAddress?.data?.length > 0 ? addressOriginAddress?.data[0] : null
+            },
+            destinationDetail: {
+                city: destinationCity[0],
+                time: destinationTime,
+                arriveAt: arrivalDate,
+                address: destinationAddress,
+            },
+            route: route,
+        };
+    }
+
+    confirmRoundTrip = async (bookListOneWay, bookListRoundTrip, refCode, refCodeRoundTrip) => {
+
+        const confirmOneWay = await this.confirmBookingWithoutSendMail(bookListOneWay, refCode);
+        const confirmRoundTrip = await this.confirmBookingWithoutSendMail(bookListRoundTrip, refCodeRoundTrip);
+
+        // select data for sending email
+        const oneWayNotification = confirmOneWay?.notification;
+        const roundTripNotification = confirmRoundTrip?.notification;
+        // bus, seatno, originDate, originTime
+        await this.sendMailRoundTrip({
+            ...oneWayNotification,
+            ticketCountReturn: roundTripNotification?.ticketCount,
+            priceReturn: roundTripNotification?.price,
+            ticketIdReturn: roundTripNotification?.ticketId,
+            busTypeReturn: roundTripNotification?.busType,
+            seatNoReturn: roundTripNotification?.seatNo,
+            originDateReturn: roundTripNotification?.originDate,
+            originTimeReturn: roundTripNotification?.originTime,
+            originCityReturn: roundTripNotification?.originCity,
+            originAddressReturn: roundTripNotification?.originAddress,
+            durationReturn: roundTripNotification?.duration,
+            kilometerReturn: roundTripNotification?.kilometer,
+            destinationDateReturn: roundTripNotification?.destinationDate,
+            destinationTimeReturn: roundTripNotification?.destinationTime,
+            destinationCityReturn: roundTripNotification?.destinationCity,
+            dateSendReturn: roundTripNotification?.dateSend,
+            passengersReturn: roundTripNotification?.passengers,
+            facibilitiesReturn: roundTripNotification?.facibilities,
+        })
+
+        return {
+            oneWay: confirmOneWay || null,
+            roundTrip: confirmRoundTrip || null,
+        }
+    }
 
     checkPaymentStatus = async (paymentTokenId) => {
         try {
@@ -250,6 +543,8 @@ export class PaymentService {
     }
 
     async sendMail({
+        ticketCount,
+        price,
         toEmail,
         ticketId,
         busType,
@@ -266,6 +561,7 @@ export class PaymentService {
         dateSend,
         passenger,
         passengers = [],
+        facibilities ,
     }) {
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -293,11 +589,13 @@ export class PaymentService {
                 destinationCity,
                 passengers,
                 dateSend,
+                facibilities
             });
 
 
-
             const pdfBuffer = await generateInvoicePdf({
+                ticketCount,
+                price,
                 ticketId,
                 toEmail,
                 busType,
@@ -312,7 +610,139 @@ export class PaymentService {
                 destinationTime,
                 destinationCity,
                 dateSend,
-                passenger
+                passengers,
+                facibilities,
+            });
+
+
+            transporter.sendMail({
+                from: 'chentochea2002@gmail.com',
+                to: toEmail,
+                subject: 'Giant Ibis E-Ticket',
+                text: 'Please find your e-ticket attached.',
+                html: htmlContent,
+                attachments: [
+                    {
+                        filename: 'e-ticket.pdf',
+                        content: pdfBuffer,
+                        contentType: 'application/pdf',
+                    },
+                ],
+            });
+
+            console.log('Email sent successfully!');
+        } catch (error) {
+            console.error('Error sending mail:', error);
+            throw error;
+        }
+    }
+
+    async sendMailRoundTrip({
+        // departuree param
+        ticketCount,
+        price,
+        toEmail,
+        ticketId,
+        busType,
+        seatNo,
+        originDate,
+        originTime,
+        originCity,
+        originAddress,
+        duration,
+        kilometer,
+        destinationDate,
+        destinationTime,
+        destinationCity,
+        dateSend,
+        passengers = [],
+        facibilities = [],
+        // return param
+        ticketCountReturn,
+        priceReturn,
+        ticketIdReturn,
+        busTypeReturn,
+        seatNoReturn,
+        originDateReturn,
+        originTimeReturn,
+        originCityReturn,
+        originAddressReturn,
+        durationReturn,
+        kilometerReturn,
+        destinationDateReturn,
+        destinationTimeReturn,
+        destinationCityReturn,
+        dateSendReturn,
+        passengersReturn = [],
+        facibilitiesReturn = []
+    }) {
+
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER || 'chentochea2002@gmail.com',
+                pass: process.env.EMAIL_PASS || 'gplrmjmqewdrgodu',
+            },
+        });
+
+        try {
+
+            const htmlContent = TemplateMail({
+                originAddress,
+                toEmail,
+                ticketId,
+                busType,
+                seatNo,
+                originDate,
+                originTime,
+                originCity,
+                duration,
+                kilometer,
+                destinationDate,
+                destinationTime,
+                destinationCity,
+                facibilities,
+                passengers,
+                dateSend,
+            });
+
+            const pdfBuffer = await generateInvoiceRoundTripPdf({
+                ticketCount,
+                price,
+                ticketId,
+                toEmail,
+                busType,
+                seatNo,
+                originDate,
+                originTime,
+                originCity,
+                originAddress,
+                duration,
+                kilometer,
+                destinationDate,
+                destinationTime,
+                destinationCity,
+                dateSend,
+                passengers,
+                facibilities,
+                ticketCountReturn,
+                priceReturn,
+                ticketIdReturn,
+                busTypeReturn,
+                seatNoReturn,
+                originDateReturn,
+                originTimeReturn,
+                originCityReturn,
+                originAddressReturn,
+                durationReturn,
+                kilometerReturn,
+                destinationDateReturn,
+                destinationTimeReturn,
+                destinationCityReturn,
+                dateSendReturn,
+                passengersReturn,
+                facibilitiesReturn
             });
 
 

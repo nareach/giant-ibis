@@ -85,22 +85,21 @@ export default function TicketConfirmation({
               <div>
                 <h3 className="font-medium mb-3">Traveller Details</h3>
                 <div className="space-y-1">
-                  <div className="text-gray-500">Firstname: {book?.ticket?.first_name}</div>
-                  <div className="text-gray-500">LastName: {book?.ticket?.last_name}</div>
-                  <div className="text-gray-500">Phone Number: {book?.ticket?.mobile}</div>
-                  <div className="text-gray-500">Email: {book?.ticket?.email}</div>
+                  <div className=""><span className="text-gray-500 pr-5">First name:  </span>{book?.ticket?.first_name}</div>
+                  <div className=""><span className="text-gray-500 pr-5">Last name:  </span>{book?.ticket?.last_name}</div>
+                  <div className=""><span className="text-gray-500 pr-5">Phone Number: </span>{book?.ticket?.mobile}</div>
+                  <div className=""><span className="text-gray-500 pr-5">Email:  </span>{book?.ticket?.email}</div>
+                  <div><span className="text-gray-500 pr-5">Booking Status: </span> {book?.seat_status}</div>
+                  <div><span className="text-gray-500 pr-5">Seat no: </span> {book?.seat_no}</div>
+                  <div><span className="text-gray-500 pr-5">Price: </span> {book?.price}</div>
+                  <div><span className="text-gray-500 pr-5">Ticket: </span> {book?.ticketCount}</div>
                 </div>
-              </div>
-
-              <div className="text-gray-600 lg:mt-16">
-                <div>Booking Status : {book?.seat_status}</div>
-                <div>Seat no. : {book?.seat_no}</div>
               </div>
             </div>
 
             <div className="flex justify-between items-end pt-4 border-t">
               <div className="text-gray-600">Total Fare</div>
-              <div className="text-xl font-medium">${book?.price}</div>
+              <div className="text-xl font-medium">${Number(book?.price) * book?.ticketCount}</div>
             </div>
           </div>
         </div>

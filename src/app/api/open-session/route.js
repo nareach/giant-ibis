@@ -21,7 +21,7 @@ export async function POST(request) {
                 "item": 'booking',
                 "quantity": "1",
                 "expiryTime": "5",
-                "paymentCard": paymentMethod == 'khqr' ? '0' : '1',
+                "paymentCard": paymentMethod,
             }
         });
 
@@ -32,6 +32,9 @@ export async function POST(request) {
                 'Content-Type': 'application/json',
             }
         });
+
+        console.log("response: ", response.data);
+        
 
         if (response.data?.result?.errorDetails !== "SUCCESS") {
 
@@ -51,8 +54,7 @@ export async function POST(request) {
         if (response.data) {
             return Response.json({
                 status: true,
-                response: response.data,
-                data: JSON.parse(data)
+                data: response?.data,
             })
         }
 

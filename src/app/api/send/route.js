@@ -3,6 +3,7 @@ import PDFDocument from 'pdfkit/js/pdfkit.standalone.js';
 import path from 'path';
 import fs from 'fs/promises';
 import { bufferImageLogo } from '@/constant/buffer-img-logo';
+import { googleMapIconBase64 } from '@/constant/facibilities/google-map';
 
 export async function GET(request) {
   try {
@@ -24,8 +25,11 @@ export async function GET(request) {
       });
     });
 
-    generateHeader(doc);
-    generateFooter(doc, 650);
+    let finalY = await generateHeader(doc);
+    if (finalY > 790) {
+      doc.addPage();
+      finalY = 50; // Reset Y position for new page
+    }
 
     doc.end();
 
@@ -47,118 +51,377 @@ export async function GET(request) {
   }
 }
 
-function generateHeader(doc) {
+async function generateHeader(doc) {
+  // Initialize dynamic Y position
+  let y = 50; // Start from top margin
 
   const pageWidth = 595.28;
   const lineLength = 250;
   const startX = (pageWidth - lineLength) / 2;
-  const yPosition = 308;
 
-  doc
-    .fontSize(9)
-    // [START] HEADER
-    .text('From: Giantibis.com', 50, 57, { align: 'left' })
-    .text('Subject: E-Ticket ID #API682236378bfc13.16118443', 50, 75, { align: 'left' })
-    .text('Date: 9 January 2025 3:12 AM', 200, 57, { align: 'right' })
-    .text('To: sunjessica05@gmail.com', 200, 75, { align: 'right' })
-    // [END] HEADER
-    .strokeColor('#A6A6A6')
+  // [START] HEADER
+  doc.fontSize(9)
+    .text('From: Giantibis.com', 50, y, { align: 'left' })
+    .text('Date: 9 January 2025 3:12 AM', 200, y, { align: 'right' });
+  y += 25;
+
+  doc.text('Subject: E-Ticket ID #API682236378bfc13.16118443', 50, y, { align: 'left' })
+    .text('To: sunjessica05@gmail.com', 200, y, { align: 'right' });
+  y += 25;
+
+  // Horizontal line
+  doc.strokeColor('#A6A6A6')
     .lineWidth(1)
-    .moveTo(50, 100)
-    .lineTo(555, 100)
-    .stroke()
-    .image(bufferImageLogo, 50, 120, { width: 180 }).fontSize(20)
+    .moveTo(50, y)
+    .lineTo(555, y)
+    .stroke();
+  y += 10;
+
+  // Logo and ticket info
+  doc.image(bufferImageLogo, 50, y, { width: 180 })
     .fill("#0057A8")
     .font('poppins-bold')
     .fontSize(10)
-    .text('Your E-Ticket', 50, 135, { align: 'right' })
-    .text('ID ##API682236378bfc13.16118443', 50, 155, { align: 'right' })
-    .lineWidth(1)
-    .moveTo(50, 200)
-    .lineTo(555, 200)
-    .stroke()
-    // [START] Departure Trip Detail
-    .fontSize(18)
+    .text('Your E-Ticket', 50, y + 15, { align: 'right' })
+    .text('ID ##API682236378bfc13.16118443', 50, y + 35, { align: 'right' });
+  y += 70;
+
+  // Horizontal line
+  doc.moveTo(50, y)
+    .lineTo(555, y)
+    .stroke();
+  y += 20;
+
+  // Departure Trip Detail
+  doc.fontSize(18)
     .fill("#0057A8")
     .font('poppins-bold')
-    .text('Departure Trip Detail', 50, 220, { align: 'left' })
-    .fontSize(10)
+    .text('Departure Trip Detail', 50, y, { align: 'left' });
+  y += 30;
+
+  let seatText = 'Seat No: 2-A,3-A';
+  let rightMargin = 50;
+  let textWidth = 250;
+
+  doc.fontSize(11)
     .fill("black")
     .font('poppins-bold')
-    .text('Universe Noble-37 (Mini Van 15 Seats)', 50, 250, { align: 'left' })
+    .text('Universe Noble-37 (Mini Van 15 Seats)', 50, y, { align: 'left' })
     .fill("red")
-    .text('Seat No: 2-A,3-A,2-A,3-A,2-A,3-A,2-A,3-A2-A,3-A', 50, 250, { align: 'right' })
+    .text(seatText, pageWidth - rightMargin - textWidth, y, {
+      width: textWidth,
+      align: 'right'
+    }).fontSize(10);
+
+  y = y + 20;
+  // add facibility here 
+
+  await addFacibilities(doc, y, {
+    airConditioning: true,
+    wifi: true,
+    snack: true,
+    waterBottle: true,
+    wetTowel: true,
+    powerOutlet: true,
+    gps: true,
+    legRoom: true,
+    seatBelt: true,
+    toilet: true,
+    tv: true,
+    usbCharger: true,
+    sleepingBed: true
+  })
+
+
+  let textHeight = doc.heightOfString(seatText, { width: textWidth });
+  y += textHeight + 40;
+  // Trip information
+  doc.font('poppins-regular')
     .fill("black")
-    .font('poppins-regular')
-    .text('Nov, 16', 50, 290, { align: 'left' })
-    .font('poppins-bold')
-    .text('08:45 AM', 50, 305, { align: 'left' })
-    .font('poppins-regular')
-    .text('Phnom Penh', 50, 320, { align: 'left' })
-    .text('5 House', 50, 290, { align: 'center' })
-    .text('5 KM', 50, 312, { align: 'center' })
-    .moveTo(startX, yPosition)
+    .text('Nov, 16', 50, y, { align: 'left' })
+    .text('5 House', 50, y + 10, { align: 'center' })
+    .text('Nov, 16', 50, y, { align: 'right' });
+  y += 15;
+
+  doc.font('poppins-regular')
+    .text('08:45 AM', 50, y, { align: 'left' })
+    .text('5 KM', 50, y + 10, { align: 'center' })
+    .text('08:45 AM', 50, y, { align: 'right' });
+
+  let yLineCenter = y;
+  y += 15;
+
+  doc.font('poppins-regular')
+    .text('Phnom Penh', 50, y, { align: 'left' })
+    .text('Phnom Penh', 50, y, { align: 'right' });
+
+  doc.font('poppins-bold')
+    .fill("#0057A8")
+    .text('Get Direction', 50, y + 15, {
+      align: 'left',
+      link: "https://www.youtube.com/watch?v=fZ0reQOkHO4&list=RDfZ0reQOkHO4&start_radio=1",
+      continued: true,
+      underline: true
+    })
+    .text("", 0, 0, {
+      align: 'left',
+      link: null,
+      continued: null,
+      underline: null
+    }).image(googleMapIconBase64, 120, y + 17, { width: 6 });
+
+
+  y += 50;
+
+
+  let pageWidth2 = 595.28;
+  let lineLength2 = 250;
+  let startX2 = (pageWidth2 - lineLength2) / 2;
+  let yPosition = yLineCenter + 10;
+
+  let centerX = startX + lineLength;
+  let centerY = yPosition;
+  let radius = 2;
+
+  doc.fill('red').moveTo(startX2, yPosition)
     .lineTo(startX + lineLength, yPosition)
     .stroke()
-    .text('Nov, 16', 50, 290, { align: 'right' })
-    .font('poppins-bold')
-    .text('08:45 AM', 50, 305, { align: 'right' })
-    .font('poppins-regular')
-    .text('Phnom Penh', 50, 320, { align: 'right' })
-    .lineWidth(1)
-    .moveTo(50, 350)
-    .lineTo(555, 350)
+    .lineWidth(4)
+    .lineCap('round')
+    .circle(centerX, centerY, radius)
     .stroke()
-    // payment detail
-    .fontSize(18)
+    .lineWidth(4)
+    .lineCap('round')
+    .circle(startX, centerY, radius)
+    .stroke()
+
+
+  doc
+    .lineWidth(1)
+    .moveTo(50, y)
+    .lineTo(555, y)
+    .stroke();
+  y += 20;
+
+
+  // Return Trip Detail
+  doc.fontSize(18)
     .fill("#0057A8")
     .font('poppins-bold')
-    .text('Passenger Details', 50, 365, { align: 'left' })
+    .text('Return Trip Detail', 50, y, { align: 'left' });
+  y += 30;
+
+  seatText = 'Seat No: 2-A,3-A';
+  rightMargin = 50;
+  textWidth = 250;
+
+  doc.fontSize(11)
+    .fill("black")
+    .font('poppins-bold')
+    .text('Universe Noble-37 (Mini Van 15 Seats)', 50, y, { align: 'left' })
+    .fill("red")
+    .text(seatText, pageWidth - rightMargin - textWidth, y, {
+      width: textWidth,
+      align: 'right'
+    }).fontSize(10);
+
+  textHeight = doc.heightOfString(seatText, { width: textWidth });
+  y += textHeight + 40;
+  // Trip information
+  doc.font('poppins-regular')
+    .fill("black")
+    .text('Nov, 16', 50, y, { align: 'left' })
+    .text('5 House', 50, y + 10, { align: 'center' })
+    .text('Nov, 16', 50, y, { align: 'right' });
+  y += 15;
+
+  doc.font('poppins-regular')
+    .text('08:45 AM', 50, y, { align: 'left' })
+    .text('5 KM', 50, y + 10, { align: 'center' })
+    .text('08:45 AM', 50, y, { align: 'right' });
+  yLineCenter = y;
+  y += 15;
+
+  doc.font('poppins-regular')
+    .text('Phnom Penh', 50, y, { align: 'left' })
+    .text('Phnom Penh', 50, y, { align: 'right' });
+  y += 30;
+
+
+  pageWidth2 = 595.28;
+  lineLength2 = 250;
+  startX2 = (pageWidth2 - lineLength2) / 2;
+  yPosition = yLineCenter + 10;
+
+  centerX = startX + lineLength;
+  centerY = yPosition;
+  radius = 2;
+
+  doc.fill('red').moveTo(startX2, yPosition)
+    .lineTo(startX + lineLength, yPosition)
+    .stroke()
+    .lineWidth(4)
+    .lineCap('round')
+    .circle(centerX, centerY, radius)
+    .stroke()
+    .lineWidth(4)
+    .lineCap('round')
+    .circle(startX, centerY, radius)
+    .stroke()
+
+
+  doc
+    .lineWidth(1)
+    .moveTo(50, y)
+    .lineTo(555, y)
+    .stroke();
+  y += 20;
+
+  // [END] Return Trip Detail
+
+  // Passenger Details
+  doc.fontSize(18)
+    .fill("#0057A8")
+    .font('poppins-bold')
+    .text('Passenger Details', 50, y, { align: 'left' });
+  y += 40;
+
+
+
+  // Dynamic table implementation
+  const passengers = [
+    { name: 'Jessica Sun', email: 'chentochea@gmail.com', phone: '+855 92 655 182' },
+    { name: 'John Smith', email: 'chentochea@gmail.com', phone: '+855 92 655 182' },
+    { name: 'Jessica Sun', email: 'chentochea@gmail.com', phone: '+855 92 655 182' },
+    { name: 'John Smith', email: 'chentochea@gmail.com', phone: '+855 92 655 182' },
+    { name: 'Jessica Sun', email: 'chentochea@gmail.com', phone: '+855 92 655 182' },
+    { name: 'John Smith', email: 'chentochea@gmail.com', phone: '+855 92 655 182' },
+    { name: 'Jessica Sun', email: 'chentochea@gmail.com', phone: '+855 92 655 182' },
+    { name: 'John Smith', email: 'chentochea@gmail.com', phone: '+855 92 655 182' },
+    { name: 'Jessica Sun', email: 'chentochea@gmail.com', phone: '+855 92 655 182' },
+  ];
+
+  // Table headers
+  doc.font('poppins-bold')
+    .fontSize(10)
+    .text('Name', 50, y)
+    .text('Phone', 200, y)
+    .text('Email', 350, y);
+  y += 20;
+
+  // Table rows
+  passengers.forEach(passenger => {
+    doc.font('poppins-regular')
+      .fontSize(9)
+      .fill("black")
+      .text(passenger.name, 50, y)
+      .text(passenger.phone, 200, y)
+      .text(passenger.email, 350, y)
+      .moveTo(50, y + 15)
+      .lineTo(550, y + 15)
+      .strokeColor('#E0E0E0')
+      .lineWidth(0.5)
+      .stroke();
+
+    y += 30;
+    if (y > 740) {
+      doc.addPage();
+      y = 50;
+    }
+  });
+
+  if (y > 740) {
+    doc.addPage();
+    y = 50;
+  }
+
+  doc.font('poppins-bold')
+    .fontSize(18)
+    .fill("#0057A8")
+    .text('Payment Detail', 50, y, { align: 'left' })
     .font('poppins-regular')
     .fontSize(10)
     .fill("black")
     .font('poppins-bold')
-    .text('Name:', 50, 400, { align: 'left' })
-    .text('Phone:', 50, 420, { align: 'left' })
-    .text('Email:', 50, 440, { align: 'left' })
-    .text('Pick Up:', 50, 460, { align: 'left' })
+    .text('Total Ticket Departure:', 50, y + 30, { align: 'left' })
+    .text('Amount Departure:', 50, y + 50, { align: 'left' })
+    .text('Total:', 50, y + 80, { align: 'left' })
     .font('poppins-regular')
-    .text('Sun Jessica', 150, 400,)
-    .text('+855 96 999 3333', 150, 420,)
-    .text('cheachento007@gmail.com', 150, 440,)
-    .text('Kompong Cham', 150, 460,)
-    .fontSize(18)
-    .fill("black")
-    .fill("#0057A8")
-    .font('poppins-bold')
+    .text('120', 270, y + 30,) // departure 
+    .text('130$', 270, y + 50,) // price departure
+    .text('1100$', 270, y + 80) // price return
+    .strokeColor("black")
     .lineWidth(1)
-    .moveTo(50, 490)
-    .lineTo(555, 490)
-    .stroke()
-    .text('Payment Detail', 50, 510, { align: 'left' })
-    .font('poppins-regular')
-    .fontSize(10)
-    .fill("black")
-    .font('poppins-bold')
-    .text('Total Ticket:', 50, 550, { align: 'left' })
-    .text('Amount:', 50, 565, { align: 'left' })
-    .text('Amount:', 50, 595, { align: 'left' })
-    .font('poppins-regular')
-    .text('10', 220, 550,)
-    .text('10$', 220, 565,)
-    .lineWidth(1)
-    .moveTo(50, 588)
-    .lineTo(250, 588)
-    .text('10$', 220, 595)
-    .lineWidth(1)
-    .moveTo(50, 630)
-    .lineTo(555, 630)
-    .stroke()
-    .fill("black")
+    .moveTo(50, y + 70)
+    .lineTo(300, y + 70)
+    .stroke();
+
+  y += 120;
+
+  if (y > 740) {
+    doc.addPage();
+    y = 50;
+  }
+
+  generateFooter(doc, y);
+
+  return y;
+}
+
+async function addFacibilities(doc, y, facilities) {
+
+  const FACILITY_ICONS = {
+    airConditioning: 'aircon.png',
+    wifi: 'Wifi.png',
+    snack: 'snack-icon.png',
+    waterBottle: 'water-bottle-icon.png',
+    wetTowel: 'wet-tower.png',
+    powerOutlet: 'power-outlet-icon.png',
+    gps: 'gps.png',
+    legRoom: 'legroom.png',
+    seatBelt: 'seat-belt.png',
+    toilet: 'toilet.png',
+    tv: 'tv.png',
+    usbCharger: 'usb-charger-icon.png',
+    sleepingBed: 'sleeping-bed-icon-orange.png'
+  };
+
+  const icons = {};
+  let x = 50;
+
+  for (const [facility, isAvailable] of Object.entries(facilities)) {
+    if (!isAvailable) continue;
+
+    const iconFilename = FACILITY_ICONS[facility];
+    if (!iconFilename) continue;
+    try {
+      const iconPath = path.join(process.cwd(), 'public/assets/icons/');
+      const fullPath = path.join(iconPath, iconFilename);
+
+      const imageBuffer = await fs.readFile(fullPath);
+      const extension = path.extname(iconFilename).slice(1);
+      const base64 = imageBuffer.toString('base64');
+
+
+      const icon = `data:image/${extension};base64,${base64}`
+      doc.image(icon, x, y + 10, { width: 17 })
+      x = x + 22;
+    } catch (error) {
+      console.error(`Error loading icon for ${facility}:`, error);
+      icons[facility] = {
+        available: true,
+        icon: null // or a default icon
+      };
+    }
+  }
+
+  return icons;
+
 }
 
 function generateFooter(doc, startFrom = 650) {
 
+  startFrom += 20;
   const items = [
     "Tickets are non-refundable but exchangeable for 1 time only up to one year from the date of purchase. Note: Please inform us 24 hours before departure time via email: info@giantibis.com or Hotline: +855 96 999 3333.",
     "Online tickets may be purchased at any time before departure as long as seats are still available.",
@@ -195,9 +458,9 @@ function generateFooter(doc, startFrom = 650) {
     .fontSize(10)
     .text('The following rules apply to all Giant Ibis Transport passengers and is subject to change at any time without prior notice:', 50, startFrom + 40, { align: 'left' })
 
-  let y = startFrom + 50;
+  let y = startFrom + 80;
   const options = { width: 500, continued: false };
-  const pageHeight = doc.page.height - 100; // Leave 100px margin at bottom
+  const pageHeight = doc.page.height - 50; // Leave 100px margin at bottom
 
   items.forEach(item => {
     // Check if we ne5d a new page before adding content
@@ -205,7 +468,7 @@ function generateFooter(doc, startFrom = 650) {
 
     if (y + itemHeight > pageHeight) {
       doc.addPage();
-      y = 70; // Reset Y position for new page
+      y = 50;
     }
 
     // Draw bullet point
@@ -221,3 +484,28 @@ function generateFooter(doc, startFrom = 650) {
   });
 
 }
+
+
+
+export async function getBase64Image(relativePath) {
+  // Construct absolute path
+  const publicDir = path.join(process.cwd(), 'public/assets/icons/');
+  const imagePath = path.join(publicDir, relativePath);
+
+  try {
+    // Read image file
+    const imageBuffer = await fs.readFile(imagePath);
+
+    // Get file extension for MIME type
+    const extension = path.extname(relativePath).slice(1);
+    const mimeType = `image/${extension}`;
+
+    // Convert to base64
+    const base64 = imageBuffer.toString('base64');
+    return `data:${mimeType};base64,${base64}`;
+  } catch (error) {
+    console.error('Error converting image to base64:', error);
+    return null;
+  }
+}
+

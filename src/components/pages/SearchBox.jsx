@@ -46,7 +46,6 @@ export default function SearchBookForm() {
   const [departureDate, setDepartureDate] = useState(departureDateParam);
   const [returnDate, setReturnDate] = useState(return_date_param);
 
-
   /**
    * 
    */

@@ -15,6 +15,9 @@ export async function GET(request, { params }) {
 
     const { searchParams } = new URL(request.url);
     const refCode = searchParams.get('refCode');
+    const refCodeRoundTrip = searchParams.get('refCodeRoundTrip');
+    const tripType = searchParams.get('tripType');
+
 
     // const paymentStatus = await paymentService.checkPaymentStatus(id);
     // if (paymentStatus?.result.errorDetails != 'SUCCESS') {
@@ -23,24 +26,48 @@ export async function GET(request, { params }) {
     //         message: "Your payment was not successful. Please try again."
     //     }, { status: 400 });
     // }
-    
+
+    if (tripType != "round-trip") {
+        let booklist = await getAllBookDetail();
+
+        const bookOneWay = booklist?.data?.filter((item, index) => item.ref_code === refCode);
+
+        if (bookOneWay?.length <= 0) {
+            return NextResponse.json({
+                status: false,
+                message: "Ref code not found."
+            }, { status: 400 });
+        }
+
+        const confirmBookedOneWay = await paymentService.confirmOneWay(bookOneWay, refCode);
+
+        return NextResponse.json({
+            status: true,
+            message: "Retrive route detail successfull.",
+            data: confirmBookedOneWay,
+        })
+    }
+
+    // round trip
 
     let booklist = await getAllBookDetail();
 
     const bookOneWay = booklist?.data?.filter((item, index) => item.ref_code === refCode);
+    const bookRoundTrip = booklist?.data?.filter((item, index) => item.ref_code === refCodeRoundTrip);
 
-    if (bookOneWay?.length <= 0) {
+    if (bookOneWay?.length <= 0 || bookRoundTrip?.length <= 0) {
         return NextResponse.json({
             status: false,
             message: "Ref code not found."
         }, { status: 400 });
     }
 
-    const confirmBookedOneWay = await paymentService.confirmOneWay(bookOneWay,refCode);
+    const confirmRoundTrip = await paymentService.confirmRoundTrip(bookOneWay, bookRoundTrip, refCode, refCodeRoundTrip);
 
     return NextResponse.json({
         status: true,
         message: "Retrive route detail successfull.",
-        data: confirmBookedOneWay,
+        data: {...confirmRoundTrip},
     })
+
 }
