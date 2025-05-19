@@ -538,14 +538,12 @@ export class PaymentService {
         pickup,
     }) {
 
-        console.log({
-            pickup,
-        });
-
         const transporter = nodemailer.createTransport({
             host: '4156.smtp.antispamcloud.com',
             port: 465,
             secure: true,
+            logger: true,
+            debug: true,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
@@ -672,6 +670,8 @@ export class PaymentService {
             host: '4156.smtp.antispamcloud.com',
             port: 465,
             secure: true,
+            logger: true,
+            debug: true,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
@@ -724,8 +724,8 @@ export class PaymentService {
             });
 
             const pdfBuffer = await generateInvoiceRoundTripPdf({
-                pickup: "",
-                pickupReturn: "",
+                pickup: pickup,
+                pickupReturn: pickupReturn,
                 ticketCount,
                 price,
                 ticketId,

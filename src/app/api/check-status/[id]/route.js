@@ -19,8 +19,8 @@ export async function GET(request, { params }) {
     const tripType = searchParams.get('tripType');
 
     const paymentStatus = await paymentService.checkPaymentStatus(id);
-    console.log("paymentStatus: ",paymentStatus?.result?.paymentMethod);
-    
+    console.log("paymentStatus: ", paymentStatus?.result?.paymentMethod);
+
     if (paymentStatus?.result.errorDetails != 'SUCCESS') {
         return NextResponse.json({
             status: false,
@@ -33,8 +33,7 @@ export async function GET(request, { params }) {
     if (tripType != "round-trip") {
 
         let booklist = await getAllBookDetail();
-
-        const bookOneWay = booklist?.data?.filter((item, index) => item.ref_code === refCode);
+        let bookOneWay = booklist?.data?.filter((item, index) => item.ref_code === refCode);
 
         if (bookOneWay?.length <= 0) {
             return NextResponse.json({
@@ -44,6 +43,8 @@ export async function GET(request, { params }) {
         }
 
         const confirmRefOneWay = await confirmBooking(refCode);
+        booklist = await getAllBookDetail();
+        bookOneWay = booklist?.data?.filter((item, index) => item.ref_code === refCode);
 
         const confirmBookedOneWay = await paymentService.confirmOneWay(bookOneWay, refCode, confirmRefOneWay?.status, paymentMethod);
 
@@ -58,8 +59,8 @@ export async function GET(request, { params }) {
 
     let booklist = await getAllBookDetail();
 
-    const bookOneWay = booklist?.data?.filter((item, index) => item.ref_code === refCode);
-    const bookRoundTrip = booklist?.data?.filter((item, index) => item.ref_code === refCodeRoundTrip);
+    let bookOneWay = booklist?.data?.filter((item, index) => item.ref_code === refCode);
+    let bookRoundTrip = booklist?.data?.filter((item, index) => item.ref_code === refCodeRoundTrip);
 
     if (bookOneWay?.length <= 0 || bookRoundTrip?.length <= 0) {
         return NextResponse.json({
@@ -69,17 +70,19 @@ export async function GET(request, { params }) {
     }
 
 
+
+
     const confirmRef = await confirmBooking(refCode);
     const confirmRefRoundTrip = await confirmBooking(refCodeRoundTrip);
-    console.log({
-        confirmRef,
-        confirmRefRoundTrip
-    });
+
+    booklist = await getAllBookDetail();
+    bookOneWay = booklist?.data?.filter((item, index) => item.ref_code === refCode);
+    bookRoundTrip = booklist?.data?.filter((item, index) => item.ref_code === refCodeRoundTrip);
     
     let isConfirm = confirmRef?.status && confirmRefRoundTrip?.status
 
     console.log("is confirm: ", isConfirm);
-    
+
 
     const confirmRoundTrip = await paymentService.confirmRoundTrip(bookOneWay, bookRoundTrip, refCode, refCodeRoundTrip, isConfirm, paymentMethod);
 
