@@ -71,17 +71,16 @@ export const AvailableTripItems = ({
     const [paymentTokenid, setPaymentTokenid] = useState();
     const [transactionID, setTransactionID] = useState();
     const [payDate, setPayDate] = useState();
-    const [isFormValid, setIsFormValid] = useState(false);
     const [showSecondTrip, setShowSecondTrip] = useState(false);
+    const [amountTotal, setAmountTotal] = useState();
 
-    const [item, setItem] = useState();
     const [successsUrl, setSuccesssUrl] = useState();
 
     const passengerInfoRef = useRef();
 
-    // state add booking
     const [oneTripBooking, setOneTripBooking] = useState();
     const [roundTripBooking, setRoundTripBooking] = useState();
+    const [item, setItem] = useState();
 
 
     const [errors, setErrors] = useState({
@@ -90,6 +89,7 @@ export const AvailableTripItems = ({
         email: "",
         pickupOrigin: ""
     });
+
 
     const handleTripSelect = (trip) => {
         setRouteSelected(trip);
@@ -487,19 +487,20 @@ export const AvailableTripItems = ({
     // When set this data to form success it will trigger to call useEffect submit the form
     useEffect(() => {
         const submitTheForm = async () => {
-            if (transactionID && payDate && successsUrl && sessionId) {
+            if (transactionID && payDate && successsUrl && sessionId && amountTotal) {
 
                 document.getElementById('_xpayTestForm').submit();
             }
         };
         submitTheForm();
-    }, [transactionID, payDate, successsUrl, sessionId, paymentMethod])
+    }, [transactionID, payDate, successsUrl, sessionId, paymentMethod, amountTotal])
 
 
     const handlePay = async () => {
         try {
             setLoading(true);
-            
+            setIsLoading(true);
+
             if (!passengerInfoRef.current.validatePassengers()) {
                 toast.error("Please fill in all user information");
                 setLoading(false);
@@ -507,6 +508,7 @@ export const AvailableTripItems = ({
             }
             let url = ''
             let amount = 0;
+            let ticketCount = 0;
 
             if (tripType == 'round-trip') {
 
@@ -574,8 +576,14 @@ export const AvailableTripItems = ({
                     return;
                 }
 
+
+                if (paymentMethod != 'khqr') {
+                    ticketCount = selectedSeat?.length + selectedSeatReturn.length;
+                }
+
+
                 url = `${CLIENT_URL}/success/${bookedOnWay?.Booking_id}/${booked?.Booking_id}`
-                amount = (selectedSeat?.length * (Number(routeSelected?.price))) + (selectedSeatReturn.length * (Number(routeReturnSelected?.price)));
+                amount = (selectedSeat?.length * (Number(routeSelected?.price))) + (selectedSeatReturn.length * (Number(routeReturnSelected?.price))) + ticketCount;
 
             } else {
 
@@ -617,17 +625,16 @@ export const AvailableTripItems = ({
                 }
 
 
+                if (paymentMethod != 'khqr') {
+                    ticketCount = selectedSeat?.length;
+                }
 
                 url = `${CLIENT_URL}/success/${bookedOnWay?.Booking_id}`
-                amount = (selectedSeat?.length * (Number(routeSelected?.price)));
+                amount = (selectedSeat?.length * (Number(routeSelected?.price))) + ticketCount;
             }
 
             const uuid = uuidv4();
             const payDate1 = moment(new Date()).format('DD-MM-YYYY');
-            setIsLoading(true);
-            setTransactionID(uuid);
-            setPayDate(payDate1);
-            setSuccesssUrl(url);
 
             const body = {
                 "uuid": uuid,
@@ -636,26 +643,22 @@ export const AvailableTripItems = ({
                 "paymentMethod": paymentMethod == 'khqr' ? '0' : '1',
             }
 
-            console.log("body: ", body);
-            
 
             const qr = await generatQR(body).unwrap();
 
-            console.log("qr: ", qr?.data);
-            
             setError(null);
             setTransactionID(uuid);
             setPayDate(payDate1);
             setSuccesssUrl(url);
             setPaymentTokenid(qr.data?.result?.xTran?.paymentTokenid)
             setSessionId(qr.data?.result?.sessionid);
-
+            setAmountTotal(amount);
             /**
              * After set thhis data to form success it will trigger to call useEffect submit the form
              */
         } catch (error) {
             console.log("error: ", error);
-            
+
             if (error?.data?.type == "payment") {
                 setShowPopup(true);
             }
@@ -1071,12 +1074,20 @@ export const AvailableTripItems = ({
                                         <span className="text-gray-600">Total Travellers</span>
                                         <span>{selectedSeat?.length + selectedSeatReturn.length}</span>
                                     </div>
+
+                                    {
+                                        paymentMethod != "khqr" ? <div className="flex justify-between">
+                                            <span className="text-gray-600">Service Charge</span>
+                                            <span>$ {selectedSeat?.length + selectedSeatReturn.length}</span>
+                                        </div> : <></>
+                                    }
                                     <div className="flex justify-between font-medium pt-3 border-t">
                                         <span>Total Charge</span>
-                                        <span>${
-                                            (selectedSeat?.length * (Number(routeSelected?.price))) + (selectedSeatReturn.length * (Number(routeReturnSelected?.price)))
+
+                                        {
+                                            paymentMethod != "khqr" ? <span>${(selectedSeat?.length * (Number(routeSelected?.price))) + (selectedSeatReturn.length * (Number(routeReturnSelected?.price)) + (selectedSeat.length + selectedSeatReturn.length))}
+                                            </span> : <span>${(selectedSeat?.length * (Number(routeSelected?.price))) + (selectedSeatReturn.length * (Number(routeReturnSelected?.price)))}</span>
                                         }
-                                        </span>
                                     </div>
                                 </div>
                             </div> : <div className="bg-white rounded-md p-6 shadow-custom2">
@@ -1090,9 +1101,18 @@ export const AvailableTripItems = ({
                                         <span className="text-gray-600">Total Travellers</span>
                                         <span>{selectedSeat?.length}</span>
                                     </div>
+                                    {
+                                        paymentMethod != "khqr" ? <div className="flex justify-between">
+                                            <span className="text-gray-600">Service Charge</span>
+                                            <span>$ {selectedSeat.length}</span>
+                                        </div> : <></>
+                                    }
                                     <div className="flex justify-between font-medium pt-3 border-t">
                                         <span>Total Charge</span>
-                                        <span>${selectedSeat?.length * (Number(routeSelected?.price))}</span>
+                                        {
+                                            paymentMethod != "khqr" ? <span>${(selectedSeat?.length * (Number(routeSelected?.price))) + (selectedSeat.length)}</span> :
+                                                <span>${selectedSeat?.length * (Number(routeSelected?.price))}</span>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -1163,22 +1183,7 @@ export const AvailableTripItems = ({
                                 <input type="hidden" id="sessionid" name="sessionid" value={sessionId} />
                                 <input type="hidden" id="transactionID" name="transactionID" value={transactionID} />
                                 <input type="hidden" id="expirytime" name="expirytime" value="5" />
-                                {
-                                    tripType == 'round-trip' ? <input
-                                        type="hidden"
-                                        id="amount"
-                                        name="amount"
-                                        value={(selectedSeat?.length * (Number(routeSelected?.price))) + (selectedSeatReturn.length * (Number(routeReturnSelected?.price)))}
-                                    /> :
-                                        <input
-                                            type="hidden"
-                                            id="amount"
-                                            name="amount"
-                                            value={selectedSeat?.length * (Number(routeSelected?.price))}
-                                        />
-
-
-                                }
+                                <input type="hidden" id="amount" name="amount" value={amountTotal}/> 
                                 <input type="hidden" id="quantity" name="quantity" value="1" />
                                 <input type="hidden" id="currencytype" name="currencytype" value="USD" />
                                 <input type="hidden" id="description" name="description" value='booking' />

@@ -25,6 +25,7 @@ export async function generateInvoiceRoundTripPdf({
     ticketId,
     busType,
     seatNo,
+    pickup,
     originDate,
     originTime,
     originCity,
@@ -38,6 +39,7 @@ export async function generateInvoiceRoundTripPdf({
     passengers = [],
     facibilities = [],
     ticketCountReturn,
+    pickupReturn,
     priceReturn,
     ticketIdReturn,
     busTypeReturn,
@@ -107,7 +109,9 @@ export async function generateInvoiceRoundTripPdf({
         destinationCityReturn,
         dateSendReturn,
         passengersReturn,
-        facibilitiesReturn
+        facibilitiesReturn,
+        pickup,
+        pickupReturn
     });
 
     doc.end();
@@ -130,6 +134,7 @@ async function generateHeader(doc, {
     duration,
     kilometer,
     destinationDate,
+    pickup,
     destinationTime,
     destinationCity,
     dateSend,
@@ -147,6 +152,7 @@ async function generateHeader(doc, {
     originAddressReturn,
     durationReturn,
     kilometerReturn,
+    pickupReturn,
     destinationDateReturn,
     destinationTimeReturn,
     destinationCityReturn,
@@ -264,8 +270,16 @@ async function generateHeader(doc, {
             }).image(googleMapIconBase64, 120, y + 17, { width: 6 });
     }
 
-    y = sumY(doc, y, 40);
+    if (pickup) {
+        doc.font('poppins-regular').fill("black").text(`Pick up at: ${pickup}`, 50, y + 14, {
+            align: 'left',
+        });
 
+        y = sumY(doc, y, 55);
+
+    } else {
+        y = sumY(doc, y, 40);
+    }
 
     let pageWidth2 = 595.28;
     let lineLength2 = 250;
@@ -364,7 +378,16 @@ async function generateHeader(doc, {
             }).image(googleMapIconBase64, 120, y + 17, { width: 6 });
     }
 
-    y = sumY(doc, y, 40);
+    if (pickupReturn) {
+        doc.font('poppins-regular').fill("black").text(`Pick up at:  ${pickupReturn}`, 50, y + 14, {
+            align: 'left',
+        });
+        
+        y = sumY(doc, y, 55);
+
+    } else {
+        y = sumY(doc, y, 40);
+    }
 
 
     pageWidth2 = 595.28;
@@ -463,7 +486,7 @@ async function generateHeader(doc, {
         .moveTo(50, y + 110)
         .lineTo(290, y + 110)
         .stroke();
-        
+
     y = sumY(doc, y, 120)
 
     generateFooter(doc, y);

@@ -1,14 +1,13 @@
-import { ACLEDA_BANK_API_CHECK_STATUS, fromMail, loginId, merchantID, merchantName, password, signature } from "@/constant/constant";
+import { ACLEDA_BANK_API_CHECK_STATUS, loginId, merchantID, merchantName, password, signature } from "@/constant/constant";
 import { confirmBooking, getAddressDetail, getAllBookDetail, getBusList, getCity, getPickUpList, getRouteBus, getRouteList, getRouteTiming, printTicket } from "@/services/giantIbisServiceCall";
 import { addHoursToTime, calculateArrival } from "@/utils/time-util";
 import axios from "axios";
 import moment from "moment";
-import { TemplateMail } from "../send/template2";
 import nodemailer from 'nodemailer';
-import puppeteer from "puppeteer";
-import chromium from "@sparticuz/chromium";
 import { generateInvoicePdf } from "./utils/generate-invoice";
 import { generateInvoiceRoundTripPdf } from "./utils/generate-invoice-round-trip";
+import { RoundTripMailTemplate } from "../send/RoundTripTemplate";
+import { OneWayTemplate } from "../send/OneWayTemplate";
 
 export class PaymentService {
 
@@ -24,12 +23,7 @@ export class PaymentService {
     }
 
 
-    confirmOneWay = async (bookList, refCode) => {
-
-        const confirmRef = await confirmBooking(refCode);
-        // confirm fail skip
-        console.log("confirm: ", confirmRef);
-
+    confirmOneWay = async (bookList, refCode, isConfirm, paymentMethod) => {
         const seatNumbers = bookList?.map(item => item?.seat_id).join(",");
         const routeList = await getRouteList();
         const cities = await getCity();
@@ -97,9 +91,10 @@ export class PaymentService {
             }
         })
 
-        if (confirmRef?.status) {
+        if (isConfirm) {
             await this.sendMail({
                 ticketCount: ticketInfor?.length || 0,
+                price: ticketInfor[0].price,
                 busType: route?.bus_type || "",
                 kilometer: route?.kilo_meters || "",
                 duration: route?.duration || "",
@@ -116,36 +111,12 @@ export class PaymentService {
                 destinationTime: destinationTime || "",
                 passengers: passengers,
                 facibilities: facility,
-
+                pickup: pickupObj?.title ? pickupObj?.title : null,
             })
         }
 
-        await this.sendMail({
-            ticketCount: ticketInfor?.length || 0,
-            price: ticketInfor[0].price,
-            busType: route?.bus_type || "",
-            kilometer: route?.kilo_meters || "",
-            duration: route?.duration || "",
-            seatNo: seatNumbers || "",
-            toEmail: ticketInfor?.length > 0 ? ticketInfor[0]?.email : "",
-            ticketId: refCode,
-            passenger: passengers?.length > 0 ? passengers[0] : null,
-            dateSend: ticketInfor?.length > 0 ? ticketInfor[0]?.issued_date : "",
-            originCity: originCity[0]?.city_name || "",
-            originDate: moment(bookList[0]?.travel_date)?.format('MMMM-DD-YYYY') || "",
-            originTime: bookList[0]?.travel_time || "",
-            originAddress: addressOriginAddress?.data?.length > 0 ? addressOriginAddress?.data[0]?.url : null,
-            destinationCity: destinationCity[0]?.city_name || "",
-            destinationDate: arrivalDate || "",
-            destinationTime: destinationTime || "",
-            passengers: passengers,
-            facibilities: facility,
-        })
-
-
         return {
             passengers,
-            confirmRef: confirmRef,
             ticketCount: ticketInfor?.length || 0,
             price: ticketInfor[0].price,
             ticket: ticketInfor?.length > 0 ? ticketInfor[0] : null,
@@ -357,6 +328,7 @@ export class PaymentService {
 
         return {
             notification: {
+                pickup: pickupObj?.title ? pickupObj?.title : null,
                 ticketCount: ticketInfor?.length || 0,
                 price: ticketInfor[0].price,
                 busType: route?.bus_type || "",
@@ -412,35 +384,36 @@ export class PaymentService {
         };
     }
 
-    confirmRoundTrip = async (bookListOneWay, bookListRoundTrip, refCode, refCodeRoundTrip) => {
+    confirmRoundTrip = async (bookListOneWay, bookListRoundTrip, refCode, refCodeRoundTrip, isConfirm, paymentMethod) => {
 
         const confirmOneWay = await this.confirmBookingWithoutSendMail(bookListOneWay, refCode);
         const confirmRoundTrip = await this.confirmBookingWithoutSendMail(bookListRoundTrip, refCodeRoundTrip);
 
-        // select data for sending email
         const oneWayNotification = confirmOneWay?.notification;
         const roundTripNotification = confirmRoundTrip?.notification;
-        // bus, seatno, originDate, originTime
-        await this.sendMailRoundTrip({
-            ...oneWayNotification,
-            ticketCountReturn: roundTripNotification?.ticketCount,
-            priceReturn: roundTripNotification?.price,
-            ticketIdReturn: roundTripNotification?.ticketId,
-            busTypeReturn: roundTripNotification?.busType,
-            seatNoReturn: roundTripNotification?.seatNo,
-            originDateReturn: roundTripNotification?.originDate,
-            originTimeReturn: roundTripNotification?.originTime,
-            originCityReturn: roundTripNotification?.originCity,
-            originAddressReturn: roundTripNotification?.originAddress,
-            durationReturn: roundTripNotification?.duration,
-            kilometerReturn: roundTripNotification?.kilometer,
-            destinationDateReturn: roundTripNotification?.destinationDate,
-            destinationTimeReturn: roundTripNotification?.destinationTime,
-            destinationCityReturn: roundTripNotification?.destinationCity,
-            dateSendReturn: roundTripNotification?.dateSend,
-            passengersReturn: roundTripNotification?.passengers,
-            facibilitiesReturn: roundTripNotification?.facibilities,
-        })
+
+        if (isConfirm)
+            await this.sendMailRoundTrip({
+                ...oneWayNotification,
+                pickupReturn: roundTripNotification?.pickup,
+                ticketCountReturn: roundTripNotification?.ticketCount,
+                priceReturn: roundTripNotification?.price,
+                ticketIdReturn: roundTripNotification?.ticketId,
+                busTypeReturn: roundTripNotification?.busType,
+                seatNoReturn: roundTripNotification?.seatNo,
+                originDateReturn: roundTripNotification?.originDate,
+                originTimeReturn: roundTripNotification?.originTime,
+                originCityReturn: roundTripNotification?.originCity,
+                originAddressReturn: roundTripNotification?.originAddress,
+                durationReturn: roundTripNotification?.duration,
+                kilometerReturn: roundTripNotification?.kilometer,
+                destinationDateReturn: roundTripNotification?.destinationDate,
+                destinationTimeReturn: roundTripNotification?.destinationTime,
+                destinationCityReturn: roundTripNotification?.destinationCity,
+                dateSendReturn: roundTripNotification?.dateSend,
+                passengersReturn: roundTripNotification?.passengers,
+                facibilitiesReturn: roundTripNotification?.facibilities,
+            })
 
         return {
             oneWay: confirmOneWay || null,
@@ -470,7 +443,7 @@ export class PaymentService {
 
             return response.data;
         } catch (error) {
-            console.log('error: ', error);
+            console.log('error: ', error?.response);
         }
 
         return null;
@@ -561,20 +534,33 @@ export class PaymentService {
         dateSend,
         passenger,
         passengers = [],
-        facibilities ,
+        facibilities,
+        pickup,
     }) {
+
+        console.log({
+            pickup,
+        });
+
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: '4156.smtp.antispamcloud.com',
+            port: 465,
+            secure: true,
             auth: {
-                user: process.env.EMAIL_USER || 'chentochea2002@gmail.com',
-                pass: process.env.EMAIL_PASS || 'gplrmjmqewdrgodu',
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
             },
+            tls: {
+                rejectUnauthorized: false
+            }
         });
 
         try {
 
-            const htmlContent = TemplateMail({
+            const htmlContent = OneWayTemplate({
                 originAddress,
+                ticketCount,
+                price,
                 toEmail,
                 ticketId,
                 busType,
@@ -589,7 +575,8 @@ export class PaymentService {
                 destinationCity,
                 passengers,
                 dateSend,
-                facibilities
+                facibilities,
+                pickup
             });
 
 
@@ -612,11 +599,12 @@ export class PaymentService {
                 dateSend,
                 passengers,
                 facibilities,
+                pickup
             });
 
 
             transporter.sendMail({
-                from: 'chentochea2002@gmail.com',
+                from: 'info@giantibis.com',
                 to: toEmail,
                 subject: 'Giant Ibis E-Ticket',
                 text: 'Please find your e-ticket attached.',
@@ -657,6 +645,8 @@ export class PaymentService {
         dateSend,
         passengers = [],
         facibilities = [],
+        pickup,
+        pickupReturn,
         // return param
         ticketCountReturn,
         priceReturn,
@@ -679,16 +669,23 @@ export class PaymentService {
 
 
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: '4156.smtp.antispamcloud.com',
+            port: 465,
+            secure: true,
             auth: {
-                user: process.env.EMAIL_USER || 'chentochea2002@gmail.com',
-                pass: process.env.EMAIL_PASS || 'gplrmjmqewdrgodu',
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
             },
+            tls: {
+                rejectUnauthorized: false
+            }
         });
 
         try {
 
-            const htmlContent = TemplateMail({
+            const htmlContent = RoundTripMailTemplate({
+                ticketCount,
+                price,
                 originAddress,
                 toEmail,
                 ticketId,
@@ -705,9 +702,30 @@ export class PaymentService {
                 facibilities,
                 passengers,
                 dateSend,
+                ticketCountReturn,
+                priceReturn,
+                ticketIdReturn,
+                busTypeReturn,
+                seatNoReturn,
+                originDateReturn,
+                originTimeReturn,
+                originCityReturn,
+                originAddressReturn,
+                durationReturn,
+                kilometerReturn,
+                destinationDateReturn,
+                destinationTimeReturn,
+                destinationCityReturn,
+                dateSendReturn,
+                passengersReturn,
+                facibilitiesReturn,
+                pickup,
+                pickupReturn
             });
 
             const pdfBuffer = await generateInvoiceRoundTripPdf({
+                pickup: "",
+                pickupReturn: "",
                 ticketCount,
                 price,
                 ticketId,
@@ -747,7 +765,7 @@ export class PaymentService {
 
 
             transporter.sendMail({
-                from: 'chentochea2002@gmail.com',
+                from: 'info@giantibis.com',
                 to: toEmail,
                 subject: 'Giant Ibis E-Ticket',
                 text: 'Please find your e-ticket attached.',

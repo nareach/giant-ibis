@@ -1,19 +1,8 @@
 import { fromMail } from "@/constant/constant"
-import { airConBase64 } from "@/constant/facibilities/air-con"
-import { gpsBase64 } from "@/constant/facibilities/gps"
-import { legRoomBase64 } from "@/constant/facibilities/legroom"
-import { powerOutlet } from "@/constant/facibilities/power-outlet"
-import { seatBeltBase64 } from "@/constant/facibilities/seat-bekt"
-import { sleepBedIconBase64 } from "@/constant/facibilities/sleep-bed-icon"
-import { snakeIconBase64 } from "@/constant/facibilities/snack"
-import { toiletIconBase64 } from "@/constant/facibilities/toilet"
-import { tvBase64 } from "@/constant/facibilities/tv"
-import { usbChargerBase64 } from "@/constant/facibilities/usa-charger"
-import { waterBottleBase64 } from "@/constant/facibilities/water-bottle"
-import { wetTowerBase64 } from "@/constant/facibilities/wet-tower"
-import { wifiBase64 } from "@/constant/facibilities/wifi"
 
-export const TemplateMail = ({
+export const RoundTripMailTemplate = ({
+    ticketCount,
+    price,
     toEmail,
     dateSend,
     ticketId,
@@ -29,9 +18,27 @@ export const TemplateMail = ({
     destinationTime,
     destinationCity,
     facibilities,
-    passengers = []
+    passengers = [],
+    ticketCountReturn,
+    priceReturn,
+    ticketIdReturn,
+    busTypeReturn,
+    seatNoReturn,
+    originDateReturn,
+    originTimeReturn,
+    originCityReturn,
+    originAddressReturn,
+    durationReturn,
+    kilometerReturn,
+    destinationDateReturn,
+    destinationTimeReturn,
+    destinationCityReturn,
+    dateSendReturn,
+    passengersReturn,
+    pickup,
+    pickupReturn,
+    facibilitiesReturn
 }) => {
-    console.log("facibilities email", facibilities);
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -40,10 +47,14 @@ export const TemplateMail = ({
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Ticket</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Red+Rose:wght@300..700&display=swap"
-        rel="stylesheet">
+
     <style type="text/css">
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Red+Rose:wght@300..700&display=swap');
+        
+        body{
+            font-family: 'Poppins';
+        }
+
         @media only screen and (max-width: 600px) {
             .container {
                 width: 100% !important;
@@ -129,7 +140,7 @@ export const TemplateMail = ({
                     <tr>
                         <td>
                             <div style="font-weight: 700; font-size: 18px; color: #0057A8; font-family: Poppins, sans-serif;"
-                                class="title">Trip Detail</div>
+                                class="title">Return Trip Detail</div>
                             <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
                                 <tr>
                                     <td style="font-weight: 600; font-size: 10px; font-family: Poppins, sans-serif;">
@@ -142,20 +153,19 @@ export const TemplateMail = ({
                             <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
                                 <tr>
                                     <td style="font-weight: 600; font-size: 10px; font-family: Poppins, sans-serif;">
-                                        <img style="width: 25px;" src="${airConBase64}" alt="air conditioning">
-                                        ${facibilities?.airConditioning ? `<img style="width: 25px;" src="${airConBase64}" alt=""> ` : ""}
-                                        ${facibilities?.wifi ? `<img style="width: 25px;" src="${wifiBase64}" alt=""> ` : ""}
-                                        ${facibilities?.snack ? `<img style="width: 25px;" src="${snakeIconBase64}" alt=""> ` : ""}
-                                        ${facibilities?.waterBottle ? `<img style="width: 25px;" src="${waterBottleBase64}" alt=""> ` : ""}
-                                        ${facibilities?.wetTowel ? `<img style="width: 25px;" src="${wetTowerBase64}" alt=""> ` : ""}
-                                        ${facibilities?.powerOutlet ? `<img style="width: 25px;" src="${powerOutlet}" alt=""> ` : ""}
-                                        ${facibilities?.gps ? `<img style="width: 25px;" src="${gpsBase64}" alt=""> ` : ""}
-                                        ${facibilities?.legRoom ? `<img style="width: 25px;" src="${legRoomBase64}" alt=""> ` : ""}
-                                        ${facibilities?.seatBelt ? `<img style="width: 25px;" src="${seatBeltBase64}" alt=""> ` : ""}
-                                        ${facibilities?.toilet ? `<img style="width: 25px;" src="${toiletIconBase64}" alt=""> ` : ""}
-                                        ${facibilities?.tv ? `<img style="width: 25px;" src="${tvBase64}" alt=""> ` : ""}
-                                        ${facibilities?.usbCharger ? `<img style="width: 25px;" src="${usbChargerBase64}" alt=""> ` : ""}
-                                        ${facibilities?.sleepingBed ? `<img style="width: 25px;" src="${sleepBedIconBase64}" alt=""> ` : ""}
+                                        ${facibilities?.airConditioning ? `<img style="width: 25px;" src=${getImageUrl("aircon.png")} alt=""> ` : ""}
+                                        ${facibilities?.wifi ? `<img style="width: 25px;" src=${getImageUrl("Wifi.png")} alt=""> ` : ""}
+                                        ${facibilities?.snack ? `<img style="width: 25px;" src=${getImageUrl("snack-icon.png")} alt=""> ` : ""}
+                                        ${facibilities?.waterBottle ? `<img style="width: 25px;" src=${getImageUrl("water-bottle-icon.png")} alt=""> ` : ""}
+                                        ${facibilities?.wetTowel ? `<img style="width: 25px;" src=${getImageUrl("wet-tower.png")} alt=""> ` : ""}
+                                        ${facibilities?.powerOutlet ? `<img style="width: 25px;" src=${getImageUrl("power-outlet-icon.png")} alt=""> ` : ""}
+                                        ${facibilities?.gps ? `<img style="width: 25px;" src=${getImageUrl("gps.png")} alt=""> ` : ""}
+                                        ${facibilities?.legRoom ? `<img style="width: 25px;" src=${getImageUrl("legroom.png")} alt=""> ` : ""}
+                                        ${facibilities?.seatBelt ? `<img style="width: 25px;" src=${getImageUrl("seat-belt.png")} alt=""> ` : ""}
+                                        ${facibilities?.toilet ? `<img style="width: 25px;" src=${getImageUrl("toilet.png")} alt=""> ` : ""}
+                                        ${facibilities?.tv ? `<img style="width: 25px;" src=${getImageUrl("tv.png")} alt=""> ` : ""}
+                                        ${facibilities?.usbCharger ? `<img style="width: 25px;" src=${getImageUrl("usb-charger-icon.png")} alt=""> ` : ""}
+                                        ${facibilities?.sleepingBed ? `<img style="width: 25px;" src=${getImageUrl("sleeping-bed-icon-orange.png")} alt=""> ` : ""}
                                     </td>
 
                                 </tr>
@@ -164,7 +174,7 @@ export const TemplateMail = ({
                                 <tr>
                                     <td
                                         style="width: 30%; font-weight: 600; font-size: 10px; font-family: Poppins, sans-serif; text-align: left;">
-                                        ${originDate}<br>${originTime}<br>${originCity} <br> ${originAddress ? `<a href="${originAddress}" target="_blank" rel="noopener noreferrer">Get Direction</a>` : ""}
+                                        ${originDate}<br>${originTime}<br>${originCity} ${originAddress ? ` <br><a href="${originAddress}" target="_blank" rel="noopener noreferrer">Get Direction</a>` : ""} ${pickup ? `<br>Pick up at: ${pickup}` : ""}
                                     </td>
                                     <td style=" text-align: center;justify-content:center; font-family: Poppins, sans-serif;">
                                         <span style="font-size: 10px; font-weight: 500;">${duration}</span><br>
@@ -180,8 +190,66 @@ export const TemplateMail = ({
                         </td>
                     </tr>
                 </table>
+                <!-- STart Return -->
+                <div style="margin-top: 10px;margin-bottom: 10px; width: 100%; background-color: #A6A6A6; height: 1px;"></div>
 
-                <!-- Divider -->
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td>
+                            <div style="font-weight: 700; font-size: 18px; color: #0057A8; font-family: Poppins, sans-serif;"
+                                class="title">Departure Trip Detail</div>
+                            <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
+                                <tr>
+                                    <td style="font-weight: 600; font-size: 10px; font-family: Poppins, sans-serif;">
+                                        ${busTypeReturn}</td>
+                                    <td
+                                        style="text-align: right; color: red; font-weight: 600; font-size: 10px; font-family: Poppins, sans-serif;">
+                                        Seat number: ${seatNoReturn}</td>
+                                </tr>
+                            </table>
+                            <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
+                                <tr>
+                                    <td style="font-weight: 600; font-size: 10px; font-family: Poppins, sans-serif;">
+                                        ${facibilitiesReturn?.airConditioning ? `<img style="width: 25px;" src=${getImageUrl("aircon.png")} alt=""> ` : ""}
+                                        ${facibilitiesReturn?.wifi ? `<img style="width: 25px;" src=${getImageUrl("Wifi.png")} alt=""> ` : ""}
+                                        ${facibilitiesReturn?.snack ? `<img style="width: 25px;" src=${getImageUrl("snack-icon.png")} alt=""> ` : ""}
+                                        ${facibilitiesReturn?.waterBottle ? `<img style="width: 25px;" src=${getImageUrl("water-bottle-icon.png")} alt=""> ` : ""}
+                                        ${facibilitiesReturn?.wetTowel ? `<img style="width: 25px;" src=${getImageUrl("wet-tower.png")} alt=""> ` : ""}
+                                        ${facibilitiesReturn?.powerOutlet ? `<img style="width: 25px;" src=${getImageUrl("power-outlet-icon.png")} alt=""> ` : ""}
+                                        ${facibilitiesReturn?.gps ? `<img style="width: 25px;" src=${getImageUrl("gps.png")} alt=""> ` : ""}
+                                        ${facibilitiesReturn?.legRoom ? `<img style="width: 25px;" src=${getImageUrl("legroom.png")} alt=""> ` : ""}
+                                        ${facibilitiesReturn?.seatBelt ? `<img style="width: 25px;" src=${getImageUrl("seat-belt.png")} alt=""> ` : ""}
+                                        ${facibilitiesReturn?.toilet ? `<img style="width: 25px;" src=${getImageUrl("toilet.png")} alt=""> ` : ""}
+                                        ${facibilitiesReturn?.tv ? `<img style="width: 25px;" src=${getImageUrl("tv.png")} alt=""> ` : ""}
+                                        ${facibilitiesReturn?.usbCharger ? `<img style="width: 25px;" src=${getImageUrl("usb-charger-icon.png")} alt=""> ` : ""}
+                                        ${facibilitiesReturn?.sleepingBed ? `<img style="width: 25px;" src=${getImageUrl("sleeping-bed-icon-orange.png")} alt=""> ` : ""}
+                                    </td>
+
+                                </tr>
+                            </table>
+                            <table style="width: 100%; margin-top: 20px; border-collapse: collapse;" class="trip-info">
+                                <tr>
+                                    <td
+                                        style="width: 30%; font-weight: 600; font-size: 10px; font-family: Poppins, sans-serif; text-align: left;">
+                                        ${originDateReturn}<br>${originTimeReturn}<br>${originCityReturn}  ${originAddressReturn ? `<br> <a href="${originAddressReturn}" target="_blank" rel="noopener noreferrer">Get Direction</a>` : ""} ${pickupReturn ? `<br>  Pick up at: ${pickupReturn}` : ""}
+                                    </td>
+                                    <td style=" text-align: center;justify-content:center; font-family: Poppins, sans-serif;">
+                                        <span style="font-size: 10px; font-weight: 500;">${durationReturn}</span><br>
+                                        <div style="height: 1px; background-color: black; width: 100%;"></div>
+                                        <span style="font-size: 10px;font-weight: 500;">${kilometerReturn}</span><br>
+                                    </td>
+                                    <td
+                                        style="width: 30%; font-weight: 600; font-size: 10px; font-family: Poppins, sans-serif; text-align: right;">
+                                        ${destinationDateReturn}<br>${destinationTimeReturn}<br>${destinationCityReturn}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- End Return -->
+
         <tr>
             <td style="padding: 0;">
                 <div style="margin-top: 0px; width: 100%; background-color: #A6A6A6; height: 1px;"></div>
@@ -205,9 +273,6 @@ export const TemplateMail = ({
                         <th
                             style="padding: 12px 15px; text-align: left; font-weight: 500; font-size: 10px; border: 1px solid black; background-color: #D0E8FF; color: black; font-family: Poppins, sans-serif;">
                             Email</th>
-                        <th
-                            style="padding: 12px 15px; text-align: left; font-weight: 500; font-size: 10px; border: 1px solid black; background-color: #D0E8FF; color: black; font-family: Poppins, sans-serif;">
-                            Pickup</th>
                     </tr>
                     ${passengers?.map((item, index) =>
         `
@@ -221,16 +286,51 @@ export const TemplateMail = ({
                                 <td
                                     style="padding: 12px 15px; text-align: left; font-weight: 500; font-size: 10px; border: 1px solid black; background-color: white; color: black; font-family: Poppins, sans-serif;">
                                     ${item.email}</td>
-                                <td
-                                    style="padding: 12px 15px; text-align: left; font-weight: 500; font-size: 10px; border: 1px solid black; background-color: white; color: black; font-family: Poppins, sans-serif;">
-                                    ${item?.pickup}</td>
                             </tr>
                             `).join("")}
                 </table>
             </td>
         </tr>
+            <tr>
+            <td style="padding: 0;">
+                <div style="margin-top: 0px; width: 100%; background-color: #A6A6A6; height: 1px;"></div>
+            </td>
+        </tr>
 
-        <!-- Divider -->
+        <tr>
+            <td style="padding: 20px;">
+                <div style="font-weight: 700; font-size: 18px; color: #0057A8; font-family: Poppins, sans-serif;"
+                    class="title">Payment Detail</div>
+                <table style="width: 50%; margin-top: 15px; font-size: 12px;" class="passenger-table">
+                    <tr>
+                        <td>Total Ticket Departure: </td>
+                        <td>${ticketCount}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Ticket Return: </td>
+                        <td>${ticketCountReturn}</td>
+                    </tr>
+                    <tr>
+                        <td>Amount Departure: </td>
+                        <td>$ ${price}</td>
+                    </tr>
+                    <tr>
+                        <td>Amount Return: </td>
+                        <td>$ ${priceReturn}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div style="margin-top: 0px; width: 120%; background-color: #A6A6A6; height: 1px;"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Total: </td>
+                        <td>$ ${((price * ticketCount) + (priceReturn * ticketCountReturn))}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+
         <tr>
             <td style="padding: 0;">
                 <div style="margin-top: 0px; width: 100%; background-color: #A6A6A6; height: 1px;"></div>
@@ -320,4 +420,8 @@ export const TemplateMail = ({
 </body>
 
 </html>`
+}
+
+const getImageUrl = (filaneme) => {
+    return `https://giant-ibis-three.vercel.app/assets/icons/${filaneme}`
 }

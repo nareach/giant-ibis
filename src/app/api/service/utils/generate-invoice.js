@@ -34,6 +34,7 @@ export async function generateInvoicePdf({
     destinationTime,
     destinationCity,
     dateSend,
+    pickup,
     passengers = [],
     facibilities = []
 }) {
@@ -73,6 +74,7 @@ export async function generateInvoicePdf({
         dateSend,
         passengers,
         facibilities,
+        pickup
     });
 
     doc.end();
@@ -99,6 +101,7 @@ function generateHeader(doc, {
     destinationCity,
     dateSend,
     facibilities,
+    pickup,
     passengers = []
 }) {
     // Initialize dynamic Y position
@@ -215,7 +218,18 @@ function generateHeader(doc, {
             }).image(googleMapIconBase64, 120, y + 17, { width: 6 });
     }
 
-    y = sumY(doc, y, 40);
+    if (pickup) {
+        doc.font('poppins-regular').fill("black").text(`Pick up at: ${pickup}`, 50, y + 14, {
+            align: 'left',
+        });
+
+        y = sumY(doc, y, 55);
+
+    } else {
+        y = sumY(doc, y, 40);
+    }
+
+
 
 
     const pageWidth2 = 595.28;
@@ -283,7 +297,7 @@ function generateHeader(doc, {
     });
 
     y = sumY(doc, y, 20);
-    
+
     doc.font('poppins-bold')
         .fontSize(18)
         .fill("#0057A8")
