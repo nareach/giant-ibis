@@ -42,7 +42,7 @@ export async function POST(request) {
                 {
                     status: false,
                     type: "payment",
-                    message: "The payment gateway encountered an issue. Please try again later or contact support for assistance.",
+                    message: "The payment gateway is currently experiencing an issue. Please try again later or contact support for assistance. Your seat will be reserved for 20 minutes—after that, it will become available again.",
                 },
                 {
                     status: 500,
