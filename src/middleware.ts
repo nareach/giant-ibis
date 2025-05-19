@@ -9,6 +9,12 @@ export function middleware(request: NextRequest) {
     const origin = request.headers.get('referer')
     const pathname = request.nextUrl.pathname
 
+    console.log({
+        origin,
+        pathname
+    });
+    
+
     if (PUBLIC_API_PATHS.some(path => pathname.startsWith(path))) {
         return NextResponse.next()
     }
