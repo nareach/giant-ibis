@@ -1,4 +1,5 @@
 import { fromMail } from "@/constant/constant"
+import { getImageUrl } from "../service/utils/api-util"
 
 export const RoundTripMailTemplate = ({
     ticketCount,
@@ -420,8 +421,4 @@ export const RoundTripMailTemplate = ({
 </body>
 
 </html>`
-}
-
-const getImageUrl = (filaneme) => {
-    return `https://giant-ibis-three.vercel.app/assets/icons/${filaneme}`
 }

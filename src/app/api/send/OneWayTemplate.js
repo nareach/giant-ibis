@@ -1,4 +1,5 @@
-import { fromMail } from "@/constant/constant"
+import { CLIENT_URL, fromMail } from "@/constant/constant"
+import { getImageUrl } from "../service/utils/api-util";
 
 
 export const OneWayTemplate = ({
@@ -342,8 +343,4 @@ export const OneWayTemplate = ({
 </body>
 
 </html>`
-}
-
-const getImageUrl = (filaneme) => {
-    return `https://giant-ibis-three.vercel.app/assets/icons/${filaneme}`
 }
