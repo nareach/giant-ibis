@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { CLIENT_URL } from './constant/constant'
 
-const WHITELISTED_ORIGINS = ["https://giant-ibis-14jkx6yzg-chento007s-projects.vercel.app/"]
+const WHITELISTED_ORIGINS = [
+    "https://giant-ibis-14jkx6yzg-chento007s-projects.vercel.app/",
+    "https://giant-ibis-three.vercel.app/",
+    `${CLIENT_URL}/`
+]
 const PUBLIC_API_PATHS = ['/api/assets']
 
 export function middleware(request: NextRequest) {
