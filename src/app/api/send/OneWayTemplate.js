@@ -21,7 +21,8 @@ export const OneWayTemplate = ({
     destinationCity,
     facibilities,
     pickup,
-    passengers = []
+    passengers = [],
+    paymentMethod
 }) => {
     console.log("facibilities email", facibilities);
 
@@ -239,15 +240,26 @@ export const OneWayTemplate = ({
                         <td>Amount Departure: </td>
                         <td>$ ${price}</td>
                     </tr>
+                     ${paymentMethod != "khqr" ? `<tr>
+                        <td>Service Charge: </td>
+                        <td>$ ${ticketCount}</td>
+                        </tr>`: ""
+                    }
                     <tr>
                         <td>
                             <div style="margin-top: 0px; width: 120%; background-color: #A6A6A6; height: 1px;"></div>
                         </td>
                     </tr>
-                    <tr>
-                        <td>Total: </td>
-                        <td>$ ${ticketCount * price}</td>
-                    </tr>
+                    ${paymentMethod != "khqr" ? `
+                        <tr>
+                            <td>Total: </td>
+                            <td>$ ${(ticketCount * price) + ticketCount}</td>
+                        </tr>`: `
+                        <tr>
+                            <td>Total: </td>
+                            <td>$ ${(ticketCount * price)}</td>
+                        </tr>`
+                    }
                 </table>
             </td>
         </tr>

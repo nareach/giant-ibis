@@ -3,6 +3,7 @@ import { getImageUrl } from "../service/utils/api-util"
 
 export const RoundTripMailTemplate = ({
     ticketCount,
+    paymentMethod,
     price,
     toEmail,
     dateSend,
@@ -319,15 +320,24 @@ export const RoundTripMailTemplate = ({
                         <td>Amount Return: </td>
                         <td>$ ${priceReturn}</td>
                     </tr>
+                    ${paymentMethod != "khqr" ? `<tr>
+                        <td>Service Charge: </td>
+                        <td>$ ${ticketCount + ticketCountReturn}</td>
+                    </tr>`: ""
+                    }
                     <tr>
                         <td>
                             <div style="margin-top: 0px; width: 120%; background-color: #A6A6A6; height: 1px;"></div>
                         </td>
                     </tr>
-                    <tr>
+                    ${paymentMethod != "khqr" ? `<tr>
+                        <td>Total: </td>
+                        <td>$ ${((price * ticketCount) + (priceReturn * ticketCountReturn) + (ticketCount + ticketCountReturn))}</td>
+                    </tr>`: `<tr>
                         <td>Total: </td>
                         <td>$ ${((price * ticketCount) + (priceReturn * ticketCountReturn))}</td>
-                    </tr>
+                    </tr>`
+                    }
                 </table>
             </td>
         </tr>

@@ -69,9 +69,6 @@ export async function GET(request, { params }) {
         }, { status: 400 });
     }
 
-
-
-
     const confirmRef = await confirmBooking(refCode);
     const confirmRefRoundTrip = await confirmBooking(refCodeRoundTrip);
 

@@ -111,6 +111,7 @@ export class PaymentService {
                 destinationTime: destinationTime || "",
                 passengers: passengers,
                 facibilities: facility,
+                paymentMethod,
                 pickup: pickupObj?.title ? pickupObj?.title : null,
             })
         }
@@ -385,7 +386,8 @@ export class PaymentService {
     }
 
     confirmRoundTrip = async (bookListOneWay, bookListRoundTrip, refCode, refCodeRoundTrip, isConfirm, paymentMethod) => {
-
+        console.log("paymentMethod: ",paymentMethod);
+        
         const confirmOneWay = await this.confirmBookingWithoutSendMail(bookListOneWay, refCode);
         const confirmRoundTrip = await this.confirmBookingWithoutSendMail(bookListRoundTrip, refCodeRoundTrip);
 
@@ -395,6 +397,7 @@ export class PaymentService {
         if (isConfirm)
             await this.sendMailRoundTrip({
                 ...oneWayNotification,
+                paymentMethod,
                 pickupReturn: roundTripNotification?.pickup,
                 ticketCountReturn: roundTripNotification?.ticketCount,
                 priceReturn: roundTripNotification?.price,
@@ -536,6 +539,7 @@ export class PaymentService {
         passengers = [],
         facibilities,
         pickup,
+        paymentMethod,
     }) {
 
         const transporter = nodemailer.createTransport({
@@ -574,7 +578,8 @@ export class PaymentService {
                 passengers,
                 dateSend,
                 facibilities,
-                pickup
+                pickup,
+                paymentMethod,
             });
 
 
@@ -597,7 +602,8 @@ export class PaymentService {
                 dateSend,
                 passengers,
                 facibilities,
-                pickup
+                pickup,
+                paymentMethod
             });
 
 
@@ -625,6 +631,7 @@ export class PaymentService {
 
     async sendMailRoundTrip({
         // departuree param
+        paymentMethod,
         ticketCount,
         price,
         toEmail,
@@ -720,13 +727,15 @@ export class PaymentService {
                 passengersReturn,
                 facibilitiesReturn,
                 pickup,
-                pickupReturn
+                pickupReturn,
+                paymentMethod
             });
 
             const pdfBuffer = await generateInvoiceRoundTripPdf({
                 pickup: pickup,
                 pickupReturn: pickupReturn,
                 ticketCount,
+                paymentMethod,
                 price,
                 ticketId,
                 toEmail,
@@ -760,7 +769,8 @@ export class PaymentService {
                 destinationCityReturn,
                 dateSendReturn,
                 passengersReturn,
-                facibilitiesReturn
+                facibilitiesReturn,
+
             });
 
 

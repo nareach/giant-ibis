@@ -34,7 +34,7 @@ export async function POST(request) {
         });
 
         console.log("response: ", response.data);
-        
+
 
         if (response.data?.result?.errorDetails !== "SUCCESS") {
 
@@ -60,7 +60,17 @@ export async function POST(request) {
 
 
     } catch (error) {
-
+        return Response.json(
+            {
+                status: false,
+                type: "payment",
+                message: "The payment gateway is currently experiencing an issue. Please try again later or contact support for assistance. Your seat will be reserved for 20 minutes—after that, it will become available again.",
+            },
+            {
+                status: 500,
+                statusText: "Payment Gateway Error"
+            }
+        );
     }
 
 }

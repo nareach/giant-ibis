@@ -55,6 +55,7 @@ export async function generateInvoiceRoundTripPdf({
     destinationCityReturn,
     dateSendReturn,
     passengersReturn = [],
+    paymentMethod,
     facibilitiesReturn = []
 }) {
 
@@ -111,7 +112,8 @@ export async function generateInvoiceRoundTripPdf({
         passengersReturn,
         facibilitiesReturn,
         pickup,
-        pickupReturn
+        pickupReturn,
+        paymentMethod
     });
 
     doc.end();
@@ -157,6 +159,7 @@ async function generateHeader(doc, {
     destinationTimeReturn,
     destinationCityReturn,
     dateSendReturn,
+    paymentMethod,
     passengersReturn = [],
     facibilitiesReturn = []
 }) {
@@ -271,7 +274,7 @@ async function generateHeader(doc, {
     }
 
     if (pickup) {
-        doc.font('poppins-regular').fill("black").text(`Pick up at: ${pickup}`, 50, y + 14, {
+        doc.font('poppins-regular').fill("black").text(`Pick up at: ${pickup}`, 50, y + 32, {
             align: 'left',
         });
 
@@ -379,10 +382,10 @@ async function generateHeader(doc, {
     }
 
     if (pickupReturn) {
-        doc.font('poppins-regular').fill("black").text(`Pick up at:  ${pickupReturn}`, 50, y + 14, {
+        doc.font('poppins-regular').fill("black").text(`Pick up at:  ${pickupReturn}`, 50, y + 32, {
             align: 'left',
         });
-        
+
         y = sumY(doc, y, 55);
 
     } else {
@@ -460,34 +463,64 @@ async function generateHeader(doc, {
         doc.addPage();
         y = 50;
     }
+    if (paymentMethod != 'khqr') {
 
+        doc.font('poppins-bold')
+            .fontSize(18)
+            .fill("#0057A8")
+            .text('Payment Detail', 50, y, { align: 'left' })
+            .font('poppins-regular')
+            .fontSize(10)
+            .fill("black")
+            .font('poppins-bold')
+            .text('Total Ticket Departure:', 50, y + 30, { align: 'left' })
+            .text('Total Ticket Return:', 50, y + 50, { align: 'left' })
+            .text('Amount Departure:', 50, y + 70, { align: 'left' })
+            .text('Amount Return:', 50, y + 90, { align: 'left' })
+            .text('Service Charge:', 50, y + 110, { align: 'left' })
+            .text('Total:', 50, y + 140, { align: 'left' })
+            .font('poppins-regular')
+            .text(`${ticketCount}`, 270, y + 30,)
+            .text(`${ticketCountReturn}`, 270, y + 50,)
+            .text(`$ ${price}`, 270, y + 70,)
+            .text(`$ ${priceReturn}`, 270, y + 90)
+            .text(`$ ${ticketCount + ticketCountReturn}`, 270, y + 110, { align: 'left' })
+            .text(`$ ${((ticketCount * price) + (ticketCountReturn * priceReturn) + (ticketCount + ticketCountReturn))}`, 270, y + 140)
+            .strokeColor("black")
+            .lineWidth(1)
+            .moveTo(50, y + 130)
+            .lineTo(290, y + 130)
+            .stroke();
 
-    doc.font('poppins-bold')
-        .fontSize(18)
-        .fill("#0057A8")
-        .text('Payment Detail', 50, y, { align: 'left' })
-        .font('poppins-regular')
-        .fontSize(10)
-        .fill("black")
-        .font('poppins-bold')
-        .text('Total Ticket Departure:', 50, y + 30, { align: 'left' })
-        .text('Total Ticket Return:', 50, y + 50, { align: 'left' })
-        .text('Amount Departure:', 50, y + 70, { align: 'left' })
-        .text('Amount Return:', 50, y + 90, { align: 'left' })
-        .text('Total:', 50, y + 115, { align: 'left' })
-        .font('poppins-regular')
-        .text(`${ticketCount}`, 270, y + 30,) // departure 
-        .text(`${ticketCountReturn}`, 270, y + 50,) // return
-        .text(`$ ${price}`, 270, y + 70,) // price departure
-        .text(`$ ${priceReturn}`, 270, y + 90) // price return
-        .text(`$ ${((ticketCount * price) + (ticketCountReturn * priceReturn))}`, 270, y + 115) // price return
-        .strokeColor("black")
-        .lineWidth(1)
-        .moveTo(50, y + 110)
-        .lineTo(290, y + 110)
-        .stroke();
+        y = sumY(doc, y, 150)
+    } else {
+        doc.font('poppins-bold')
+            .fontSize(18)
+            .fill("#0057A8")
+            .text('Payment Detail', 50, y, { align: 'left' })
+            .font('poppins-regular')
+            .fontSize(10)
+            .fill("black")
+            .font('poppins-bold')
+            .text('Total Ticket Departure:', 50, y + 30, { align: 'left' })
+            .text('Total Ticket Return:', 50, y + 50, { align: 'left' })
+            .text('Amount Departure:', 50, y + 70, { align: 'left' })
+            .text('Amount Return:', 50, y + 90, { align: 'left' })
+            .text('Total:', 50, y + 115, { align: 'left' })
+            .font('poppins-regular')
+            .text(`${ticketCount}`, 270, y + 30,)
+            .text(`${ticketCountReturn}`, 270, y + 50,)
+            .text(`$ ${price}`, 270, y + 70,)
+            .text(`$ ${priceReturn}`, 270, y + 90)
+            .text(`$ ${((ticketCount * price) + (ticketCountReturn * priceReturn))}`, 270, y + 115) // price return
+            .strokeColor("black")
+            .lineWidth(1)
+            .moveTo(50, y + 110)
+            .lineTo(290, y + 110)
+            .stroke();
 
-    y = sumY(doc, y, 120)
+        y = sumY(doc, y, 120)
+    }
 
     generateFooter(doc, y);
 

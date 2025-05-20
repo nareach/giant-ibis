@@ -19,6 +19,7 @@ import { googleMapIconBase64 } from '@/constant/facibilities/google-map';
 
 export async function generateInvoicePdf({
     ticketCount,
+    paymentMethod,
     price,
     toEmail,
     ticketId,
@@ -74,7 +75,8 @@ export async function generateInvoicePdf({
         dateSend,
         passengers,
         facibilities,
-        pickup
+        pickup,
+        paymentMethod
     });
 
     doc.end();
@@ -102,6 +104,7 @@ function generateHeader(doc, {
     dateSend,
     facibilities,
     pickup,
+    paymentMethod,
     passengers = []
 }) {
     // Initialize dynamic Y position
@@ -219,7 +222,7 @@ function generateHeader(doc, {
     }
 
     if (pickup) {
-        doc.font('poppins-regular').fill("black").text(`Pick up at: ${pickup}`, 50, y + 14, {
+        doc.font('poppins-regular').fill("black").text(`Pick up at: ${pickup}`, 50, y + 32, {
             align: 'left',
         });
 
@@ -298,28 +301,57 @@ function generateHeader(doc, {
 
     y = sumY(doc, y, 20);
 
-    doc.font('poppins-bold')
-        .fontSize(18)
-        .fill("#0057A8")
-        .text('Payment Detail', 50, y, { align: 'left' })
-        .font('poppins-regular')
-        .fontSize(10)
-        .fill("black")
-        .font('poppins-bold')
-        .text('Total Ticket Departure:', 50, y + 30, { align: 'left' })
-        .text('Amount Departure:', 50, y + 50, { align: 'left' })
-        .text('Total:', 50, y + 80, { align: 'left' })
-        .font('poppins-regular')
-        .text(`${ticketCount}`, 270, y + 30,) // departure 
-        .text(`$ ${price}`, 270, y + 50,) // price departure
-        .text(`$ ${price * ticketCount}`, 270, y + 80) // price return
-        .strokeColor("black")
-        .lineWidth(1)
-        .moveTo(50, y + 70)
-        .lineTo(300, y + 70)
-        .stroke();
+    if (paymentMethod != 'khqr') {
+        doc.font('poppins-bold')
+            .fontSize(18)
+            .fill("#0057A8")
+            .text('Payment Detail', 50, y, { align: 'left' })
+            .font('poppins-regular')
+            .fontSize(10)
+            .fill("black")
+            .font('poppins-bold')
+            .text('Total Ticket Departure:', 50, y + 30, { align: 'left' })
+            .text('Amount Departure:', 50, y + 50, { align: 'left' })
+            .text('Service Charge:', 50, y + 70, { align: 'left' })
+            .text('Total:', 50, y + 100, { align: 'left' })
+            .font('poppins-regular')
+            .text(`${ticketCount}`, 270, y + 30,)
+            .text(`$ ${price}`, 270, y + 50,)
+            .text(`$ ${ticketCount}`, 270, y + 70, { align: 'left' })
+            .text(`$ ${(price * ticketCount) + ticketCount}`, 270, y + 100)
+            .strokeColor("black")
+            .lineWidth(1)
+            .moveTo(50, y + 90)
+            .lineTo(300, y + 90)
+            .stroke();
 
-    y = sumY(doc, y, 120)
+        y = sumY(doc, y, 140)
+
+    } else {
+        doc.font('poppins-bold')
+            .fontSize(18)
+            .fill("#0057A8")
+            .text('Payment Detail', 50, y, { align: 'left' })
+            .font('poppins-regular')
+            .fontSize(10)
+            .fill("black")
+            .font('poppins-bold')
+            .text('Total Ticket Departure:', 50, y + 30, { align: 'left' })
+            .text('Amount Departure:', 50, y + 50, { align: 'left' })
+            .text('Total:', 50, y + 80, { align: 'left' })
+            .font('poppins-regular')
+            .text(`${ticketCount}`, 270, y + 30,)
+            .text(`$ ${price}`, 270, y + 50,)
+            .text(`$ ${price * ticketCount}`, 270, y + 80)
+            .strokeColor("black")
+            .lineWidth(1)
+            .moveTo(50, y + 70)
+            .lineTo(300, y + 70)
+            .stroke();
+        y = sumY(doc, y, 120)
+
+    }
+
 
 
     generateFooter(doc, y);
