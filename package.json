@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start-prod":"NODE_ENV=production node server.js",
     "lint": "next lint"
   },
   "dependencies": {
@@ -36,6 +37,7 @@
     "html-pdf-node": "^1.0.8",
     "html-to-pdf": "^0.1.11",
     "html-to-pdfmake": "^2.5.25",
+    "http": "^0.0.1-security",
     "jsdom": "^26.1.0",
     "jspdf": "^3.0.1",
     "lucide-react": "^0.473.0",
