@@ -1,3 +1,4 @@
+'use client'
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,41 +9,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MapPin, ChevronLeft, ChevronRight, Search } from "lucide-react";
-import SearchBookForm from "./SearchBox";
+import { MapPin, ChevronLeft, ChevronRight, Search, HotelIcon } from "lucide-react";
+import { useGetAllCityQuery } from "@/store/features/cities";
+import LoadingWithText from "../common/LoadingWithText";
+import { useGetHotelByCityIdQuery, useLazyGetHotelByCityIdQuery } from "@/store/features/hotel";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
-const hotels = [
-  {
-    id: 1,
-    name: "Onederz Hostel Phnom Penh",
-    logo: "/assets/hotel.jpg",
-    description:
-      "Welcome to Onederz Hostel Phnom Penh, the best rated hostel in Phnom Penh. Rooftop pool with amazing river view What makes the hostel special is its location. You will enjoy amazing river view from our rooftop pool and restaurant. Huge public walk way and park along the river would be perfect place to enjoy walking or doing exercise. Great dining experience We have rooftop restaurant / bar with amazing river view. We have Khmer, Western and Japanese foods available. Although we pay close attention to the quality of our food, our prices are reasonable. Safe and comfortable place to stay",
-  },
-  {
-    id: 2,
-    name: "Mad Money Phnom Penh",
-    logo: "/assets/hotel.jpg",
-    description:
-      "Welcome to Onederz Hostel Phnom Penh, the best rated hostel in Phnom Penh. Rooftop pool with amazing river view What makes the hostel special is its location. You will enjoy amazing river view from our rooftop pool and restaurant. Huge public walk way and park along the river would be perfect place to enjoy walking or doing exercise. Great dining experience We have rooftop restaurant / bar with amazing river view. We have Khmer, Western and Japanese foods available. Although we pay close attention to the quality of our food, our prices are reasonable. Safe and comfortable place to stay",
-  },
-  {
-    id: 3,
-    name: "Pooltop Guesthouse",
-    logo: "/assets/hotel.jpg",
-    description:
-      "Welcome to Onederz Hostel Phnom Penh, the best rated hostel in Phnom Penh. Rooftop pool with amazing river view What makes the hostel special is its location. You will enjoy amazing river view from our rooftop pool and restaurant. Huge public walk way and park along the river would be perfect place to enjoy walking or doing exercise. Great dining experience We have rooftop restaurant / bar with amazing river view. We have Khmer, Western and Japanese foods available. Although we pay close attention to the quality of our food, our prices are reasonable. Safe and comfortable place to stay",
-  },
-  {
-    id: 4,
-    name: "HM Grand Central Hotel Phnom Penh",
-    logo: "/assets/hotel.jpg",
-    description:
-      "Welcome to Onederz Hostel Phnom Penh, the best rated hostel in Phnom Penh. Rooftop pool with amazing river view What makes the hostel special is its location. You will enjoy amazing river view from our rooftop pool and restaurant. Huge public walk way and park along the river would be perfect place to enjoy walking or doing exercise. Great dining experience We have rooftop restaurant / bar with amazing river view. We have Khmer, Western and Japanese foods available. Although we pay close attention to the quality of our food, our prices are reasonable. Safe and comfortable place to stay",
-  },
-];
 
 export default function HotelListings() {
+
+  const { data: cities, isLoading: isLoadingCity, isSuccess } = useGetAllCityQuery();
+  const [triggerGetHotels, { data: hotels, isLoading: isLoadingGetHotel }] = useLazyGetHotelByCityIdQuery();
+
+  const [selectCityId, setSelectCityId] = useState();
+
+  useEffect(() => {
+    if (isSuccess && cities?.data?.length) {
+      setSelectCityId(cities.data[0].city_id);
+    }
+  }, [isSuccess, cities?.data]);
+
+  useEffect(() => {
+    if (selectCityId) {
+      triggerGetHotels(selectCityId);
+    }
+  }, [selectCityId, triggerGetHotels]);
+
+  if (isLoadingCity) {
+    return <LoadingWithText />
+  }
+
   return (
     <div className="bg-mainbg">
       <div className="px-4 md:px-10 lg:px-20 w-full mx-auto py-12">
@@ -55,60 +52,66 @@ export default function HotelListings() {
             />
             <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
           </div>
-          <Select defaultValue="phnom-penh">
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Select location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="phnom-penh">Phnom Penh</SelectItem>
-              <SelectItem value="siem-reap">Siem Reap</SelectItem>
-              <SelectItem value="battambang">Battambang</SelectItem>
-            </SelectContent>
-          </Select>
+          {
+            selectCityId ? <Select defaultValue={selectCityId} onValueChange={(value) => setSelectCityId(value)}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <SelectValue placeholder="Select location" />
+              </SelectTrigger>
+              <SelectContent>
+                {
+                  cities?.data?.map((item, index) => <SelectItem value={item?.city_id} key={index}>{item?.city_name}</SelectItem>)
+                }
+              </SelectContent>
+            </Select> : <></>
+          }
         </div>
-        <div className="space-y-6">
-          {hotels.map((hotel) => (
-            <Card key={hotel.id} className="p-6">
-              <div className="flex flex-col md:flex-row gap-6">
-                <img
-                  src={hotel.logo || "/placeholder.svg"}
-                  alt={`${hotel.name} logo`}
-                  className="w-full md:w-56 h-56 rounded-md object-cover"
-                />
-                <div className="flex-1">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-2">
-                    <h2 className="text-xl font-semibold">{hotel.name}</h2>
-                    <Button variant="ghost" className="text-orange-500 hover:text-orange-600 mt-2 md:mt-0" >
-                      <MapPin className="w-4 h-4 mr-2" />
-                      Get Direction
-                    </Button>
+        {
+          !isLoadingGetHotel ? <div className="space-y-6">
+            {
+              hotels?.data?.length > 0 ? <div>
+                {hotels?.data?.map((hotel, index) => (
+                  <Card key={index} className="p-6 mb-5">
+                    <div className="flex flex-col md:flex-row gap-6">
+                      <img
+                        src={`https://giantibis.com/ibis_admin/${hotel?.image}`}
+                        alt={`${hotel.name} logo`}
+                        className="w-full md:w-56 h-56 rounded-md object-contain"
+                      />
+                      <div className="flex-1">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-2">
+                          <h2 className="text-xl font-semibold">{hotel.name}</h2>
+                          <Link href={hotel?.url} target="_blank" variant="ghost" className="text-orange-500 hover:text-orange-600 flex justify-center items-center mt-2 md:mt-0" >
+                            <MapPin className="w-4 h-4 mr-2" />
+                            Get Direction
+                          </Link>
+                        </div>
+                        <p className="text-gray-600 text-sm leading-relaxed">
+                          {hotel.descripition}
+                        </p>
+                        <p className="text-gray-600 text-sm leading-relaxed">
+                          <span className="font-semibold">Address</span>: {hotel?.address}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div> : <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-md">
+                <div className="flex flex-col items-center text-center">
+                  <div className="p-4 bg-amber-100 rounded-full mb-4">
+                    <HotelIcon className="w-8 h-8 text-amber-600" />
                   </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    {hotel.description}
+                  <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                    No Hotels Available
+                  </h2>
+                  <p className="text-gray-600 mb-4">
+                    We couldn't find any hotels matching your criteria. Try adjusting your filters or search in a different area.
                   </p>
                 </div>
               </div>
-            </Card>
-          ))}
-        </div>
-        <div className="flex justify-center items-center gap-2 mt-6">
-          <Button variant="outline" size="icon" disabled>
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="border-primary text-primary-foreground"
-          >
-            1
-          </Button>
-          <Button variant="outline">2</Button>
-          <Button variant="outline">...</Button>
-          <Button variant="outline">9</Button>
-          <Button variant="outline">10</Button>
-          <Button variant="outline" size="icon">
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
+            }
+          </div> : <LoadingWithText />
+        }
+
       </div>
     </div>
   );

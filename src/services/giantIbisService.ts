@@ -1,7 +1,7 @@
 import axios from 'axios';
 import FormData from 'form-data';
 
-type GiantIbisApiFunction = 'get_routeList' | 'get_route_timing' | 'get_cityList' | 'get_address' | 'get_busList' | 'get_route_bus' | 'confirm_Booking' | 'get_booking_detail' | 'get_bus_status' | 'print_ticket' | 'get_pickupList';
+type GiantIbisApiFunction = 'get_routeList' | 'get_route_timing' | 'get_cityList' | 'get_address' | 'get_busList' | 'get_route_bus' | 'confirm_Booking' | 'get_booking_detail' | 'get_bus_status' | 'print_ticket' | 'get_pickupList' | 'get_hotelList';
 
 export const callGiantIbisApi = async (apiFunction: GiantIbisApiFunction, payload?: Record<string, any>) => {
   const formData = new FormData();

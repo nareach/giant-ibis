@@ -99,3 +99,12 @@ export const getPickUpList = async ({
         city_id: city_id
     })
 }
+
+export const getHotelList = async ({
+    city_id,
+}) => {
+    return await callGiantIbisApi(
+        'get_hotelList', {
+        city_id: city_id
+    })
+}

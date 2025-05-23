@@ -6,8 +6,6 @@ export const metadata = pageMetadata.hotels;
 const page = () => {
   return <div >
     <HotelListings/>
-    
-
   </div>;
 };
 
