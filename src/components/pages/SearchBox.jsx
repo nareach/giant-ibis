@@ -163,11 +163,6 @@ export default function SearchBookForm() {
 
   }
 
-
-  if (isLoadingCity) {
-    return <LoadingComponent />
-  }
-
   return (
     <Suspense fallback={<div>Loading ...</div>}>
 
@@ -218,7 +213,9 @@ export default function SearchBookForm() {
 
                   {
                     tripType == 'one-way' ? (
-                      <PickDateFilter isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date, dateString) => {
+                      <PickDateFilter 
+                      loading={isLoadingCity}
+                      isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date, dateString) => {
                         setDepartureDate(date);
                         setReturnDate(null);
                       }} />) : (<></>)
@@ -236,6 +233,7 @@ export default function SearchBookForm() {
                       <PickDateFilter
                         isError={isDepartureDateError}
                         value={departureDate}
+                        loading={isLoadingCity}
                         title={'Departure'}
                         onChange={(date, dateString) => {
                           setDepartureDate(date);
@@ -245,6 +243,7 @@ export default function SearchBookForm() {
 
                       <PickDateFilter
                         isError={isReturneDateError}
+                        loading={isLoadingCity}
                         value={returnDate ? returnDate : null}
                         title={'Return'}
                         startFrom={departureDate}

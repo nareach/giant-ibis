@@ -26,6 +26,8 @@ import { useGetPickUpByCityIdQuery } from '@/store/features/pick-up';
 import NoBusComponent from './NoBusComponent';
 import { useGenerateQRMutation } from '@/store/features/payment';
 import PaymentFailedPopup from '../features/payments/PaymentFailedPopup';
+import { Checkbox } from '@heroui/react';
+import Link from 'next/link';
 
 
 export const AvailableTripItems = ({
@@ -63,6 +65,7 @@ export const AvailableTripItems = ({
      */
     const [loading, setLoading] = useState("");
     const [confirmLoading, setConfirmLoading] = useState(false);
+    const [confirmPayment, setIsConfirmPayment] = useState(true);
 
 
     const [isLoading, setIsLoading] = useState(false);
@@ -1118,7 +1121,7 @@ export const AvailableTripItems = ({
                             </div>
                         }
 
-                        <div className="border-2 border-dashed shadow-custom2 p-6 rounded-md border-pay">
+                        <div className="border-2 border-dashed shadow-custom2 p-6 rounded-md border-pay bg-white">
                             <h2 className="text-xl font-semibold mb-4">Payment Methods</h2>
                             <div className="space-y-3">
                                 <div
@@ -1172,41 +1175,63 @@ export const AvailableTripItems = ({
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div>
-                            <form id="_xpayTestForm" name="_xpayTestForm"
-                                action="https://epaymentuat.acledabank.com.kh/GIANTIBIS/paymentPage.jsp"
-                                method="post">
+                            <div>
+                                <div className="flex items-center mt-4">
+                                    <Checkbox
+                                        defaultSelected
+                                        size="lg"
+                                        radius="full"
+                                        className='font-medium'
+                                        isSelected={confirmPayment}
+                                        onValueChange={() => setIsConfirmPayment(!confirmPayment)}
+                                    />
+                                    <span className='font-medium'>
+                                        I accept the{' '}
+                                        <Link href={'/term-and-conditions'} target='_blank' className='underline'>
+                                            Terms and Conditions.
+                                        </Link>
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <form id="_xpayTestForm" name="_xpayTestForm"
+                                    action="https://epaymentuat.acledabank.com.kh/GIANTIBIS/paymentPage.jsp"
+                                    method="post">
+                                    <input type="hidden" id="merchantID" name="merchantID" value={merchantID} />
+                                    <input type="hidden" id="paymenttokenid" name="paymenttokenid" value={paymentTokenid} />
+                                    <input type="hidden" id="sessionid" name="sessionid" value={sessionId} />
+                                    <input type="hidden" id="transactionID" name="transactionID" value={transactionID} />
+                                    <input type="hidden" id="expirytime" name="expirytime" value="5" />
+                                    <input type="hidden" id="amount" name="amount" value={amountTotal} />
+                                    <input type="hidden" id="quantity" name="quantity" value="1" />
+                                    <input type="hidden" id="currencytype" name="currencytype" value="USD" />
+                                    <input type="hidden" id="description" name="description" value='booking' />
+                                    <input type="hidden" id="item" name="item" value='booking' />
+                                    <input type="hidden" id="errorUrl" name="errorUrl"
+                                        value="http://localhost:3000/error" />
+                                    <input type="hidden" id="paymentCard" name="paymentCard" value={paymentMethod == 'khqr' ? '0' : '1'} />
+                                    <input type="hidden" id="invoiceid" name="invoiceid" value={transactionID} />
 
-                                <input type="hidden" id="merchantID" name="merchantID" value={merchantID} />
-                                <input type="hidden" id="paymenttokenid" name="paymenttokenid" value={paymentTokenid} />
-                                <input type="hidden" id="sessionid" name="sessionid" value={sessionId} />
-                                <input type="hidden" id="transactionID" name="transactionID" value={transactionID} />
-                                <input type="hidden" id="expirytime" name="expirytime" value="5" />
-                                <input type="hidden" id="amount" name="amount" value={amountTotal}/> 
-                                <input type="hidden" id="quantity" name="quantity" value="1" />
-                                <input type="hidden" id="currencytype" name="currencytype" value="USD" />
-                                <input type="hidden" id="description" name="description" value='booking' />
-                                <input type="hidden" id="item" name="item" value='booking' />
-                                <input type="hidden" id="errorUrl" name="errorUrl"
-                                    value="http://localhost:3000/error" />
-                                <input type="hidden" id="paymentCard" name="paymentCard" value={paymentMethod == 'khqr' ? '0' : '1'} />
-                                <input type="hidden" id="invoiceid" name="invoiceid" value={transactionID} />
-
-                                <input type="hidden" id="successUrlToReturn" name="successUrlToReturn"
-                                    value={successsUrl} />
-                                <input type="hidden" id="errorUrl" name="errorUrl"
-                                    value={`http://localhost:3000/error/`} />
-                                <br />
-                                <button
-                                    type="button"
-                                    disabled={isLoading}
-                                    onClick={handlePay}
-                                    className={` text-[15px] w-full rounded-md py-2 text-white bg-primary hover:bg-primary-dark`}                                >
-                                    {isLoading ? 'Submitting ...' : 'Payment'}
-                                </button>
-                            </form>
+                                    <input type="hidden" id="successUrlToReturn" name="successUrlToReturn"
+                                        value={successsUrl} />
+                                    <input type="hidden" id="errorUrl" name="errorUrl"
+                                        value={`http://localhost:3000/error/`} />
+                                    <br />
+                                    <button
+                                        type="button"
+                                        disabled={isLoading || !confirmPayment}
+                                        onClick={handlePay}
+                                        className={cn(
+                                            `text-[15px] w-full rounded-md py-3 text-white bg-primary hover:bg-primary-dark`,
+                                            !confirmPayment ? 'cursor-not-allowed' : ''
+                                        )}
+                                    >
+                                        {isLoading ? 'Submitting ...' : 'Payment'}
+                                    </button>
+                                </form>
+                            </div>
                         </div>
+
 
                     </div>
                 </div>

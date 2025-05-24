@@ -1,0 +1,7 @@
+.custom-select-placeholder .ant-select-selection-placeholder {
+    color: black !important;
+}
+
+.custom-select-placeholder {
+    font-family: 'Poppins';
+}

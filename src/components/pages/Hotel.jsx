@@ -45,12 +45,6 @@ export default function HotelListings() {
       <div className="px-4 md:px-10 lg:px-20 w-full mx-auto py-12">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
           <div className="relative w-full md:w-80">
-            <Input
-              type="text"
-              placeholder="Search"
-              className="pl-10 w-full"
-            />
-            <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
           </div>
           {
             selectCityId ? <Select defaultValue={selectCityId} onValueChange={(value) => setSelectCityId(value)}>

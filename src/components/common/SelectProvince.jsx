@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@heroui/react";
 import { Select } from "antd";
-
+import './select-province-placehoder.css'
 export const SelectProvince = ({
     title,
     items,
@@ -37,7 +37,10 @@ export const SelectProvince = ({
                     value={value}
                     placeholder={`Select ${title}`}
                     optionFilterProp="label"
-                    className="w-full h-[39px]"
+                    className="w-full h-[39px] text-black custom-select-placeholder"
+                    style={{
+                        color: 'black'
+                    }}
                     filterOption={(input, option) =>
                         (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                     }

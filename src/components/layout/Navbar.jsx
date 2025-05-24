@@ -1,7 +1,6 @@
 "use client";
 import {
   Split,
-  UserRound,
   Newspaper,
   Hotel,
   BusFront,
@@ -10,7 +9,9 @@ import {
   Moon,
   Menu,
   X,
+  Bus,  
 } from "lucide-react";
+import { MdOutlineDateRange } from "react-icons/md";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -37,30 +38,36 @@ const Navbar = () => {
     },
     {
       id: 2,
-      icon: <Earth className="iconSVG w-5 h-5 lg:w-[23px] lg:h-[23px]" />,
-      tooltip: "Border Crossing",
-      href: "/crossing",
+      icon: <Bus className="iconSVG w-5 h-5 lg:w-[23px] lg:h-[23px]" />,
+      tooltip: "WHY IBIS",
+      href: "/why-ibis",
     },
     {
       id: 3,
+      icon: <MdOutlineDateRange  className="iconSVG w-5 h-5 lg:w-[23px] lg:h-[23px]" />,
+      tooltip: "Schedule",
+      href: "/schedule",
+    },
+    {
+      id: 4,
       icon: <Hotel className="iconSVG w-5 h-5 lg:w-[23px] lg:h-[23px]" />,
       tooltip: "Hotel",
       href: "/hotel",
     },
     {
-      id: 4,
+      id: 5,
       icon: <Newspaper className="iconSVG w-5 h-5 lg:w-[23px] lg:h-[23px]" />,
       tooltip: "Blog",
       href: "/blog",
     },
     {
-      id: 5,
-      icon: <UserRound className="iconSVG w-5 h-5 lg:w-[23px] lg:h-[23px]" />,
-      tooltip: "About Us",
-      href: "/about",
+      id: 6,
+      icon: <Earth className="iconSVG w-5 h-5 lg:w-[23px] lg:h-[23px]" />,
+      tooltip: "Border Crossing",
+      href: "/crossing",
     },
     {
-      id: 6,
+      id: 7,
       icon: <Split className="iconSVG w-5 h-5 lg:w-[25px] lg:h-[25px]" />,
       tooltip: "Our Branch",
       href: "/branch",
@@ -79,7 +86,7 @@ const Navbar = () => {
             className="h-[50px] w-auto"
           />
         </Link>
-  
+
         <nav className="hidden md:flex items-center gap-5 lg:gap-12 bg-white dark:bg-gray-800 backdrop-blur-sm px-4 py-2 rounded-[15px] shadow-custom">
           {navIcons.map(({ id, icon, tooltip, href }) => (
             <Link

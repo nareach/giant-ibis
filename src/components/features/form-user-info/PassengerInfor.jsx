@@ -1,12 +1,16 @@
-import React, { useState, useEffect, forwardRef } from 'react';
+import React, { useState, useEffect, forwardRef, useRef } from 'react';
 import { Checkbox, Select } from 'antd';
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import './passengerInfor.css'
+import NotificationPopup from '../modal/NotificationPopup';
 
 const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, pickupDeparture, pickupReturn, allowedpickUpDeparture, allowedpickUpReturn }, ref) => {
     const [passengers, setPassengers] = useState([]);
     const [errors, setErrors] = useState([]);
     const [isOneForm, setIsOneForm] = useState(false);
     const [originalPassengers, setOriginalPassengers] = useState([]);
+    const [allowNotificationOnce, setAllowNotificationOnce] = useState(false);
+    const notificationRef = useRef();
+
 
     // Initialize passengers when seatCount or tripType changes
     useEffect(() => {
@@ -25,8 +29,8 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
 
     const handleChange = (index, field, value) => {
         let updatedPassengers;
-        console.log("change: ",{index, field, value});
-        
+        console.log("change: ", { index, field, value });
+
         if (isOneForm) {
             updatedPassengers = passengers.map(passenger => ({
                 ...passenger,
@@ -150,6 +154,14 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
         return isValid;
     };
 
+    const handleShowNotificationOnece = () => {
+
+        if(!allowNotificationOnce){
+            setAllowNotificationOnce(true);
+            notificationRef.current?.openModal();
+        }
+    }
+
     React.useImperativeHandle(ref, () => ({
         validatePassengers,
         getPassengerData: () => passengers,
@@ -168,7 +180,9 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
                         showSearch
                         placeholder={`${label}`}
                         optionFilterProp="label"
-                        className="w-full h-[39px]"
+                        onClick={handleShowNotificationOnece}
+                        allowClear
+                        className="w-full h-[43px] custom-select-placeholder"
                         filterOption={(input, option) =>
                             (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                         }
@@ -183,9 +197,11 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
                 ) : (<>
                     <Select
                         showSearch
+                        allowClear
                         placeholder={`${label}`}
+                        onClick={handleShowNotificationOnece}
                         optionFilterProp="label"
-                        className="w-full h-[39px]"
+                        className="w-full h-[43px] custom-select-placeholder"
                         filterOption={(input, option) =>
                             (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                         }
@@ -199,38 +215,6 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
                     />
                 </>)
             }
-
-
-            {/* <Select
-                value={passengers[passengerIndex]?.[field] || ''}
-                className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
-                onValueChange={(value) => handleChange(passengerIndex, field, value)}
-            >
-                <SelectTrigger
-                    id={`passenger-${isOneForm ? 'all' : passengerIndex}-${field}`}
-                    className="w-full p-3 bg-[#F8F7FD] border-none"
-                >
-                    <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-auto">
-                    {
-                        field == "pickupLocation" ? (<>
-                            {pickupDeparture?.map((location) => (
-                                <SelectItem key={location.id} value={location.id}>
-                                    {location.title}
-                                </SelectItem>
-                            ))}
-                        </>) : (<>
-                            {pickupReturn.map((location) => (
-                                <SelectItem key={location.id} value={location.id}>
-                                    {location.title}
-                                </SelectItem>
-                            ))}
-                        </>)
-                    }
-
-                </SelectContent>
-            </Select> */}
             {errors[passengerIndex]?.[field] && (
                 <p className="text-red-500 text-xs mt-1">{errors[passengerIndex][field]}</p>
             )}
@@ -239,6 +223,8 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
 
     return (
         <div className="space-y-6 shadow-custom2 p-6 rounded-md">
+            <NotificationPopup ref={notificationRef} />
+
             <h2 className="text-xl font-semibold mb-4" id="travellerDetail">
                 Traveller Details ({seatCount} {seatCount === 1 ? 'Passenger' : 'Passengers'})
             </h2>

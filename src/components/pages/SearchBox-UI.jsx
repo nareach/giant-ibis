@@ -5,7 +5,7 @@ import { TitleFilter } from "../common/TitleFilter";
 import { TripTypeComponent } from "../common/TripType";
 import { SelectProvince } from "../common/SelectProvince";
 import { PickDateFilter } from "../common/PickDate";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useGetAllCityQuery, useLazyGetCitesByOriginQuery } from "@/store/features/cities";
@@ -16,7 +16,6 @@ export default function SearchBookForm() {
 
   const pathname = usePathname();
   const router = useRouter();
-  const { query } = router;
   const [triggerGetDestination, { data: destinations, isLoading: isLoadindDestination }] = useLazyGetCitesByOriginQuery();
 
 
@@ -24,17 +23,14 @@ export default function SearchBookForm() {
    * query param
    */
 
-  const originParam = query?.origin || null; // '1'
-  const destinationParam = query?.destination || null; // '2'
-  const departureDateParam = query?.departure_date || null; // '14-04-2025'
   const { data: citiesData, isLoading: isLoadingCity } = useGetAllCityQuery();
 
   /**
    * state filter
    */
-  const [origin, setOrigin] = useState(originParam);
-  const [destination, setDestination] = useState(destinationParam);
-  const [departureDate, setDepartureDate] = useState(departureDateParam);
+  const [origin, setOrigin] = useState(null);
+  const [destination, setDestination] = useState(null);
+  const [departureDate, setDepartureDate] = useState(null);
   const [returnDate, setReturnDate] = useState();
 
   /**
@@ -94,6 +90,8 @@ export default function SearchBookForm() {
 
 
     }
+
+    setLoading(false);
   }
 
   const handleFilterDestination = async (originId) => {
@@ -106,12 +104,12 @@ export default function SearchBookForm() {
   }
 
 
-  if (pathname === '/book' ) {
+  if (pathname === '/book' || pathname === '/term-and-conditions') {
     return (<></>);
   }
 
 
-  if (pathname.includes('success') || pathname === '/error' ) {
+  if (pathname.includes('success') || pathname === '/error') {
     return (<></>);
   }
 
@@ -161,10 +159,16 @@ export default function SearchBookForm() {
 
                   {
                     tripType == 'one-way' ? (
-                      <PickDateFilter isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date, dateString) => {
-                        setDepartureDate(date);
-                        setReturnDate(null);
-                      }} />) : (<></>)
+                      <PickDateFilter
+                        isError={isDepartureDateError}
+                        value={departureDate}
+                        title={'Departure'}
+                        loading={isLoadingCity}
+                        onChange={(date, dateString) => {
+                          setDepartureDate(date);
+                          setReturnDate(null);
+                        }}
+                      />) : (<></>)
                   }
                 </div>
 
@@ -180,6 +184,7 @@ export default function SearchBookForm() {
                         isError={isDepartureDateError}
                         value={departureDate}
                         title={'Departure'}
+                        loading={isLoadingCity}
                         onChange={(date, dateString) => {
                           setDepartureDate(date);
                           setReturnDate(null);
@@ -190,6 +195,7 @@ export default function SearchBookForm() {
                         isError={isReturneDateError}
                         value={returnDate ? returnDate : null}
                         title={'Return'}
+                        loading={isLoadingCity}
                         startFrom={departureDate}
                         onChange={(date, dateString) => {
                           setReturnDate(date);
@@ -204,7 +210,11 @@ export default function SearchBookForm() {
               <Button
                 type="button"
                 onClick={handleSearch}
-                className="bg-primary w-32 text-center mt-7 hover:bg-primary "
+                disabled={loading || isLoadingCity}
+                className={cn(
+                  'bg-primary w-32 text-center mt-7 hover:bg-primary',
+                  isLoadingCity || loading ? 'cursor-not-allowed' : ''
+                )}
               >
                 {
                   loading ? 'Searching...' : 'Search'

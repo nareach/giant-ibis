@@ -7,6 +7,7 @@ import './pick-date.css';
 import { Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
 import dayjs from 'dayjs';
+import { Skeleton } from "@heroui/react";
 
 const poppins = Poppins({
     subsets: ['latin'],
@@ -15,7 +16,14 @@ const poppins = Poppins({
 });
 
 
-export const PickDateFilter = ({ title, onChange, isError, value, colspan = 'lg:col-span-2', startFrom }) => {
+export const PickDateFilter = ({
+    title,
+    onChange,
+    isError,
+    value,
+    colspan = 'lg:col-span-2',
+    startFrom,
+    loading = false }) => {
 
     const disabledDate = (current) => {
         if (current && current < dayjs().startOf('day')) {
@@ -38,17 +46,30 @@ export const PickDateFilter = ({ title, onChange, isError, value, colspan = 'lg:
                 {title}
             </Label>
 
-            <DatePicker
-                placeholder={`Select ${title} Date`}
-                value={value}
-                format="YYYY-MM-DD"
-                onChange={onChange}
-                disabledDate={disabledDate}
-                className={`${poppins.className} font-normal flex h-[40px] w-full rounded-md border border-neutral-200 bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-neutral-950 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:border-neutral-800 dark:file:text-neutral-50 dark:placeholder:text-neutral-400 dark:focus-visible:ring-neutral-300`} />
-
             {
-                isError ? (<span className="text-red-500 mt-3 text-[14px]">{title} is required.</span>) : ''
+                loading ? <div className="space-y-2">
+                    <Skeleton className="h-10 w-full rounded-md" />
+                    {isError && (
+                        <span className="text-red-500 mt-3 text-[14px]">
+                            {title} is required.
+                        </span>
+                    )}
+                </div> : <>
+                    <DatePicker
+                        placeholder={`Select ${title} Date`}
+                        value={value}
+                        format="YYYY-MM-DD"
+                        onChange={onChange}
+                        disabledDate={disabledDate}
+                        className={`${poppins.className} font-normal flex h-[40px] w-full rounded-md border border-neutral-200 bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-neutral-950 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:border-neutral-800 dark:file:text-neutral-50 dark:placeholder:text-neutral-400 dark:focus-visible:ring-neutral-300`} />
+
+                    {
+                        isError ? (<span className="text-red-500 mt-3 text-[14px]">{title} is required.</span>) : ''
+                    }
+                </>
             }
+
+
         </div>
     );
 }
