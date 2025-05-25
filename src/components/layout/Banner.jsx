@@ -18,10 +18,10 @@ export const Banner = () => {
             <div
                 className=" absolute inset-0    flex flex-col items-center justify-center  text-white  px-4  md:items-start md:justify-start md:left-20 top-28"
             >
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-center md:text-left">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-center md:text-left dark:text-gray-800">
                     Every Mile, Every Journey, Together
                 </h1>
-                <p className="text-sm sm:text-lg md:text-xl mb-6 max-w-lg md:max-w-2xl text-center md:text-left">
+                <p className="text-sm sm:text-lg md:text-xl mb-6 max-w-lg md:max-w-2xl text-center md:text-left dark:text-gray-800">
                     Experience seamless travel, reliable service, and a commitment to
                     getting you wherever you need to be.
                 </p>

@@ -12,7 +12,7 @@ export class RouteService {
             const { origin, destination, travelDate } = params;
 
             let routes = await this.findByOriginAndDestination({ destination, origin });
-            if(routes?.length < 1){
+            if (routes?.length < 1) {
                 return null;
             }
             const timing = await this.findTimingByRouteId(routes[0]?.id);
@@ -49,7 +49,17 @@ export class RouteService {
                     // address
                     const addressOrigin = await this.findAddress(routeId, routeTimingMetaValue);
 
-                    const destinationAddress = await this.findAddress(routeId, destinationTime);
+                    let destinationAddress = null;
+                    if (addressOrigin?.data?.length > 0) {
+                        destinationAddress = {
+                            address: addressOrigin?.data[0]?.dropaddress,
+                            descripition: addressOrigin?.data[0]?.dropaddress,
+                            url: addressOrigin?.data[0]?.dropurl
+                        }
+                    }
+
+                    console.log(destinationAddress);
+                    
 
                     // bus
                     const busType = await this.findBusList(route?.bus_type);
@@ -65,12 +75,13 @@ export class RouteService {
                     });
 
                     let allowedpickUp = busDetail?.data?.length > 0 ? busDetail?.data[0].allowedpick : '';
-                    allowedpickUp = allowedpickUp == '0' ? false : true ;
+                    allowedpickUp = allowedpickUp == '0' ? false : true;
                     const facility = this.getFacilities(busDetail?.data?.length > 0 ? busDetail?.data[0].facilities : null)
 
                     // route detail
                     return {
                         ...route,
+                        addressOrigin,
                         facilities: facility,
                         allowedpickUp: allowedpickUp,
                         timing: timing.data[index],
@@ -86,7 +97,7 @@ export class RouteService {
                             city: destinationDetail,
                             time: destinationTime,
                             arriveAt: arrivalDate,
-                            address: destinationAddress?.data?.length > 0 ? destinationAddress?.data[0] : null
+                            address: destinationAddress || null
                         },
                     };
                 }))).filter(Boolean);

@@ -17,7 +17,7 @@ export const merchantName = "GIANTIBIS";
 
 
 export const API_KEY = "ce3e3f95a317e31ac46e98cd32dd00b38b3e1488";
-export const CLIENT_URL = "https://giant-ibis-three.vercel.app";
+export const CLIENT_URL = "http://localhost:3000";
 export const API_URL_NEXT = process.env.API_URL || `${CLIENT_URL}/api`;
 
 

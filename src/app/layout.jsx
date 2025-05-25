@@ -3,6 +3,7 @@ import "./globals.css";
 import { Banner } from "@/components/layout/Banner";
 import LayoutProvider from "./layoutProvider";
 import SearchBookFormUI from "@/components/pages/SearchBox-UI";
+import { cn } from "@/lib/utils";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -83,12 +84,12 @@ export const pageMetadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={poppins.className}>
-          <LayoutProvider>
-            <Banner />
-            <SearchBookFormUI />
-            {children}
-          </LayoutProvider>
+      <body className={cn(poppins.className, 'dark:bg-[#0D001A]')}>
+        <LayoutProvider>
+          <Banner />
+          <SearchBookFormUI />
+          {children}
+        </LayoutProvider>
       </body>
     </html>
   );

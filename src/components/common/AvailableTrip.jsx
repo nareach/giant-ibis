@@ -809,6 +809,7 @@ export const AvailableTripItems = ({
                                             departure_date={routeSelected?.destinationDetail?.arriveAt}
                                             isStart={false}
                                             time={routeSelected?.destinationDetail?.time}
+                                            address={routeSelected?.destinationDetail?.address?.url}
                                         />
                                     </div>
                                 </div>
@@ -860,6 +861,7 @@ export const AvailableTripItems = ({
                                                         departure_date={routeReturnSelected?.destinationDetail?.arriveAt}
                                                         isStart={false}
                                                         time={routeReturnSelected?.destinationDetail?.time}
+                                                        address={routeReturnSelected?.destinationDetail?.address?.url}
                                                     />
                                                 </div>
                                             </div>
@@ -1000,6 +1002,8 @@ export const AvailableTripItems = ({
                                             isStart={true}
                                             time={routeSelected?.destinationDetail?.time}
                                             routeId={routeSelected?.id}
+                                            address={routeSelected?.destinationDetail?.address?.url}
+
                                         />
                                     </div>
                                 </div>
@@ -1053,6 +1057,7 @@ export const AvailableTripItems = ({
                                                         isStart={true}
                                                         time={routeReturnSelected?.destinationDetail?.time}
                                                         routeId={routeReturnSelected?.id}
+                                                        address={routeReturnSelected?.destinationDetail?.address?.url}
                                                     />
                                                 </div>
                                             </div>

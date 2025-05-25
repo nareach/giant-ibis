@@ -68,10 +68,10 @@ const Testimonials = () => {
               {testimonials.map((testimonial) => (
                 <CarouselItem
                   key={testimonial.id}
-                  className="md:basis-1/2 lg:basis-1/3"
+                  className="md:basis-1/2 lg:basis-1/3 "
                 >
                   <div className="p-1">
-                    <Card>
+                    <Card className="dark:bg-gray-800">
                       <CardContent className="flex flex-col justify-between p-6">
                         <div className="flex justify-between items-start mb-4">
                           <div>

@@ -9,19 +9,28 @@ import {
   Moon,
   Menu,
   X,
-  Bus,  
+  Bus,
 } from "lucide-react";
 import { MdOutlineDateRange } from "react-icons/md";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [language, setLanguage] = useState("en");
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [mounted, setMounted] = useState(false)
+  const { theme, setTheme } = useTheme();
 
   const toggleDarkMode = () => {
+    if(isDarkMode){
+      setTheme('light')
+    }else{
+      setTheme('dark')
+    }
     setIsDarkMode(!isDarkMode);
   };
 
@@ -44,7 +53,7 @@ const Navbar = () => {
     },
     {
       id: 3,
-      icon: <MdOutlineDateRange  className="iconSVG w-5 h-5 lg:w-[23px] lg:h-[23px]" />,
+      icon: <MdOutlineDateRange className="iconSVG w-5 h-5 lg:w-[23px] lg:h-[23px]" />,
       tooltip: "Schedule",
       href: "/schedule",
     },
@@ -73,6 +82,12 @@ const Navbar = () => {
       href: "/branch",
     },
   ];
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
 
   return (
     <header className="w-full absolute z-10">

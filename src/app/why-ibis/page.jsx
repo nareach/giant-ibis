@@ -52,7 +52,7 @@ export default function page() {
     ]
 
     return (
-        <div className="bg-white mb-5">
+        <div className="mb-5">
             <div className="max-w-7xl mx-auto px-4 py-12 w-full  ">
                 <div className='text-center mb-10'>
                     <h1 className='text-3xl md:text-4xl font-bold text-gray-800 mb-2'>Service</h1>

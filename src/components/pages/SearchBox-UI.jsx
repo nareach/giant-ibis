@@ -116,9 +116,9 @@ export default function SearchBookForm() {
 
   return (
     <>
-      <div className="mb-10">
+      <div className="mb-10 ">
         <div>
-          <div className="max-w-7xl mx-auto mt-12 p-6 bg-white shadow-custom rounded-lg border border-gray-200">
+          <div className="max-w-7xl mx-auto mt-12 p-6 dark:bg-gray-800 bg-white shadow-custom rounded-lg border border-gray-200">
             <TitleFilter />
 
             <div className={cn(

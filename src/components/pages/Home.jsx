@@ -173,7 +173,7 @@ const Home = () => {
 
       <div className=" py-10 px-4 md:px-16 lg:px-20">
         <div className="text-center mb-8">
-          <h2 className="text-3xl text-Textcolor font-semibold">
+          <h2 className="text-3xl text-Textcolor font-semibold dark:text-gray-800">
             We Offer Best Services
           </h2>
         </div>
@@ -181,7 +181,7 @@ const Home = () => {
           {services.map((service) => (
             <div
               key={service.id}
-              className="bg-white shadow-custom rounded-lg px-[24px] py-[35px] text-center space-y-4"
+              className="bg-white shadow-custom rounded-lg px-[24px] py-[35px] text-center space-y-4 dark:bg-gray-800"
             >
               <div className="w-[80px] h-[80px] m-auto bg-gray-200 rounded-full flex items-center justify-center">
                 <Image
@@ -233,7 +233,7 @@ const Home = () => {
           {destinations.map((destination) => (
             <Card
               key={destination.id}
-              className="overflow-hidden p-5 bg-white h-full rounded-lg shadow-custom"
+              className="overflow-hidden p-5 bg-white h-full rounded-lg shadow-custom dark:bg-gray-800"
             >
               <CardContent className="p-0">
                 <div className="flex gap-5 flex-col lg:flex-row">

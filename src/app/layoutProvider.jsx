@@ -2,8 +2,10 @@
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 import { store } from "@/store/store";
+import { HeroUIProvider } from "@heroui/react";
 import { usePathname } from "next/navigation";
 import { Provider } from "react-redux";
+import {ThemeProvider as NextThemesProvider} from "next-themes";
 
 export default function LayoutProvider({ children }) {
   const pathname = usePathname();
@@ -11,9 +13,15 @@ export default function LayoutProvider({ children }) {
 
   return (
     <Provider store={store}>
-      {!isAuthPage && <Navbar />}
-      {children}
-      {!isAuthPage && <Footer />}
+      {/* <HeroUIProvider> */}
+        {/* <NextThemesProvider attribute="class" defaultTheme="dark"> */}
+
+          {!isAuthPage && <Navbar />}
+          {children}
+          {!isAuthPage && <Footer />}
+        {/* </NextThemesProvider> */}
+
+      {/* </HeroUIProvider> */}
     </Provider>
   );
 }
