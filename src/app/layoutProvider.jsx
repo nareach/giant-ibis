@@ -13,15 +13,15 @@ export default function LayoutProvider({ children }) {
 
   return (
     <Provider store={store}>
-      {/* <HeroUIProvider> */}
-        {/* <NextThemesProvider attribute="class" defaultTheme="dark"> */}
+      <HeroUIProvider>
+        <NextThemesProvider attribute="class" defaultTheme="light">
 
           {!isAuthPage && <Navbar />}
           {children}
           {!isAuthPage && <Footer />}
-        {/* </NextThemesProvider> */}
+        </NextThemesProvider>
 
-      {/* </HeroUIProvider> */}
+      </HeroUIProvider>
     </Provider>
   );
 }
