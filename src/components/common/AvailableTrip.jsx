@@ -842,8 +842,8 @@ export const AvailableTripItems = ({
                                                         departure_date={routeReturnSelected?.originDetail?.leaveAt}
                                                         isStart={true}
                                                         time={routeReturnSelected?.timing?.meta_value}
-                                                        routeId={routeSelected?.id}
-                                                        address={routeSelected?.originDetail?.address?.url}
+                                                        routeId={routeReturnSelected?.id}
+                                                        address={routeReturnSelected?.originDetail?.address?.url}
                                                     />
 
                                                     <Bus className="w-5 h-5 mt-8 text-secondary ml-6 mr-6 " />
@@ -857,7 +857,6 @@ export const AvailableTripItems = ({
                                                         </div>
                                                     </div>
                                                     <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" /> 
-                                                    {routeReturnSelected?.destinationDetail?.address?.url}
                                                     <RouteInfor
                                                         city={routeReturnSelected?.destinationDetail?.city?.city_name}
                                                         routeId={routeReturnSelected?.id}
