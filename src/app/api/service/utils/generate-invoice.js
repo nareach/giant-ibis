@@ -36,6 +36,7 @@ export async function generateInvoicePdf({
     destinationCity,
     dateSend,
     pickup,
+    destinationAddress,
     passengers = [],
     facibilities = []
 }) {
@@ -76,7 +77,8 @@ export async function generateInvoicePdf({
         passengers,
         facibilities,
         pickup,
-        paymentMethod
+        paymentMethod,
+        destinationAddress
     });
 
     doc.end();
@@ -105,6 +107,7 @@ function generateHeader(doc, {
     facibilities,
     pickup,
     paymentMethod,
+    destinationAddress,
     passengers = []
 }) {
     // Initialize dynamic Y position
@@ -160,9 +163,9 @@ function generateHeader(doc, {
 
     y = sumY(doc, y, 30);
 
-    const seatText = `Seat No: ${seatNo}`;
-    const rightMargin = 50;
-    const textWidth = 250;
+    let seatText = `Seat No: ${seatNo}`;
+    let rightMargin = 50;
+    let textWidth = 250;
 
     doc.fontSize(11)
         .fill("black")
@@ -219,6 +222,34 @@ function generateHeader(doc, {
                 continued: null,
                 underline: null
             }).image(googleMapIconBase64, 120, y + 17, { width: 6 });
+    }
+
+    if (destinationAddress) {
+        const text = 'Get Direction';
+        const iconPadding = 5;
+        const iconWidth = 6;
+        textWidth = doc.widthOfString(text);
+        const totalWidth = textWidth + iconPadding + iconWidth;
+        rightMargin = 50;
+        const x = doc.page.width - rightMargin - totalWidth;
+
+        // Draw the text
+        doc.fill("#0057A8")
+            .text(text, x, y + 15, {
+                link: `${destinationAddress}`,
+                underline: true,
+                continued: false
+            });
+
+        doc.text("", 0, 0, {
+            link: null,
+            underline: null,
+            continued: null
+        });
+
+        doc.image(googleMapIconBase64, x + textWidth + iconPadding, y + 17, {
+            width: 6
+        });
     }
 
     if (pickup) {

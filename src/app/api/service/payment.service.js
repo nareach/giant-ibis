@@ -47,7 +47,18 @@ export class PaymentService {
 
         // address
         const addressOriginAddress = await this.findAddress(route?.id, bookList[0].travel_time);
-        const destinationAddress = await this.findAddress(route?.id, destinationTime);
+        let destinationAddress = null;
+        if (addressOriginAddress?.data?.length > 0) {
+            destinationAddress = {
+                address: addressOriginAddress?.data[0]?.dropaddress,
+                descripition: addressOriginAddress?.data[0]?.dropaddress,
+                url: addressOriginAddress?.data[0]?.dropurl
+            }
+        }
+
+        console.log(destinationAddress);
+        
+
         const busDetail = await this.findRouteBus(
             bookList[0].route_id,
             bookList[0].travel_time
@@ -63,7 +74,7 @@ export class PaymentService {
             pickupObj = getPickUpListData?.data?.filter((item) => item?.id == pickup);
             pickupObj = pickupObj?.length > 0 ? pickupObj[0] : null;
         }
-
+ 
         if (printTicket?.data?.length > 0) {
             ticketInfor = printTicket?.data?.filter((item) => item?.first_name != "guest_name0")?.map((item) => {
 
@@ -89,9 +100,9 @@ export class PaymentService {
                 email: item?.email || "",
                 pickup: pickupObj?.title || "",
             }
-        })
+        });
 
-        if (isConfirm) {
+        if (true) {
             await this.sendMail({
                 ticketCount: ticketInfor?.length || 0,
                 price: ticketInfor[0].price,
@@ -113,11 +124,13 @@ export class PaymentService {
                 facibilities: facility,
                 paymentMethod,
                 pickup: pickupObj?.title ? pickupObj?.title : null,
+                destinationAddress: destinationAddress?.url || null,
             })
         }
 
         return {
             passengers,
+            paymentMethod: paymentMethod || null,
             ticketCount: ticketInfor?.length || 0,
             price: ticketInfor[0].price,
             ticket: ticketInfor?.length > 0 ? ticketInfor[0] : null,
@@ -282,7 +295,15 @@ export class PaymentService {
 
         // address
         const addressOriginAddress = await this.findAddress(route?.id, bookList[0].travel_time);
-        const destinationAddress = await this.findAddress(route?.id, destinationTime);
+        let destinationAddress = null;
+        if (addressOriginAddress?.data?.length > 0) {
+            destinationAddress = {
+                address: addressOriginAddress?.data[0]?.dropaddress,
+                descripition: addressOriginAddress?.data[0]?.dropaddress,
+                url: addressOriginAddress?.data[0]?.dropurl
+            }
+        }
+
         const busDetail = await this.findRouteBus(
             bookList[0].route_id,
             bookList[0].travel_time
@@ -386,14 +407,13 @@ export class PaymentService {
     }
 
     confirmRoundTrip = async (bookListOneWay, bookListRoundTrip, refCode, refCodeRoundTrip, isConfirm, paymentMethod) => {
-        console.log("paymentMethod: ",paymentMethod);
-        
+
         const confirmOneWay = await this.confirmBookingWithoutSendMail(bookListOneWay, refCode);
         const confirmRoundTrip = await this.confirmBookingWithoutSendMail(bookListRoundTrip, refCodeRoundTrip);
 
         const oneWayNotification = confirmOneWay?.notification;
         const roundTripNotification = confirmRoundTrip?.notification;
-
+        
         if (isConfirm)
             await this.sendMailRoundTrip({
                 ...oneWayNotification,
@@ -416,11 +436,20 @@ export class PaymentService {
                 dateSendReturn: roundTripNotification?.dateSend,
                 passengersReturn: roundTripNotification?.passengers,
                 facibilitiesReturn: roundTripNotification?.facibilities,
+                destinationAddress: confirmOneWay?.destinationDetail?.address?.url,
+                destinationReturnAddress: confirmRoundTrip?.destinationDetail?.address?.url,
             })
 
         return {
-            oneWay: confirmOneWay || null,
-            roundTrip: confirmRoundTrip || null,
+            paymentMethod: paymentMethod || null,
+            oneWay: {
+                ...confirmOneWay,
+                paymentMethod: paymentMethod || null,
+            } || null,
+            roundTrip: {
+                ...confirmRoundTrip,
+                paymentMethod: paymentMethod || null,
+            } || null,
         }
     }
 
@@ -536,6 +565,7 @@ export class PaymentService {
         destinationCity,
         dateSend,
         passenger,
+        destinationAddress,
         passengers = [],
         facibilities,
         pickup,
@@ -580,6 +610,7 @@ export class PaymentService {
                 facibilities,
                 pickup,
                 paymentMethod,
+                destinationAddress
             });
 
 
@@ -603,7 +634,8 @@ export class PaymentService {
                 passengers,
                 facibilities,
                 pickup,
-                paymentMethod
+                paymentMethod,
+                destinationAddress
             });
 
 
@@ -668,6 +700,8 @@ export class PaymentService {
         destinationTimeReturn,
         destinationCityReturn,
         dateSendReturn,
+        destinationAddress,
+        destinationReturnAddress,
         passengersReturn = [],
         facibilitiesReturn = []
     }) {
@@ -728,7 +762,9 @@ export class PaymentService {
                 facibilitiesReturn,
                 pickup,
                 pickupReturn,
-                paymentMethod
+                paymentMethod,
+                destinationAddress,
+                destinationReturnAddress,
             });
 
             const pdfBuffer = await generateInvoiceRoundTripPdf({
@@ -770,7 +806,8 @@ export class PaymentService {
                 dateSendReturn,
                 passengersReturn,
                 facibilitiesReturn,
-
+                destinationAddress,
+                destinationReturnAddress,
             });
 
 

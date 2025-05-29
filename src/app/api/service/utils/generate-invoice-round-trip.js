@@ -54,6 +54,8 @@ export async function generateInvoiceRoundTripPdf({
     destinationTimeReturn,
     destinationCityReturn,
     dateSendReturn,
+    destinationAddress,
+    destinationReturnAddress,
     passengersReturn = [],
     paymentMethod,
     facibilitiesReturn = []
@@ -113,7 +115,9 @@ export async function generateInvoiceRoundTripPdf({
         facibilitiesReturn,
         pickup,
         pickupReturn,
-        paymentMethod
+        paymentMethod,
+        destinationAddress,
+        destinationReturnAddress,
     });
 
     doc.end();
@@ -159,6 +163,8 @@ async function generateHeader(doc, {
     destinationTimeReturn,
     destinationCityReturn,
     dateSendReturn,
+    destinationAddress,
+    destinationReturnAddress,
     paymentMethod,
     passengersReturn = [],
     facibilitiesReturn = []
@@ -273,6 +279,34 @@ async function generateHeader(doc, {
             }).image(googleMapIconBase64, 120, y + 17, { width: 6 });
     }
 
+    if (destinationAddress) {
+        const text = 'Get Direction';
+        const iconPadding = 5;
+        const iconWidth = 6;
+        textWidth = doc.widthOfString(text);
+        const totalWidth = textWidth + iconPadding + iconWidth;
+        rightMargin = 50;
+        const x = doc.page.width - rightMargin - totalWidth;
+
+        // Draw the text
+        doc.fill("#0057A8")
+            .text(text, x, y + 15, {
+                link: `${destinationAddress}`,
+                underline: true,
+                continued: false
+            });
+
+        doc.text("", 0, 0, {
+            link: null,
+            underline: null,
+            continued: null
+        });
+
+        doc.image(googleMapIconBase64, x + textWidth + iconPadding, y + 17, {
+            width: 6
+        });
+    }
+
     if (pickup) {
         doc.font('poppins-regular').fill("black").text(`Pick up at: ${pickup}`, 50, y + 32, {
             align: 'left',
@@ -379,6 +413,34 @@ async function generateHeader(doc, {
                 continued: null,
                 underline: null
             }).image(googleMapIconBase64, 120, y + 17, { width: 6 });
+    }
+
+    if (destinationReturnAddress) {
+        const text = 'Get Direction';
+        const iconPadding = 5;
+        const iconWidth = 6;
+        textWidth = doc.widthOfString(text);
+        const totalWidth = textWidth + iconPadding + iconWidth;
+        rightMargin = 50;
+        const x = doc.page.width - rightMargin - totalWidth;
+
+        // Draw the text
+        doc.fill("#0057A8")
+            .text(text, x, y + 15, {
+                link: `${destinationReturnAddress}`,
+                underline: true,
+                continued: false
+            });
+
+        doc.text("", 0, 0, {
+            link: null,
+            underline: null,
+            continued: null
+        });
+
+        doc.image(googleMapIconBase64, x + textWidth + iconPadding, y + 17, {
+            width: 6
+        });
     }
 
     if (pickupReturn) {

@@ -65,7 +65,7 @@ export const AvailableTripItems = ({
      */
     const [loading, setLoading] = useState("");
     const [confirmLoading, setConfirmLoading] = useState(false);
-    const [confirmPayment, setIsConfirmPayment] = useState(true);
+    const [confirmPayment, setIsConfirmPayment] = useState(false);
 
 
     const [isLoading, setIsLoading] = useState(false);
@@ -171,7 +171,8 @@ export const AvailableTripItems = ({
     };
 
     const handleSeatReturnSelect = (seatSelected) => {
-
+        console.log(routeReturnSelected);
+        
         setRouteReturnSelected((prevRouteSelected) => {
             const updatedSeats = prevRouteSelected?.seat_status?.seats?.map((seat) => {
 
@@ -512,6 +513,7 @@ export const AvailableTripItems = ({
             let url = ''
             let amount = 0;
             let ticketCount = 0;
+            let bookedOnWay = null;
 
             if (tripType == 'round-trip') {
 
@@ -545,7 +547,7 @@ export const AvailableTripItems = ({
                 const travelDateDeparture = dayjs(departureDate, "DD-MM-YYYY").format('DD-MM-YYYY');
                 const seatNoDeparture = selectedSeat?.map(item => item.seat).join(',');
 
-                const bookedOnWay = await addBooking({
+                bookedOnWay = await addBooking({
                     travel_date: travelDateDeparture,
                     travel_time: routeSelected?.timing?.meta_value,
                     bus_type: routeSelected?.busTypeDetail?.meta_key,
@@ -609,7 +611,7 @@ export const AvailableTripItems = ({
                 const travelDateDeparture = dayjs(departureDate, "DD-MM-YYYY").format('DD-MM-YYYY');
                 const seatNoDeparture = selectedSeat?.map(item => item.seat).join(',')
 
-                const bookedOnWay = await addBooking({
+                bookedOnWay = await addBooking({
                     travel_date: travelDateDeparture,
                     travel_time: routeSelected?.timing?.meta_value,
                     bus_type: routeSelected?.busTypeDetail?.bus_type,
@@ -636,21 +638,21 @@ export const AvailableTripItems = ({
                 amount = (selectedSeat?.length * (Number(routeSelected?.price))) + ticketCount;
             }
 
-            const uuid = uuidv4();
             const payDate1 = moment(new Date()).format('DD-MM-YYYY');
 
             const body = {
-                "uuid": uuid,
+                "uuid": bookedOnWay?.Booking_id,
                 "amount": amount,
                 "purchaseDate": payDate1,
                 "paymentMethod": paymentMethod == 'khqr' ? '0' : '1',
             }
-
-
+            console.log('bookedOnWay: ',bookedOnWay);
+            console.log('body: ', body);
+            
             const qr = await generatQR(body).unwrap();
-
+            
             setError(null);
-            setTransactionID(uuid);
+            setTransactionID(bookedOnWay?.Booking_id);
             setPayDate(payDate1);
             setSuccesssUrl(url);
             setPaymentTokenid(qr.data?.result?.xTran?.paymentTokenid)
@@ -854,7 +856,8 @@ export const AvailableTripItems = ({
                                                             {routeReturnSelected?.kilo_meters} KM
                                                         </div>
                                                     </div>
-                                                    <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
+                                                    <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" /> 
+                                                    {routeReturnSelected?.destinationDetail?.address?.url}
                                                     <RouteInfor
                                                         city={routeReturnSelected?.destinationDetail?.city?.city_name}
                                                         routeId={routeReturnSelected?.id}
@@ -862,6 +865,7 @@ export const AvailableTripItems = ({
                                                         isStart={false}
                                                         time={routeReturnSelected?.destinationDetail?.time}
                                                         address={routeReturnSelected?.destinationDetail?.address?.url}
+                                                    
                                                     />
                                                 </div>
                                             </div>
@@ -1212,15 +1216,13 @@ export const AvailableTripItems = ({
                                     <input type="hidden" id="currencytype" name="currencytype" value="USD" />
                                     <input type="hidden" id="description" name="description" value='booking' />
                                     <input type="hidden" id="item" name="item" value='booking' />
-                                    <input type="hidden" id="errorUrl" name="errorUrl"
-                                        value="http://localhost:3000/error" />
                                     <input type="hidden" id="paymentCard" name="paymentCard" value={paymentMethod == 'khqr' ? '0' : '1'} />
                                     <input type="hidden" id="invoiceid" name="invoiceid" value={transactionID} />
 
                                     <input type="hidden" id="successUrlToReturn" name="successUrlToReturn"
                                         value={successsUrl} />
                                     <input type="hidden" id="errorUrl" name="errorUrl"
-                                        value={`http://localhost:3000/error/`} />
+                                        value={`${CLIENT_URL}/error/`} />
                                     <br />
                                     <button
                                         type="button"

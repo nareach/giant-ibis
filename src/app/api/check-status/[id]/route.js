@@ -35,7 +35,7 @@ export async function GET(request, { params }) {
         let booklist = await getAllBookDetail();
         let bookOneWay = booklist?.data?.filter((item, index) => item.ref_code === refCode);
 
-        if (bookOneWay?.length <= 0) {
+        if (bookOneWay?.length <= 0) { 
             return NextResponse.json({
                 status: false,
                 message: "Ref code not found."
@@ -77,9 +77,6 @@ export async function GET(request, { params }) {
     bookRoundTrip = booklist?.data?.filter((item, index) => item.ref_code === refCodeRoundTrip);
     
     let isConfirm = confirmRef?.status && confirmRefRoundTrip?.status
-
-    console.log("is confirm: ", isConfirm);
-
 
     const confirmRoundTrip = await paymentService.confirmRoundTrip(bookOneWay, bookRoundTrip, refCode, refCodeRoundTrip, isConfirm, paymentMethod);
 

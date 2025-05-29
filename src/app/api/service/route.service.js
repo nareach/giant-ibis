@@ -58,9 +58,6 @@ export class RouteService {
                         }
                     }
 
-                    console.log(destinationAddress);
-                    
-
                     // bus
                     const busType = await this.findBusList(route?.bus_type);
                     const busDetail = await this.findRouteBus(routeId, routeTimingMetaValue);

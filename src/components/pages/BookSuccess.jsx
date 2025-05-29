@@ -58,6 +58,7 @@ export default function TicketConfirmation({
                 departure_date={moment(book?.destinationDetail?.arriveAt).format('MMMM-DD')}
                 isStart={false}
                 time={book?.destinationDetail?.time}
+                address={book?.destinationDetail?.address?.url}
                 routeId={book?.id}
               />
 
@@ -85,21 +86,23 @@ export default function TicketConfirmation({
               <div>
                 <h3 className="font-medium mb-3">Traveller Details</h3>
                 <div className="space-y-1">
-                  <div className=""><span className="text-gray-500 pr-5">First name:  </span>{book?.ticket?.first_name}</div>
-                  <div className=""><span className="text-gray-500 pr-5">Last name:  </span>{book?.ticket?.last_name}</div>
                   <div className=""><span className="text-gray-500 pr-5">Phone Number: </span>{book?.ticket?.mobile}</div>
-                  <div className=""><span className="text-gray-500 pr-5">Email:  </span>{book?.ticket?.email}</div>
                   <div><span className="text-gray-500 pr-5">Booking Status: </span> {book?.seat_status}</div>
-                  <div><span className="text-gray-500 pr-5">Seat no: </span> {book?.seat_no}</div>
                   <div><span className="text-gray-500 pr-5">Price: </span> {book?.price}</div>
                   <div><span className="text-gray-500 pr-5">Ticket: </span> {book?.ticketCount}</div>
+                  {
+                    book?.paymentMethod != 'khqr' ? <div><span className="text-gray-500 pr-5">Service Charge: </span>$ {book?.ticketCount}</div> : <></>
+                  }
                 </div>
               </div>
             </div>
 
             <div className="flex justify-between items-end pt-4 border-t">
               <div className="text-gray-600">Total Fare</div>
-              <div className="text-xl font-medium">${Number(book?.price) * book?.ticketCount}</div>
+              {
+                book?.paymentMethod != 'khqr' ? <div className="text-xl font-medium">${(Number(book?.price) * book?.ticketCount) + book?.ticketCount}</div> : <div className="text-xl font-medium">${Number(book?.price) * book?.ticketCount}</div>
+              }
+
             </div>
           </div>
         </div>

@@ -37,6 +37,8 @@ export const RoundTripMailTemplate = ({
     destinationCityReturn,
     dateSendReturn,
     passengersReturn,
+    destinationAddress,
+    destinationReturnAddress,
     pickup,
     pickupReturn,
     facibilitiesReturn
@@ -185,7 +187,7 @@ export const RoundTripMailTemplate = ({
                                     </td>
                                     <td
                                         style="width: 30%; font-weight: 600; font-size: 10px; font-family: Poppins, sans-serif; text-align: right;">
-                                        ${destinationDate}<br>${destinationTime}<br>${destinationCity}
+                                        ${destinationDate}<br>${destinationTime}<br>${destinationCity} ${destinationAddress ? ` <br><a href="${destinationAddress}" target="_blank" rel="noopener noreferrer">Get Direction</a>` : ""}
                                     </td>
                                 </tr>
                             </table>
@@ -242,7 +244,7 @@ export const RoundTripMailTemplate = ({
                                     </td>
                                     <td
                                         style="width: 30%; font-weight: 600; font-size: 10px; font-family: Poppins, sans-serif; text-align: right;">
-                                        ${destinationDateReturn}<br>${destinationTimeReturn}<br>${destinationCityReturn}
+                                        ${destinationDateReturn}<br>${destinationTimeReturn}<br>${destinationCityReturn} ${destinationReturnAddress ? `<br> <a href="${destinationReturnAddress}" target="_blank" rel="noopener noreferrer">Get Direction</a>` : ""}
                                     </td>
                                 </tr>
                             </table>

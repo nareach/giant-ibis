@@ -6,6 +6,9 @@ export async function POST(request) {
 
         const { uuid, amount, purchaseDate, paymentMethod } = await request.json();
 
+        console.log({ uuid, amount, purchaseDate, paymentMethod });
+        
+
         let data = JSON.stringify({
             "loginId": loginId,
             "password": password,

@@ -170,9 +170,42 @@ async function generateHeader(doc) {
       underline: null
     }).image(googleMapIconBase64, 120, y + 17, { width: 6 });
 
-    doc.font('poppins-regular').fill("black").text("Pick Up At: Preah Monivong Boulevard (93)", 50, y + 32, {
-      align: 'left',
-    })
+
+  // Set font and text properties
+  doc.font('poppins-bold')
+    .fontSize(12); // Make sure font size is set
+
+  // Measure text and calculate position
+  const text = 'Get Direction';
+  const iconPadding = 5;
+  textWidth = doc.widthOfString(text);
+  const totalWidth = textWidth + iconPadding + iconWidth;
+  rightMargin = 50;
+  const x = doc.page.width - rightMargin - totalWidth;
+
+  // Draw the text
+  doc.fill("#0057A8")
+    .text(text, x, y + 15, {
+      link: "https://www.youtube.com/watch?v=fZ0reQOkHO4&list=RDfZ0reQOkHO4&start_radio=1",
+      underline: true,
+      continued: false
+    });
+
+  doc.text("", 0, 0, {
+    link: null,
+    underline: null,
+    continued: null
+  });
+
+  doc.image(googleMapIconBase64, x + textWidth + iconPadding, y + 17, {
+    width: 6
+  });
+
+
+
+  doc.font('poppins-regular').fill("black").text("Pick Up At: Preah Monivong Boulevard (93)", 50, y + 32, {
+    align: 'left',
+  })
 
 
   y += 55;
