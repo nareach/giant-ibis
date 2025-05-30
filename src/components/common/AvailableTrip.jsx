@@ -38,7 +38,8 @@ export const AvailableTripItems = ({
     isLoadingFetching,
     roundTrips,
     origin,
-    destination
+    destination,
+    passengers
 }) => {
 
     const { data: pickupDeparture, isLoading: isLoadingPickUp, isError: isErrorPickUp } =
@@ -171,8 +172,7 @@ export const AvailableTripItems = ({
     };
 
     const handleSeatReturnSelect = (seatSelected) => {
-        console.log(routeReturnSelected);
-        
+
         setRouteReturnSelected((prevRouteSelected) => {
             const updatedSeats = prevRouteSelected?.seat_status?.seats?.map((seat) => {
 
@@ -216,7 +216,22 @@ export const AvailableTripItems = ({
          * call API to check seat status
          */
 
+
+
         try {
+
+            if (selectedSeat.length != passengers) {
+                toast.error("The number of selected seats must be equal to the number of passengers.");
+                return;
+            }
+
+            if (tripType == 'round-trip') {
+                if (selectedSeatReturn.length != passengers) {
+                    toast.error("The number of selected seats must be equal to the number of passengers.");
+                    return;
+                }
+            }
+
             setConfirmLoading(true);
 
             if (selectedSeat.length < 1) {
@@ -646,11 +661,11 @@ export const AvailableTripItems = ({
                 "purchaseDate": payDate1,
                 "paymentMethod": paymentMethod == 'khqr' ? '0' : '1',
             }
-            console.log('bookedOnWay: ',bookedOnWay);
+            console.log('bookedOnWay: ', bookedOnWay);
             console.log('body: ', body);
-            
+
             const qr = await generatQR(body).unwrap();
-            
+
             setError(null);
             setTransactionID(bookedOnWay?.Booking_id);
             setPayDate(payDate1);
@@ -673,9 +688,6 @@ export const AvailableTripItems = ({
             setIsLoading(false);
         }
     }
-
-
-
 
     if (activeStep === "select") {
         return (
@@ -856,7 +868,7 @@ export const AvailableTripItems = ({
                                                             {routeReturnSelected?.kilo_meters} KM
                                                         </div>
                                                     </div>
-                                                    <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" /> 
+                                                    <MapPinCheckInside className="w-5 mt-8 h-5 text-secondary ml-6 mr-6" />
                                                     <RouteInfor
                                                         city={routeReturnSelected?.destinationDetail?.city?.city_name}
                                                         routeId={routeReturnSelected?.id}
@@ -864,7 +876,7 @@ export const AvailableTripItems = ({
                                                         isStart={false}
                                                         time={routeReturnSelected?.destinationDetail?.time}
                                                         address={routeReturnSelected?.destinationDetail?.address?.url}
-                                                    
+
                                                     />
                                                 </div>
                                             </div>

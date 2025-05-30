@@ -17,6 +17,8 @@ import { useGetAllCityQuery, useLazyGetCitesByOriginQuery } from '@/store/featur
 import LoadingWithText from '../common/LoadingWithText';
 import { useLazyGetPickUpByCityIdQuery } from '@/store/features/pick-up';
 import NoBusComponent from '../common/NoBusComponent';
+import SelectPassengerCount from '../common/SelectPassengerCount';
+import { Search } from 'lucide-react';
 
 export default function SearchBookForm() {
   const router = useRouter();
@@ -37,6 +39,7 @@ export default function SearchBookForm() {
   const return_date_param = searchParams.get('return_date') ? dayjs(searchParams.get('return_date'), "DD-MM-YYYY") : null;
   const trip_type_param = searchParams.get('trip_type') || 'one-way';
 
+  const passenger_count = searchParams.get('passenger_count') || 0;
 
   /**
    * state filter
@@ -59,6 +62,7 @@ export default function SearchBookForm() {
   const [isReturneDateError, setReturnDateError] = useState(false);
 
   const [tripType, setTripType] = useState(trip_type_param);
+  const [passengers, setPassengers] = useState(passenger_count);
 
 
   /**
@@ -109,7 +113,7 @@ export default function SearchBookForm() {
       }).unwrap();
 
       console.log("result round trip: ", result);
-      
+
 
       setRoundTrips(result?.data);
     }
@@ -175,7 +179,7 @@ export default function SearchBookForm() {
             <TitleFilter />
 
             <div className={cn(
-              `grid grid-cols-1 lg:grid-cols-8 gap-6 items-start`,
+              `grid grid-cols-1 lg:grid-cols-10 gap-6 items-start`,
             )}>
 
               <TripTypeComponent defaultValue={trip_type_param} onChange={(value) => {
@@ -213,12 +217,12 @@ export default function SearchBookForm() {
 
                   {
                     tripType == 'one-way' ? (
-                      <PickDateFilter 
-                      loading={isLoadingCity}
-                      isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date, dateString) => {
-                        setDepartureDate(date);
-                        setReturnDate(null);
-                      }} />) : (<></>)
+                      <PickDateFilter
+                        loading={isLoadingCity}
+                        isError={isDepartureDateError} value={departureDate} title={'Departure'} onChange={(date, dateString) => {
+                          setDepartureDate(date);
+                          setReturnDate(null);
+                        }} />) : (<></>)
                   }
                 </div>
 
@@ -256,15 +260,31 @@ export default function SearchBookForm() {
               </div>
 
 
-              <Button
-                type="button"
-                onClick={handleSearch}
-                className="bg-primary w-32 text-center mt-7 hover:bg-primary "
-              >
-                {
-                  loading ? 'Searching...' : 'Search'
-                }
-              </Button>
+              <div className="flex lg:col-span-3 gap-3">
+
+                <SelectPassengerCount
+                  defaultPassenger={passengers}
+                  onChange={(count) => {
+                    setPassengers(count);
+                    setTrips([]);
+                    setRoundTrips([]);
+                  }}
+                />
+
+                <Button
+                  type="button"
+                  onClick={handleSearch}
+                  disabled={loading || isLoadingCity}
+                  className={cn(
+                    'bg-primary w-32 text-center mt-7 hover:bg-primary',
+                    isLoadingCity || loading ? 'cursor-not-allowed' : ''
+                  )}
+                >
+                  {
+                    loading ? 'Searching...' : <div className="flex justify-center items-center gap-2">Search <Search /></div>
+                  }
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -285,8 +305,9 @@ export default function SearchBookForm() {
                       roundTrips={roundTrips}
                       destination={destination}
                       origin={origin}
+                      passengers={passengers}
                     />
-                  </> : <NoBusComponent/>
+                  </> : <NoBusComponent />
                 }
               </div>
             </>
