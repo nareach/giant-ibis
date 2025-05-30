@@ -56,9 +56,6 @@ export class PaymentService {
             }
         }
 
-        console.log(destinationAddress);
-        
-
         const busDetail = await this.findRouteBus(
             bookList[0].route_id,
             bookList[0].travel_time
@@ -69,12 +66,15 @@ export class PaymentService {
         let ticketInfor = null;
         let pickup = bookList[0].pickup;
         let pickupObj = null;
+
         if (pickup) {
             const getPickUpListData = await getPickUpList({ city_id: route?.origin });
-            pickupObj = getPickUpListData?.data?.filter((item) => item?.id == pickup);
-            pickupObj = pickupObj?.length > 0 ? pickupObj[0] : null;
+            if (getPickUpListData?.data != 'NULL') {
+                pickupObj = getPickUpListData?.data?.filter((item) => item?.id == pickup);
+                pickupObj = pickupObj?.length > 0 ? pickupObj[0] : null;
+            }
         }
- 
+
         if (printTicket?.data?.length > 0) {
             ticketInfor = printTicket?.data?.filter((item) => item?.first_name != "guest_name0")?.map((item) => {
 
@@ -413,7 +413,7 @@ export class PaymentService {
 
         const oneWayNotification = confirmOneWay?.notification;
         const roundTripNotification = confirmRoundTrip?.notification;
-        
+
         if (isConfirm)
             await this.sendMailRoundTrip({
                 ...oneWayNotification,
