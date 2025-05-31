@@ -28,6 +28,7 @@ import { useGenerateQRMutation } from '@/store/features/payment';
 import PaymentFailedPopup from '../features/payments/PaymentFailedPopup';
 import { Checkbox } from '@heroui/react';
 import Link from 'next/link';
+import { showToast } from '../features/toast/ToastMessage';
 
 
 export const AvailableTripItems = ({
@@ -109,7 +110,8 @@ export const AvailableTripItems = ({
                 }
             }, 50);
 
-            toast.info("Please select return route.")
+            showToast("info", `Please select return route.`);
+
         } else {
             setActiveStep("seat")
 
@@ -217,17 +219,16 @@ export const AvailableTripItems = ({
          */
 
 
-
         try {
 
             if (selectedSeat.length != passengers) {
-                toast.error("The number of selected seats must be equal to the number of passengers.");
+                showToast("error", "The number of selected seats must be equal to the number of passengers.");
                 return;
             }
 
             if (tripType == 'round-trip') {
                 if (selectedSeatReturn.length != passengers) {
-                    toast.error("The number of selected seats must be equal to the number of passengers.");
+                    showToast("error", "The number of selected seats must be equal to the number of passengers.");
                     return;
                 }
             }
@@ -235,18 +236,18 @@ export const AvailableTripItems = ({
             setConfirmLoading(true);
 
             if (selectedSeat.length < 1) {
-                toast.warning('Please select at least one seat.');
+                showToast("error", "Please select at least one seat.");
                 return;
             }
 
             if (tripType == 'round-trip') {
                 if (selectedSeatReturn.length < 1) {
-                    toast.warning('Please select at least one return seat!');
+                    showToast("error", "Please select at least one return seat!");
                     return;
                 }
 
                 if (selectedSeat.length != selectedSeatReturn.length) {
-                    toast.warning('The number of departure seats must match the number of return seats.');
+                    showToast("error", "The number of departure seats must match the number of return seats.");
                     return;
                 }
             }
@@ -436,14 +437,16 @@ export const AvailableTripItems = ({
 
                 // retrive the invalid and alert message to the user
                 const unavailableSeats = invalidSeats.map(item => item.seat_id).join(', ');
-                toast.error(`These seats are unavailable: ${unavailableSeats}. Please remove them.`);
+                showToast("error", `These seats are unavailable: ${unavailableSeats}. Please remove them.`);
+
                 setActiveStep("");
                 return false;
             } else {
 
                 // 
                 const unavailableSeats = invalidSeats.map(item => item.seat_id).join(', ');
-                toast.error(`These seats are unavailable: ${unavailableSeats}. Please remove them.`);
+                showToast("error", `These seats are unavailable: ${unavailableSeats}. Please remove them.`);
+
                 return false;
             }
         }
@@ -519,9 +522,10 @@ export const AvailableTripItems = ({
         try {
             setLoading(true);
             setIsLoading(true);
-
+            console.log(passengerInfoRef.current.getPassengerData());
+            
             if (!passengerInfoRef.current.validatePassengers()) {
-                toast.error("Please fill in all user information");
+                showToast("error", `Please fill in all user information`);
                 setLoading(false);
                 return;
             }
@@ -591,7 +595,7 @@ export const AvailableTripItems = ({
                 setRoundTripBooking(booked);
 
                 if (!(booked?.status && bookedOnWay.status)) {
-                    toast.warning('Other User select user seat please try again');
+                    showToast("error", `Other User select user seat please try again`);
                     setActiveStep("seat");
                     return;
                 }

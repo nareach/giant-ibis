@@ -11,7 +11,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AvailableTripItems } from "../common/AvailableTrip";
 import LoadingComponent from "../layout/Loading";
 import { cn } from "@/lib/utils";
-import { Toaster } from 'sonner';
+import { toast, Toaster } from 'sonner';
 import { useLazyGetRouteQuery } from '@/store/features/route-bus';
 import { useGetAllCityQuery, useLazyGetCitesByOriginQuery } from '@/store/features/cities';
 import LoadingWithText from '../common/LoadingWithText';
@@ -19,6 +19,7 @@ import { useLazyGetPickUpByCityIdQuery } from '@/store/features/pick-up';
 import NoBusComponent from '../common/NoBusComponent';
 import SelectPassengerCount from '../common/SelectPassengerCount';
 import { Search } from 'lucide-react';
+import { showToast } from '../features/toast/ToastMessage';
 
 export default function SearchBookForm() {
   const router = useRouter();
@@ -60,6 +61,7 @@ export default function SearchBookForm() {
   const [isDestinationError, setDestinationError] = useState(false);
   const [isDepartureDateError, setDepartureDateError] = useState(false);
   const [isReturneDateError, setReturnDateError] = useState(false);
+  const [passengerCountError, setPassengerCountError] = useState(false);
 
   const [tripType, setTripType] = useState(trip_type_param);
   const [passengers, setPassengers] = useState(passenger_count);
@@ -77,6 +79,7 @@ export default function SearchBookForm() {
     setOriginError(!origin);
     setDestinationError(!destination);
     setDepartureDateError(!departureDate);
+    setPassengerCountError(!passengers);
 
 
     if (tripType === 'round-trip') {
@@ -263,6 +266,7 @@ export default function SearchBookForm() {
               <div className="flex lg:col-span-3 gap-3">
 
                 <SelectPassengerCount
+                  isError={passengerCountError}
                   defaultPassenger={passengers}
                   onChange={(count) => {
                     setPassengers(count);

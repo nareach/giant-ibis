@@ -5,7 +5,7 @@ import { Dropdown, InputNumber, Button } from 'antd';
 import { User } from 'lucide-react';
 import { Label } from '@radix-ui/react-label';
 
-export default function SelectPassengerCount({ onChange, defaultPassenger =0 }) {
+export default function SelectPassengerCount({ onChange, defaultPassenger = 0, isError }) {
     const [passengerCount, setPassengerCount] = useState(defaultPassenger);
 
     const updateCount = (newCount) => {
@@ -61,6 +61,9 @@ export default function SelectPassengerCount({ onChange, defaultPassenger =0 }) 
                     <User size={16} />
                 </div>
             </Dropdown>
+            {
+                isError ? (<span className="text-red-500 mt-3 text-[14px]">Passengers is required.</span>) : ''
+            }
         </div>
     );
 }

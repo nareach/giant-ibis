@@ -47,6 +47,8 @@ export default function SearchBookForm() {
   const [isDestinationError, setDestinationError] = useState(false);
   const [isDepartureDateError, setDepartureDateError] = useState(false);
   const [isReturneDateError, setReturnDateError] = useState(false);
+  const [passengerCountError, setPassengerCountError] = useState(false);
+
   const [tripType, setTripType] = useState('one-way');
 
 
@@ -55,22 +57,24 @@ export default function SearchBookForm() {
    */
   const handleSearch = async () => {
     setLoading(true);
-
+    console.log(origin);
+    
     setOriginError(!origin);
     setDestinationError(!destination);
     setDepartureDateError(!departureDate);
+    setPassengerCountError(!passengers);
 
     if (tripType != 'one-way') {
 
       setReturnDateError(!returnDate);
-      if (!origin || !destination || !departureDate || !returnDate) {
+      if (!origin || !destination || !departureDate || !returnDate || !passengers) {
         setLoading(false);
         return;
       }
     }
 
 
-    if (!origin || !destination || !departureDate) {
+    if (!origin || !destination || !departureDate || !passengers) {
       setLoading(false);
       return;
     }
@@ -212,7 +216,10 @@ export default function SearchBookForm() {
 
               <div className="flex lg:col-span-3 gap-3">
 
-                <SelectPassengerCount onChange={(count) => setPassengers(count)} />
+                <SelectPassengerCount
+                  isError={passengerCountError}
+                  onChange={(count) => setPassengers(count)}
+                />
 
 
                 <Button
