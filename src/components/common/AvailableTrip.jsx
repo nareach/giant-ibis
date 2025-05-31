@@ -522,8 +522,7 @@ export const AvailableTripItems = ({
         try {
             setLoading(true);
             setIsLoading(true);
-            console.log(passengerInfoRef.current.getPassengerData());
-            
+
             if (!passengerInfoRef.current.validatePassengers()) {
                 showToast("error", `Please fill in all user information`);
                 setLoading(false);
@@ -533,6 +532,7 @@ export const AvailableTripItems = ({
             let amount = 0;
             let ticketCount = 0;
             let bookedOnWay = null;
+            console.log('come here 3');
 
             if (tripType == 'round-trip') {
 
@@ -562,6 +562,7 @@ export const AvailableTripItems = ({
                     setActiveStep("seat");
                     return;
                 }
+                console.log('come here 1');
 
                 const travelDateDeparture = dayjs(departureDate, "DD-MM-YYYY").format('DD-MM-YYYY');
                 const seatNoDeparture = selectedSeat?.map(item => item.seat).join(',');
@@ -657,6 +658,9 @@ export const AvailableTripItems = ({
                 amount = (selectedSeat?.length * (Number(routeSelected?.price))) + ticketCount;
             }
 
+            console.log('come here');
+
+
             const payDate1 = moment(new Date()).format('DD-MM-YYYY');
 
             const body = {
@@ -665,8 +669,6 @@ export const AvailableTripItems = ({
                 "purchaseDate": payDate1,
                 "paymentMethod": paymentMethod == 'khqr' ? '0' : '1',
             }
-            console.log('bookedOnWay: ', bookedOnWay);
-            console.log('body: ', body);
 
             const qr = await generatQR(body).unwrap();
 

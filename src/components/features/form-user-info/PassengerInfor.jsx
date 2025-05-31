@@ -4,6 +4,7 @@ import './passengerInfor.css'
 import NotificationPopup from '../modal/NotificationPopup';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css'
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
 const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, pickupDeparture, pickupReturn, allowedpickUpDeparture, allowedpickUpReturn }, ref) => {
     const [passengers, setPassengers] = useState([]);
@@ -116,7 +117,10 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
             }
 
             if (index === 0) {
-                if (!passenger.phoneNumber.trim() || !isValidPhoneNumber(passenger.phoneNumber)) {
+                const raw = passengers[0]?.phoneNumber;
+                const phoneWithPlus = raw.startsWith('+') ? raw : `+${raw}`;
+                
+                if (!passenger.phoneNumber.trim() || !isValidPhoneNumber(phoneWithPlus)) {
                     error.phoneNumber = 'Phone number is required';
                     isValid = false;
                 }
@@ -258,10 +262,14 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
 
                         <PhoneInput
                             country={'kh'}
+
                             value={passengers[0]?.phoneNumber || ''}
                             onChange={(value) => {
                                 console.log("phone number: ", value);
                                 handleChange(0, 'phoneNumber', value)
+                            }}
+                            inputProps={{
+                                required: true,
                             }}
                             inputClass="!w-full !py-4 !pl-16 !text-base !border border-gray-300 !rounded-md"
                             buttonClass="!border-r border-gray-300 !px-2"

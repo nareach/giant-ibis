@@ -1,4 +1,4 @@
-import { addHoursToTime, calculateArrival, calculateArrivalDateTime, hasBusLeft } from "@/utils/time-util";
+import { addHoursToTime, calculateArrival, calculateArrivalDateTime, calculateArrivalTime, hasBusLeft } from "@/utils/time-util";
 import { getAddressDetail, getBusList, getCity, getRouteBus, getRouteList, getRouteTiming } from "../../../services/giantIbisServiceCall";
 import { getBusStatus } from "@/utils/action";
 import moment from "moment";
@@ -39,7 +39,11 @@ export class RouteService {
                     // timing
                     const routeTiming = timing?.data[index] || null;
                     const routeTimingMetaValue = timing?.data[index]?.meta_value || null;
-                    const destinationTime = addHoursToTime(routeTimingMetaValue, route?.destination);
+                    const destinationTime = calculateArrivalTime({
+                        departureTime: travelDate,
+                        durationHours: route?.duration,
+                        metaTime: timing.data[index].meta_value
+                    });;
                     const arrivalDate = calculateArrival({
                         departureTime: travelDate,
                         durationHours: route?.duration,

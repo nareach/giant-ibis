@@ -1,6 +1,6 @@
 import { ACLEDA_BANK_API_CHECK_STATUS, loginId, merchantID, merchantName, password, signature } from "@/constant/constant";
 import { confirmBooking, getAddressDetail, getAllBookDetail, getBusList, getCity, getPickUpList, getRouteBus, getRouteList, getRouteTiming, printTicket } from "@/services/giantIbisServiceCall";
-import { addHoursToTime, calculateArrival } from "@/utils/time-util";
+import { addHoursToTime, calculateArrival, calculateArrivalTime } from "@/utils/time-util";
 import axios from "axios";
 import moment from "moment";
 import nodemailer from 'nodemailer';
@@ -37,7 +37,12 @@ export class PaymentService {
         const originCity = cities?.data?.filter((city, index) => city?.city_id == route?.origin)
         const destinationCity = cities?.data?.filter((city, index) => city?.city_id == route?.destination)
 
-        const destinationTime = addHoursToTime(bookList[0].travel_time, route?.destination);
+        const destinationTime = calculateArrivalTime({
+            departureTime: bookList[0].travel_date,
+            durationHours: route?.duration,
+            metaTime: bookList[0].travel_time
+        });;
+
         const arrivalDate = calculateArrival({
             departureTime: bookList[0].travel_date,
             durationHours: route?.duration,
@@ -285,7 +290,11 @@ export class PaymentService {
         const originCity = cities?.data?.filter((city, index) => city?.city_id == route?.origin)
         const destinationCity = cities?.data?.filter((city, index) => city?.city_id == route?.destination)
 
-        const destinationTime = addHoursToTime(bookList[0].travel_time, route?.destination);
+        const destinationTime = calculateArrivalTime({
+            departureTime: bookList[0].travel_date,
+            durationHours: route?.duration,
+            metaTime: bookList[0].travel_time
+        });
         const arrivalDate = calculateArrival({
             departureTime: bookList[0].travel_date,
             durationHours: route?.duration,

@@ -27,27 +27,36 @@ export const fetchFromApi = async (apiFunction, bodyData = {}) => {
     const response = await fetch(API_URL, requestOptions);
 
     if (!response.ok) {
-      // Log the response status and status text
       console.error("API Error: HTTP status", response.status, response.statusText);
-      return null; // or handle error more specifically based on your needs
+      return null;
     }
 
-    const text = await response.text(); // Get the response text first
+    let text = await response.text();
     if (!text) {
       console.error("API returned empty response");
       return null;
     }
 
+    // 🛠 Clean up: Remove unexpected prefix before JSON
+    const firstBraceIndex = text.indexOf('{');
+    if (firstBraceIndex !== -1) {
+      text = text.slice(firstBraceIndex);
+    } else {
+      console.error("No JSON found in response:", text);
+      return null;
+    }
+
     try {
-      return JSON.parse(text); // Parse text as JSON
+      return JSON.parse(text);
     } catch (parseError) {
-      console.error("Error parsing JSON:", parseError, "Response text:", text);
+      console.error("Error parsing JSON:", parseError, "Cleaned Response text:", text);
       throw parseError;
     }
   } catch (error) {
     console.error("Network or other error:", error);
     throw error;
   }
+
 };
 
 // export function encrypt(data) {
@@ -72,11 +81,11 @@ export const fetchFromApi = async (apiFunction, bodyData = {}) => {
 // }
 
 
-export function encrypt (inputText) {
+export function encrypt(inputText) {
   return btoa(inputText); // Base64 encode
 };
 
-export function decrypt (encodedText) {
+export function decrypt(encodedText) {
   try {
     return atob(encodedText); // Base64 decode
   } catch (error) {
