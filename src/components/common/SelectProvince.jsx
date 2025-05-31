@@ -32,26 +32,34 @@ export const SelectProvince = ({
                     )}
                 </div>
             ) : (
-                <Select
-                    showSearch
-                    value={value}
-                    placeholder={`Select ${title}`}
-                    optionFilterProp="label"
-                    className="w-full h-[39px] text-black custom-select-placeholder"
-                    style={{
-                        color: 'black'
-                    }}
-                    filterOption={(input, option) =>
-                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                    }
-                    onChange={onChange}
-                    options={
-                        items?.map(item => ({
-                            value: item.city_id.toString(),
-                            label: item.city_name
-                        })) || []
-                    }
-                />
+                <div>
+                    <Select
+                        showSearch
+                        value={value}
+                        placeholder={`Select ${title}`}
+                        optionFilterProp="label"
+                        className="w-full h-[39px] text-black custom-select-placeholder"
+                        style={{
+                            color: 'black'
+                        }}
+                        filterOption={(input, option) =>
+                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                        onChange={onChange}
+                        options={
+                            items?.map(item => ({
+                                value: item.city_id.toString(),
+                                label: item.city_name
+                            })) || []
+                        }
+                    />
+
+                    {isError && (
+                        <span className="text-red-500 mt-3 text-[14px]">
+                            {title} is required.
+                        </span>
+                    )}
+                </div>
             )}
         </div>
     );

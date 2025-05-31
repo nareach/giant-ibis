@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { useGetAllCityQuery, useLazyGetCitesByOriginQuery } from "@/store/features/cities";
 import dayjs from 'dayjs';
 import LoadingWithText from "../common/LoadingWithText";
+import { Search, User } from "lucide-react";
+import SelectPassengerCount from "../common/SelectPassengerCount";
 
 export default function SearchBookForm() {
 
@@ -32,6 +34,7 @@ export default function SearchBookForm() {
   const [destination, setDestination] = useState(null);
   const [departureDate, setDepartureDate] = useState(null);
   const [returnDate, setReturnDate] = useState();
+  const [passengers, setPassengers] = useState(0);
 
   /**
    * 
@@ -44,6 +47,8 @@ export default function SearchBookForm() {
   const [isDestinationError, setDestinationError] = useState(false);
   const [isDepartureDateError, setDepartureDateError] = useState(false);
   const [isReturneDateError, setReturnDateError] = useState(false);
+  const [passengerCountError, setPassengerCountError] = useState(false);
+
   const [tripType, setTripType] = useState('one-way');
 
 
@@ -52,22 +57,24 @@ export default function SearchBookForm() {
    */
   const handleSearch = async () => {
     setLoading(true);
-
+    console.log(origin);
+    
     setOriginError(!origin);
     setDestinationError(!destination);
     setDepartureDateError(!departureDate);
+    setPassengerCountError(!passengers);
 
     if (tripType != 'one-way') {
 
       setReturnDateError(!returnDate);
-      if (!origin || !destination || !departureDate || !returnDate) {
+      if (!origin || !destination || !departureDate || !returnDate || !passengers) {
         setLoading(false);
         return;
       }
     }
 
 
-    if (!origin || !destination || !departureDate) {
+    if (!origin || !destination || !departureDate || !passengers) {
       setLoading(false);
       return;
     }
@@ -80,12 +87,12 @@ export default function SearchBookForm() {
         const returnDateDateFormat = dayjs(returnDate, "DD-MM-YYYY").format('DD-MM-YYYY');
 
         setLoading(false);
-        router.push(`/book?origin=${origin}&destination=${destination}&departure_date=${departureDateFormat}&trip_type=${tripType}&return_date=${returnDateDateFormat}`);
+        router.push(`/book?origin=${origin}&destination=${destination}&departure_date=${departureDateFormat}&trip_type=${tripType}&return_date=${returnDateDateFormat}&passenger_count=${passengers}`);
 
       } else {
 
         setLoading(false);
-        router.push(`/book?origin=${origin}&destination=${destination}&departure_date=${departureDateFormat}&trip_type=${tripType}`);
+        router.push(`/book?origin=${origin}&destination=${destination}&departure_date=${departureDateFormat}&trip_type=${tripType}&passenger_count=${passengers}`);
       }
 
 
@@ -122,19 +129,19 @@ export default function SearchBookForm() {
             <TitleFilter />
 
             <div className={cn(
-              `grid grid-cols-1 lg:grid-cols-8 gap-6 items-start`,
+              `grid grid-cols-1 lg:grid-cols-10 gap-6 items-start`,
             )}>
 
               <TripTypeComponent onChange={(value) => {
                 setTripType(value);
               }} />
 
-              <div className={cn('lg:col-span-6 grid gap-6',
-                tripType == 'one-way' ? 'lg:col-span-6' : ''
+              <div className={cn('lg:col-span-6 grid gap-3',
+                tripType == 'one-way' ? 'lg:col-span-6 ' : ''
               )}>
 
                 <div className={cn(
-                  'flex flex-col lg:flex-row w-full lg:col-span-4 gap-6',
+                  'flex flex-col lg:flex-row w-full lg:col-span-4 gap-3',
                   tripType == 'one-way' ? 'lg:col-span-4' : ''
                 )}>
                   <SelectProvince
@@ -207,19 +214,29 @@ export default function SearchBookForm() {
               </div>
 
 
-              <Button
-                type="button"
-                onClick={handleSearch}
-                disabled={loading || isLoadingCity}
-                className={cn(
-                  'bg-primary w-32 text-center mt-7 hover:bg-primary',
-                  isLoadingCity || loading ? 'cursor-not-allowed' : ''
-                )}
-              >
-                {
-                  loading ? 'Searching...' : 'Search'
-                }
-              </Button>
+              <div className="flex lg:col-span-3 gap-3">
+
+                <SelectPassengerCount
+                  isError={passengerCountError}
+                  onChange={(count) => setPassengers(count)}
+                />
+
+
+                <Button
+                  type="button"
+                  onClick={handleSearch}
+                  disabled={loading || isLoadingCity}
+                  className={cn(
+                    'bg-primary w-32 text-center mt-7 hover:bg-primary',
+                    isLoadingCity || loading ? 'cursor-not-allowed' : ''
+                  )}
+                >
+                  {
+                    loading ? 'Searching...' : <div className="flex justify-center items-center gap-2">Search <Search /></div>
+                  }
+                </Button>
+              </div>
+
             </div>
           </div>
         </div>

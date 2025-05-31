@@ -2,6 +2,9 @@ import React, { useState, useEffect, forwardRef, useRef } from 'react';
 import { Checkbox, Select } from 'antd';
 import './passengerInfor.css'
 import NotificationPopup from '../modal/NotificationPopup';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css'
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
 const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, pickupDeparture, pickupReturn, allowedpickUpDeparture, allowedpickUpReturn }, ref) => {
     const [passengers, setPassengers] = useState([]);
@@ -28,6 +31,8 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
     }, [seatCount, tripType]);
 
     const handleChange = (index, field, value) => {
+        console.log("value");
+
         let updatedPassengers;
         console.log("change: ", { index, field, value });
 
@@ -112,7 +117,10 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
             }
 
             if (index === 0) {
-                if (!passenger.phoneNumber.trim()) {
+                const raw = passengers[0]?.phoneNumber;
+                const phoneWithPlus = raw.startsWith('+') ? raw : `+${raw}`;
+                
+                if (!passenger.phoneNumber.trim() || !isValidPhoneNumber(phoneWithPlus)) {
                     error.phoneNumber = 'Phone number is required';
                     isValid = false;
                 }
@@ -156,7 +164,7 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
 
     const handleShowNotificationOnece = () => {
 
-        if(!allowNotificationOnce){
+        if (!allowNotificationOnce) {
             setAllowNotificationOnce(true);
             notificationRef.current?.openModal();
         }
@@ -242,6 +250,75 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
             {isOneForm ? (
                 <div className="space-y-4">
                     <div>
+                        <p className="font-medium">Contact Details</p>
+                        <div className='h-[2px] rounded-full bg-primary w-full'>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm mb-1">
+                            Phone Number <span className="text-red-500">*</span>
+                        </label>
+
+                        <PhoneInput
+                            country={'kh'}
+
+                            value={passengers[0]?.phoneNumber || ''}
+                            onChange={(value) => {
+                                console.log("phone number: ", value);
+                                handleChange(0, 'phoneNumber', value)
+                            }}
+                            inputProps={{
+                                required: true,
+                            }}
+                            inputClass="!w-full !py-4 !pl-16 !text-base !border border-gray-300 !rounded-md"
+                            buttonClass="!border-r border-gray-300 !px-2"
+                            containerClass="!w-full"
+                            dropdownClass="!text-black !max-h-60 overflow-y-auto"
+                            searchClass="!border !border-gray-300 !rounded-md !px-2 !py-1 !my-2"
+                            countryCodeEditable={false}
+                            enableSearch={true}
+                        />
+                        {errors[0]?.phoneNumber && (
+                            <p className="text-red-500 text-xs mt-1">{errors[0].phoneNumber}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm mb-1">
+                            Email <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="email"
+                            id="passenger-all-email"
+                            placeholder="example@gmail.com"
+                            value={passengers[0]?.email || ''}
+                            onChange={(e) => handleChange(0, 'email', e.target.value)}
+                            className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
+                        />
+                        {errors[0]?.email && (
+                            <p className="text-red-500 text-xs mt-1">{errors[0].email}</p>
+                        )}
+                    </div>
+
+                    {
+                        allowedpickUpDeparture && (
+                            renderPickupLocationSelect('pickupLocation', 'Departure Pickup Location')
+                        )
+                    }
+
+                    {tripType === 'round-trip' && allowedpickUpReturn && (
+                        renderPickupLocationSelect('returnPickupLocation', 'Return Pickup Location')
+                    )}
+
+
+                    <div className='pt-6'>
+                        <p className="font-medium">Main Passenger</p>
+                        <div className='h-[2px] rounded-full bg-primary w-full'>
+                        </div>
+                    </div>
+
+                    <div>
                         <label className="block text-sm mb-1">
                             Firstname <span className="text-red-500">*</span>
                         </label>
@@ -275,54 +352,74 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
                         )}
                     </div>
 
-                    <div>
-                        <label className="block text-sm mb-1">
-                            Phone Number <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="tel"
-                            id="passenger-all-phoneNumber"
-                            placeholder="012 345 678"
-                            value={passengers[0]?.phoneNumber || ''}
-                            onChange={(e) => handleChange(0, 'phoneNumber', e.target.value)}
-                            className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
-                        />
-                        {errors[0]?.phoneNumber && (
-                            <p className="text-red-500 text-xs mt-1">{errors[0].phoneNumber}</p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm mb-1">
-                            Email <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="email"
-                            id="passenger-all-email"
-                            placeholder="example@gmail.com"
-                            value={passengers[0]?.email || ''}
-                            onChange={(e) => handleChange(0, 'email', e.target.value)}
-                            className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
-                        />
-                        {errors[0]?.email && (
-                            <p className="text-red-500 text-xs mt-1">{errors[0].email}</p>
-                        )}
-                    </div>
-
-                    {
-                        allowedpickUpDeparture && (
-                            renderPickupLocationSelect('pickupLocation', 'Departure Pickup Location')
-                        )
-                    }
-
-                    {tripType === 'round-trip' && allowedpickUpReturn && (
-                        renderPickupLocationSelect('returnPickupLocation', 'Return Pickup Location')
-                    )}
                 </div>
             ) : (
                 passengers.map((passenger, index) => (
                     <div key={index} className="space-y-4 border-b pb-4 mb-4 last:border-b-0">
-                        <h3 className="font-medium">Passenger {index + 1}</h3>
+
+
+                        {index === 0 && (
+                            <>
+                                <div className='pt-6'>
+                                    <p className="font-medium">Contact Detail</p>
+                                    <div className='h-[2px] rounded-full bg-primary w-full'>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm mb-1">
+                                        Phone Number <span className="text-red-500">*</span>
+                                    </label>
+
+                                    <PhoneInput
+                                        country={'kh'}
+                                        value={passenger.phoneNumber}
+                                        onChange={(value) => handleChange(index, 'phoneNumber', value)}
+                                        inputClass="!w-full !py-4 !pl-16 !text-base !border border-gray-300 !rounded-md"
+                                        buttonClass="!border-r border-gray-300 !px-2"
+                                        containerClass="!w-full"
+                                        dropdownClass="!text-black !max-h-60 overflow-y-auto"
+                                        searchClass="!border !border-gray-300 !rounded-md !px-2 !py-1 !my-2"
+                                        countryCodeEditable={false}
+                                        enableSearch={true}
+                                    />
+
+                                    {errors[index]?.phoneNumber && (
+                                        <p className="text-red-500 text-xs mt-1">{errors[index].phoneNumber}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm mb-1">
+                                        Email <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="email"
+                                        id={`passenger-${index}-email`}
+                                        placeholder="example@gmail.com"
+                                        value={passenger.email}
+                                        onChange={(e) => handleChange(index, 'email', e.target.value)}
+                                        className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
+                                    />
+                                    {errors[index]?.email && (
+                                        <p className="text-red-500 text-xs mt-1">{errors[index].email}</p>
+                                    )}
+                                </div>
+                                {
+                                    allowedpickUpDeparture && renderPickupLocationSelect('pickupLocation', 'Departure Pickup Location', index)
+                                }
+
+                                {tripType === 'round-trip' && allowedpickUpReturn && (
+                                    renderPickupLocationSelect('returnPickupLocation', 'Return Pickup Location', index)
+                                )}
+                            </>
+                        )}
+
+
+                        <div className='pt-6'>
+                            <p className="font-medium">{index == 0 ? 'Main Passenger' : `Passenger ${index + 1}`}</p>
+                            <div className='h-[2px] rounded-full bg-primary w-full'>
+                            </div>
+                        </div>
 
                         <div>
                             <label className="block text-sm mb-1">
@@ -358,50 +455,7 @@ const PassengerInfo = forwardRef(({ seatCount, onPassengerDataChange, tripType, 
                             )}
                         </div>
 
-                        {index === 0 && (
-                            <>
-                                <div>
-                                    <label className="block text-sm mb-1">
-                                        Phone Number <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        id={`passenger-${index}-phoneNumber`}
-                                        placeholder="012 345 678"
-                                        value={passenger.phoneNumber}
-                                        onChange={(e) => handleChange(index, 'phoneNumber', e.target.value)}
-                                        className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
-                                    />
-                                    {errors[index]?.phoneNumber && (
-                                        <p className="text-red-500 text-xs mt-1">{errors[index].phoneNumber}</p>
-                                    )}
-                                </div>
 
-                                <div>
-                                    <label className="block text-sm mb-1">
-                                        Email <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="email"
-                                        id={`passenger-${index}-email`}
-                                        placeholder="example@gmail.com"
-                                        value={passenger.email}
-                                        onChange={(e) => handleChange(index, 'email', e.target.value)}
-                                        className="w-full p-3 rounded-md bg-[#F8F7FD] border-none"
-                                    />
-                                    {errors[index]?.email && (
-                                        <p className="text-red-500 text-xs mt-1">{errors[index].email}</p>
-                                    )}
-                                </div>
-                                {
-                                    allowedpickUpDeparture && renderPickupLocationSelect('pickupLocation', 'Departure Pickup Location', index)
-                                }
-
-                                {tripType === 'round-trip' && allowedpickUpReturn && (
-                                    renderPickupLocationSelect('returnPickupLocation', 'Return Pickup Location', index)
-                                )}
-                            </>
-                        )}
                     </div>
                 ))
             )}

@@ -111,7 +111,18 @@ export const combineDateTime = (isoDate, time12hr) => {
 
 export const calculateArrival = ({ departureTime, durationHours, metaTime }) => {
   const departure = combineDateTime(departureTime, metaTime);
-
   const duration = parseDurationHours(durationHours);
-  return departure.add(duration, 'hour').format('MMMM-DD-YYYY');
+
+  const arrival = departure.add(duration, 'hour');
+
+  return arrival.format('MMMM-DD-YYYY'); // example: 2025-06-01 08:30 PM
+};
+
+export const calculateArrivalTime = ({ departureTime, durationHours, metaTime }) => {
+  const departure = combineDateTime(departureTime, metaTime);
+  const duration = parseDurationHours(durationHours);
+
+  const arrival = departure.add(duration, 'hour');
+
+  return arrival.format('hh:mm A'); // example: 2025-06-01 08:30 PM
 };
